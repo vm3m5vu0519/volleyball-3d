@@ -27,15 +27,15 @@ function applyCons(V){for(const c of V.cons){const d=c.dst;
   if(c.k==='rotation'){VX.q1.copy(c.sr).invert().multiply(c.src.quaternion);VX.q2.copy(VX.I).slerp(VX.q1,c.w);d.quaternion.copy(c.dr).multiply(VX.q2);}
   else if(c.k==='roll'){VX.q1.copy(c.sr).invert().multiply(c.src.quaternion);VX.q1.premultiply(c.sr).multiply(VX.q3.copy(c.sr).invert());VX.q1.premultiply(VX.q3.copy(c.dr).invert()).multiply(c.dr);
     VX.v1.copy(c.ax).applyQuaternion(VX.q1);VX.q2.setFromUnitVectors(c.ax,VX.v1).invert().multiply(VX.q1);VX.q3.copy(VX.I).slerp(VX.q2,c.w);d.quaternion.copy(c.dr).multiply(VX.q3);}
-  else{d.parent.updateMatrixWorld(true);d.parent.getWorldQuaternion(VX.q1);VX.q2.copy(VX.q1).multiply(c.dr);VX.v1.copy(c.ax).applyQuaternion(VX.q2);
+  else{d.parent.getWorldQuaternion(VX.q1);VX.q2.copy(VX.q1).multiply(c.dr);VX.v1.copy(c.ax).applyQuaternion(VX.q2);
     d.getWorldPosition(VX.v2);c.src.getWorldPosition(VX.v3);VX.v3.sub(VX.v2);if(VX.v3.lengthSq()<1e-8)continue;VX.v3.normalize();VX.q3.setFromUnitVectors(VX.v1,VX.v3).multiply(VX.q2);
     VX.q3.premultiply(VX.q1.invert());d.quaternion.copy(c.dr).slerp(VX.q3,c.w);}
-  d.updateMatrixWorld(true);}}
+  d.updateWorldMatrix(false,false);}}
 function applySprings(V,dt){dt=Math.min(dt,1/30);if(dt<=0)return;
-  for(const s of V.springs){const b=b0(s);b.parent.updateMatrixWorld(true);
+  for(const s of V.springs){const b=b0(s);b.parent.updateWorldMatrix(!s.pOk,false);
     if(!s.ax){if(s.tail){s.ax=s.tail.position.clone();}else{s.ax=b.position.clone().normalize().multiplyScalar(.07);} s.lenL=s.ax.length()||.01;s.ax.normalize();}
-    b.getWorldPosition(VX.v1);b.parent.getWorldQuaternion(VX.q1);VX.q2.copy(VX.q1).multiply(s.r0);
-    const ws=b.parent.getWorldScale(VX.v3).x,len=s.lenL*ws;
+    b.updateWorldMatrix(false,false);VX.v1.setFromMatrixPosition(b.matrixWorld);b.parent.matrixWorld.decompose(VX.v2,VX.q1,VX.v3);VX.q2.copy(VX.q1).multiply(s.r0);
+    const ws=VX.v3.x,len=s.lenL*ws;
     if(!s.cur||s.cur.distanceTo(VX.v1)>len*4+1){s.cur=VX.v2.copy(s.ax).applyQuaternion(VX.q2).multiplyScalar(len).add(VX.v1).clone();s.prev=s.cur.clone();}
     const inert=VX.v2.copy(s.cur).sub(s.prev).multiplyScalar(1-Math.max(.35,s.dr));if(inert.length()>len*.35)inert.setLength(len*.35);const _i=inert.clone();
     const stiff=VX.v3.copy(s.ax).applyQuaternion(VX.q2).multiplyScalar(Math.max(1.2,s.st)*1.6*dt);
@@ -44,6 +44,6 @@ function applySprings(V,dt){dt=Math.min(dt,1/30);if(dt<=0)return;
     next.sub(VX.v1).normalize();const rd=VX.v3.copy(s.ax).applyQuaternion(VX.q2);const ang=next.angleTo(rd);if(ang>.6){const k=.6/ang;next.lerp(rd,1-k).normalize();}
     next.multiplyScalar(len).add(VX.v1);s.prev.copy(s.cur);s.cur.copy(next);
     const from=VX.v2.copy(s.ax).applyQuaternion(VX.q2),to=VX.v3.copy(next).sub(VX.v1).normalize();
-    VX.q3.setFromUnitVectors(from,to).multiply(VX.q2);b.quaternion.copy(VX.q1.invert().multiply(VX.q3));b.updateMatrixWorld(true);}}
+    VX.q3.setFromUnitVectors(from,to).multiply(VX.q2);b.quaternion.copy(VX.q1.invert().multiply(VX.q3));b.updateWorldMatrix(false,false);}}
 function b0(s){return s.b;}
-function vrmPost(R,dt){const V=R.glb&&R.glb.vx;if(!V)return;if(V.cons.length)applyCons(V);if(V.springs.length)applySprings(V,dt);}
+function vrmPost(R,dt){const V=R.glb&&R.glb.vx;if(!V)return;R.glb.m.updateMatrixWorld(true);if(!V.ord){const set=new Set(V.springs.map(x=>x.b));V.springs.forEach(x=>{x.pOk=true;});V.ord=1;}if(V.cons.length)applyCons(V);if(V.springs.length)applySprings(V,dt);}

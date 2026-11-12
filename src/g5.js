@@ -44,7 +44,7 @@ function updateCamera(dt){
       const zs=Math.sign(L.z)||1;_P.set(L.x*.25+side*1.2*Math.sin(a),4.8,zs*(M.wid+4.2));_L.set(L.x*.55,.8,L.z*.35);
       const k=stT<.7?1-Math.exp(-dt*9):1-Math.exp(-dt*2.5);camS.p.lerp(_P,k);pointLook.lerp(_L,k);camS.l.copy(pointLook);fov=62;}
     else if(state!=='point')pointLook.copy(camS.l);}
-  {const v=camPrev.distanceTo(camS.p)/Math.max(dt,1e-3);camPrev.copy(camS.p);const want=clamp((v-14)/5,0,7)|0;if(want!==blurPx){blurPx=want;g3.style.filter=want?`blur(${want}px)`:'';}}
+  // （原本鏡頭快速移動時用 CSS 模糊整個畫面，瀏覽器重繪很重、會造成卡頓，拿掉）
   if(camKick>0)camKick=Math.max(0,camKick-dt*.6);if(fovKick>0)fovKick=Math.max(0,fovKick-dt*30);
   const s=shake>0?shake*.15:0;cam.position.set(camS.p.x+(rnd()-.5)*s,camS.p.y+(rnd()-.5)*s,camS.p.z+(rnd()-.5)*s);cam.position.y-=camKick*Math.sin(Math.min(1,camKick/.11)*Math.PI);cam.lookAt(camS.l);
   const f=fov-(slowT>0||bulletT>0?4:0);baseFov+=(f-baseFov)*Math.min(1,dt*8);const nf=baseFov+fovKick;if(Math.abs(cam.fov-nf)>.01){cam.fov=nf;cam.updateProjectionMatrix();}
@@ -65,6 +65,9 @@ let RS=1;
 function applyGfx(){if(!renderer)return;const sh=S.gfx>=1;renderer.shadowMap.enabled=sh;renderer.shadowMap.type=TH.PCFSoftShadowMap;sun.castShadow=sh;blobs.forEach(b=>b.visible=!sh);scene.traverse(o=>{if(o.material&&!Array.isArray(o.material))o.material.needsUpdate=true;});const dpr=devicePixelRatio||1;RS=S.gfx==2?Math.min(dpr,1.5):S.gfx==1?Math.min(dpr,1):.7;renderer.setPixelRatio(RS);renderer._w=0;}
 function render(dt){
   if(!renderer)return;
+  // 動態解析度：每格平均超過 19 毫秒（低於約 52 fps）就降低 3D 畫面解析度，順暢優先；夠快時再慢慢調回
+  {const ft=window.__ftEMA,now=performance.now()/1000;if(ft!==undefined&&inMatch()){if(ft>19&&DRS.k>.6&&now-DRS.t>1){DRS.k=Math.max(.6,DRS.k-.12);DRS.t=now;}else if(ft<12.5&&DRS.k<1&&now-DRS.t>4){DRS.k=Math.min(1,DRS.k+.08);DRS.t=now;}}
+    const pr=RS*DRS.k;if(Math.abs(renderer.getPixelRatio()-pr)>.01){renderer.setPixelRatio(pr);renderer._w=0;}}
   const w=innerWidth,h=innerHeight;if(renderer._w!==w||renderer._h!==h){renderer._w=w;renderer._h=h;renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();}
   updateCamera(dt);
   cursorG.ok=false;if(true){ray.setFromCamera({x:0,y:0},cam);const d=ray.ray.direction,o=ray.ray.origin;
@@ -241,7 +244,8 @@ function snap(){players.forEach(p=>{p.ox=p.x;p.oy=p.y;p.oz=p.z;p.oyaw=p.yaw;});i
 function bulletScale(d){if(!S.slow||!human||state!=='play'||human.y<=.2){if(human&&human.y===0)bulletT=0;return 1;}
   if(!human.swingReq)return 1;const dd=Math.hypot(ball.x-human.x,ball.y-human.y-HANDUP,ball.z-human.z);if(dd<2.6&&bulletT<.4){bulletT+=d;return .6;}return 1;}
 const PF={sim:0,ren:0,hud:0,n:0,worst:0};
-function loop(ts){const now=ts/1000;if(!last)last=now;const d=Math.min(.1,now-last);last=now;
+const DRS={k:1,t:0};
+function loop(ts){const now=ts/1000;if(!last)last=now;const d=Math.min(.1,now-last);last=now;if(d>0&&d<.1)window.__ftEMA=window.__ftEMA===undefined?d*1000:window.__ftEMA*.95+d*1000*.05;
   if(window.__manual){requestAnimationFrame(loop);return;}
   const t0=performance.now();
   if(!paused&&hitstop>0){hitstop-=d;ALPHA=1;}

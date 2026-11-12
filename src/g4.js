@@ -251,8 +251,8 @@ function retarget(R){
     const lat=j.name==='Hips'?P.hipX:j.name==='Spine'?P.chestX:j.hk?P[j.hk]:null;
     if(j.l&&lat){RT.l0.copy(j.l).applyQuaternion(RT.q2);frameQ(RT.a0,RT.l0,RT.f0);RT.w.copy(d);frameQ(RT.w,lat,RT.f1);RT.rq.copy(RT.f1).multiply(RT.f0.invert());}
     else RT.rq.setFromUnitVectors(RT.a0,d);
-    RT.rq.multiply(RT.q2);b.quaternion.copy(RT.q1.invert()).multiply(RT.rq);b.updateMatrixWorld(true);
-    if(j.name==='Hips'){RT.mid.copy(G.legMid).applyMatrix4(b.matrixWorld);RT.w.addVectors(P.Lh,P.Rh).multiplyScalar(.5).sub(RT.mid);b.getWorldPosition(RT.mid).add(RT.w);b.parent.worldToLocal(RT.mid);b.position.copy(RT.mid);b.updateMatrixWorld(true);}}
+    RT.rq.multiply(RT.q2);b.quaternion.copy(RT.q1.invert()).multiply(RT.rq);b.updateWorldMatrix(false,false);
+    if(j.name==='Hips'){RT.mid.copy(G.legMid).applyMatrix4(b.matrixWorld);RT.w.addVectors(P.Lh,P.Rh).multiplyScalar(.5).sub(RT.mid);RT.mid.setFromMatrixPosition(b.matrixWorld).add(RT.w);b.parent.worldToLocal(RT.mid);b.position.copy(RT.mid);b.updateWorldMatrix(false,false);}}
   headLook(R,G);}
 // 頭看球：影片裡的人物一直盯著球，頭最多轉 50 度、抬 35 度
 const HL={d:new TH.Vector3(),hp:new TH.Vector3(),q:new TH.Quaternion(),qy:new TH.Quaternion(),qp:new TH.Quaternion(),pq:new TH.Quaternion(),ax:new TH.Vector3(),up:new TH.Vector3(0,1,0)};
@@ -295,7 +295,8 @@ const JLIM={eL:[-2.5,0],eR:[-2.5,0],kL:[0,2.5],kR:[0,2.5],aLx:[-3.15,.95],aRx:[-
 function poseRig(p,R,dt){
   const a=ALPHA,[aL,aR]=R.arms,[gL,gR]=R.legs;
   R.g.position.set(lerp(p.ox,p.x,a),lerp(p.oy,p.y,a),lerp(p.oz,p.z,a));R.g.rotation.y=angLerp(p.oyaw??p.yaw,p.yaw,a);
-  const air=p.y>0,sp=Math.hypot(p.vx,p.vz),run=sp>.6&&!air&&p.dive<=0&&p.stun<=0&&p.rec<=0;R.ph=(R.ph||0)+dt*(2.2+sp*1.6);
+  const air=p.y>0,sp=Math.hypot(p.vx,p.vz),run=sp>.12&&!air&&p.dive<=0&&p.stun<=0&&p.rec<=0;R.phr=lerp(R.phr??(2.2+sp*1.6),2.2+sp*1.6,1-Math.exp(-dt*6));R.ph=(R.ph||0)+dt*R.phr;
+  R.rwv=lerp(R.rwv??0,run?clamp((sp-.12)/.9,0,1):0,1-Math.exp(-dt*9));const runW=R.rwv,rw=runW*runW*(3-2*runW);   // 起步、停下時從站姿平順混到跑步姿勢
   const T={pt:0,hy:HIPY,sx:.22,sy:0,tL:-.38,tR:-.38,kL:.75,kR:.75,aLx:-.55,aLz:-.14,aRx:-.55,aRz:.14,eL:-1.15,eR:-1.15};
   if(state==='menu'){T.sx=.05;T.tL=T.tR=-.05;T.kL=T.kR=.1;T.aLx=T.aRx=.05;T.eL=T.eR=-.25;}
   // 得分慶祝（不跳）：贏的一方握拳、雙手舉高、拍手、雙拳收在胸前；輸的一方雙手插腰或手撐膝蓋。每個人錯開一點時間開始
@@ -309,9 +310,11 @@ function poseRig(p,R,dt){
       else{T.aLx=T.aRx=.12;T.aLz=-.72;T.aRz=.72;T.eL=T.eR=-1.75;T.sx=.04;}}}
   // 跑步（運動員跑法）：骨盆微前傾，手肘約 90 度彎、和腳反向前後擺，往前擺時彎更多、手到胸前，往後擺時手到臀部
   // 跑步：上身挺直（整體只前傾約 3–6 度），支撐腳伸直推地，膝蓋在腳往前擺的時候彎最多（真人跑步的時序）
-  if(run){const s=Math.sin(R.ph),f=clamp(sp/7,.4,1),kl=Math.max(0,Math.sin(R.ph+1.0)),kr=Math.max(0,Math.sin(R.ph+Math.PI+1.0));T.pt=.03+.03*f;
-    const ts=x=>x>0?.88*x:.5*x;T.tL=-ts(s)*f-.07-T.pt;T.tR=-ts(-s)*f-.07-T.pt;T.kL=.12+1.5*kl*f;T.kR=.12+1.5*kr*f;
-    const as=x=>x>0?.62*x:.92*x;T.aLx=as(s)*f-.04;T.aRx=as(-s)*f-.04;T.eL=-1.25-.5*Math.max(0,-s)*f;T.eR=-1.25-.5*Math.max(0,s)*f;R.bnc=.085*f*s*s;T.sx=-.02+.03*f;T.sy=.12*s*f;T.aLz=-.12;T.aRz=.12;}else R.bnc=0;
+  // 跑步：全部用平滑曲線（不對稱的擺幅、只往一邊彎的膝蓋都用平滑函數，沒有尖角，關節速度不會突然改變）；速度變化時擺幅慢慢跟上
+  if(run){const T0={...T};R.rf=lerp(R.rf??clamp(sp/7,.4,1),clamp(sp/7,.4,1),1-Math.exp(-dt*5));const s=Math.sin(R.ph),f=R.rf,sm=x=>(x+Math.sqrt(x*x+.04)-.2)/2,asym=(x,a,b)=>(a+b)/2*x+(a-b)/2*(Math.sqrt(x*x+.04)-.2),
+      kl=sm(Math.sin(R.ph+1.0)),kr=sm(Math.sin(R.ph+Math.PI+1.0));T.pt=.03+.03*f;
+    T.tL=-asym(s,.88,.5)*f-.07-T.pt;T.tR=-asym(-s,.88,.5)*f-.07-T.pt;T.kL=.14+1.45*kl*f;T.kR=.14+1.45*kr*f;
+    T.aLx=asym(s,.62,.92)*f-.04;T.aRx=asym(-s,.62,.92)*f-.04;T.eL=-1.3-.42*sm(-s)*f;T.eR=-1.3-.42*sm(s)*f;R.bnc=.085*f*s*s;T.sx=-.02+.03*f;T.sy=.12*s*f;T.aLz=-.12;T.aRz=.12;for(const k in T)if(T0[k]!==undefined)T[k]=lerp(T0[k],T[k],rw);R.bnc*=rw;}else{R.bnc=0;R.rf=undefined;}
   const pose=p.stun>0?'stun':p.dive>0?'dive':p.rec>0?'getup':p.swing>0?p.pose:'';
   const blk=air&&Math.abs(p.x)<1.4&&state==='play'&&ball&&ball.lastTeam!==p.team&&Math.sign(ball.x)!==sd(p.team);
   const hitter=air&&!blk&&ball&&((state==='play'&&(p.human||(ball.setInfo&&ball.setInfo.hitter===p)))||(state==='serve'&&server===p));
@@ -359,12 +362,17 @@ function poseRig(p,R,dt){
   const hl=pose==='spike'||pose==='serve'?.065:p.charging||p.loadT>0?.07:pose==='bump'||pose==='dig'?.06:pose==='dive'||pose==='stun'||pose==='getup'?.1:p.landT>0?.09:.12,w=1.68/hl;
   const C=R.c||(R.c={...T}),O=R.o||(R.o={}),OV=R.ov||(R.ov={}),TP=R.tp||(R.tp={...T}),CV=R.cv||(R.cv={});
   const lim=(pose==='spike'||pose==='serve'?16:9)*dt,idt=1/Math.max(dt,1e-4);
-  for(const key in T){const t=T[key],tp=TP[key]??t,d=t-tp,ok=clamp(d,-lim,lim),ex=d-ok;let o=O[key]||0,ov=OV[key]||0;
-    if(Math.abs(ex)>1e-5){o-=ex;ov=(CV[key]||0)-ok*idt;}
-    const e=Math.exp(-w*dt),j=ov+w*o;o=(o+j*dt)*e;ov=(ov-w*j*dt)*e;ov=clamp(ov,-24,24);
+  // 部位先後（參考 MECH-CORDON）：手臂的目標加上「軀幹角速度 × −0.045 秒」，軀幹往前彎時手臂慢半拍跟上，動作有慣性和層次
+  {const CVp=R.cv||{},kk=1-Math.exp(-dt*10);R.lgw=lerp(R.lgw||0,((CVp.sx||0)+(CVp.pt||0))*-.045,kk);R.lgy=lerp(R.lgy||0,(CVp.sy||0)*-.045,kk);const tw=R.lgw,ty=R.lgy,lg=x=>clamp(x,-.3,.3);
+    if(T.aLx!==undefined){T.aLx+=lg(tw);T.aRx+=lg(tw);}if(T.aLz!==undefined){T.aLz+=lg(ty)*.5;T.aRz+=lg(ty)*.5;}}
+  // 目標每格的變化在 lim 以內＝連續動作（記下目標速度）；超過＝換姿勢：整段跳變交給差值，差值速度＝目前輸出速度－目標原本的速度
+  const TV=R.tv||(R.tv={});
+  for(const key in T){const t=T[key],tp=TP[key]??t,d=t-tp;let o=O[key]||0,ov=OV[key]||0;
+    if(Math.abs(d)>lim){o-=d;ov=(CV[key]||0)-(TV[key]||0);}else TV[key]=lerp(TV[key]||0,d*idt,.5);
+    const e=Math.exp(-w*dt),j=ov+w*o;o=(o+j*dt)*e;ov=(ov-w*j*dt)*e;ov=clamp(ov,pose==='spike'||pose==='serve'?-20:-12,pose==='spike'||pose==='serve'?20:12);
     const out=t+o;CV[key]=(out-(C[key]??out))*idt;C[key]=out;O[key]=o;OV[key]=ov;TP[key]=t;}
   // 最後一道：每個關節每秒最多轉幾弧度（扣球、發球揮臂 20，其他 11），大轉換會分好幾格走完，不會一格跳過去
-  {const CP=R.cp||(R.cp={...C}),mr=(pose==='spike'||pose==='serve'?20:11)*dt;for(const k in C){const pv=CP[k];if(pv!==undefined){const d=C[k]-pv;if(d>mr)C[k]=pv+mr;else if(d<-mr)C[k]=pv-mr;}}}
+  {const CP=R.cp||(R.cp={...C}),mr=40*dt;for(const k in C){const pv=CP[k];if(pv!==undefined){const d=C[k]-pv;if(d>mr)C[k]=pv+mr;else if(d<-mr)C[k]=pv-mr;}}}
   for(const k in JLIM)if(C[k]!==undefined){const [a,b]=JLIM[k],v=C[k];if(v>b){const o=v-b;C[k]=b+o/(1+o/.06);}else if(v<a){const o=a-v;C[k]=a-o/(1+o/.06);}}
   Object.assign(R.cp,C);
   const onFeet=!air&&pose!=='dive'&&pose!=='getup'&&pose!=='stun';
