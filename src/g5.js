@@ -8,7 +8,7 @@ function cueInfo(){if(!human||state!=='play'||!ball.setInfo||ball.setInfo.hitter
   const app=human.y>0?human.app:human.run,J=jumpProf(human,app),Lh=predict(HANDUP+J.hApex-.05);if(!Lh||Math.sign(Lh.x)!==sd(human.team))return null;
   return{x:Lh.x-tnet(human.team)*.3,z:Lh.z,toJump:Lh.t-J.tApex,hy:HANDUP+J.hApex};}
 function shotFor(){const h=human;if(!h)return'ground';
-  if(state==='point')return'point';
+  if(state==='point')return camShot||'ground';
   if(state==='serve')return server===h?'serve':'wait';
   if(h.y>.2){const blk=Math.abs(h.x)<1.6&&ball.lastTeam!==h.team&&Math.sign(ball.x)!==sd(h.team);return blk?'block':'air';}
   if(h.dive>0||h.rec>0)return'dive';
@@ -32,15 +32,18 @@ function updateCamera(dt){
     const hx=lerp(h.ox,h.x,ALPHA),hz=lerp(h.oz,h.z,ALPHA),hy=lerp(h.oy,h.y,ALPHA),pt=clamp(camPitch+cs.pt,-.2,1.25);
     _T.set(hx,1.45+hy*.75+cs.l,hz);const fx=Math.sin(camYaw)*Math.cos(pt),fy=-Math.sin(pt),fz=Math.cos(camYaw)*Math.cos(pt);
     // 鏡頭方向立即跟滑鼠，只有位置（跳起來、換動作）用很快的平滑，看起來不會卡也不會晃
-    const ptCam=state==='point'&&stT>.3;
-    if(!ptCam){camS.l.copy(_T);_P.set(_T.x-fx*cs.d,Math.max(.35,_T.y-fy*cs.d),_T.z-fz*cs.d);camS.p.lerp(_P,1-Math.exp(-dt*12));
-    camS.l.set(camS.p.x+fx*10,camS.p.y+fy*10,camS.p.z+fz*10);}
+    // 得分後鏡頭不轉、不移動，停在得分那一刻的位置看大家慶祝
+    const ptCam=state==='point';
+    if(ptCam)camS.ptEnd=time;
+    // 得分結束、回到發球站位時，鏡頭位置和方向都用 1 秒慢慢滑過去，不會一下子跳走
+    if(!ptCam){const tr=time-(camS.ptEnd??-9)<1.2,kp=1-Math.exp(-dt*(tr?3.5:12));_P.set(_T.x-fx*cs.d,Math.max(.35,_T.y-fy*cs.d),_T.z-fz*cs.d);camS.p.lerp(_P,kp);
+      _L.set(camS.p.x+fx*10,camS.p.y+fy*10,camS.p.z+fz*10);if(tr)camS.l.lerp(_L,1-Math.exp(-dt*4));else camS.l.copy(_L);}
     // 得分：鏡頭甩過球網，從高空俯看落點，3 秒後甩回發球位置（甩動時加動態模糊）
-    if(state==='point'&&stT>.3){const L=lastLand,side=sd(h.team),a=(stT-.3)*.12;
+    if(false){const L=lastLand,side=sd(h.team),a=(stT-.3)*.12;
       // 影片：鏡頭移到網柱旁邊、約 5 公尺高，斜斜往下看網前的球員
       const zs=Math.sign(L.z)||1;_P.set(L.x*.25+side*1.2*Math.sin(a),4.8,zs*(M.wid+4.2));_L.set(L.x*.55,.8,L.z*.35);
       const k=stT<.7?1-Math.exp(-dt*9):1-Math.exp(-dt*2.5);camS.p.lerp(_P,k);pointLook.lerp(_L,k);camS.l.copy(pointLook);fov=62;}
-    else pointLook.copy(camS.l);}
+    else if(state!=='point')pointLook.copy(camS.l);}
   {const v=camPrev.distanceTo(camS.p)/Math.max(dt,1e-3);camPrev.copy(camS.p);const want=clamp((v-14)/5,0,7)|0;if(want!==blurPx){blurPx=want;g3.style.filter=want?`blur(${want}px)`:'';}}
   if(camKick>0)camKick=Math.max(0,camKick-dt*.6);if(fovKick>0)fovKick=Math.max(0,fovKick-dt*30);
   const s=shake>0?shake*.15:0;cam.position.set(camS.p.x+(rnd()-.5)*s,camS.p.y+(rnd()-.5)*s,camS.p.z+(rnd()-.5)*s);cam.position.y-=camKick*Math.sin(Math.min(1,camKick/.11)*Math.PI);cam.lookAt(camS.l);

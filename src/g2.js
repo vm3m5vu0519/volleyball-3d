@@ -83,7 +83,7 @@ function point(w,why){
   if(state!=='play')return;state='point';stT=0;score[w]++;
   say(why||`${COL[w].name}得分！`,COL[w].ui,true);SFX.point();flash=.12;
   if(w!==serveTeam){if(served[w])serverIdx[w]++;served[w]=true;}serveTeam=w;
-  team(w).forEach(p=>{if(!p.human&&p.y===0&&rnd()<.5)p.jumpAt=time+.2+rnd()*.4;});
+  window.ptWin=w;
   talk(pick(team(w)),LINES.win);}
 const fault=(w,why)=>point(w,why);
 const gameOver=()=>(score[0]>=S.win||score[1]>=S.win)&&Math.abs(score[0]-score[1])>=2;

@@ -3,7 +3,7 @@
 // 數值：排球對木地板的恢復係數約 0.6–0.7（2 公尺落下約彈回 0.8 公尺）；廣告牆是軟墊、網子會吃掉大部分速度
 const BRV=BR*1.55,BALL_E=.64,ROLLF=.55;
 let bounceSnd=0;
-function standH(x,z){const W=M.wid,HF=M.half;let h=0;
+function standH(x,z){return 0;const W=M.wid,HF=M.half;let h=0;
   const az=Math.abs(z)-(W+6.5);if(az>-.475&&Math.abs(x)<22)h=Math.max(h,.5+Math.min(12,Math.floor((az+.475)/.95))*.5);
   const ax=Math.abs(x)-(HF+8);if(ax>-.475&&Math.abs(z)<15)h=Math.max(h,.5+Math.min(10,Math.floor((ax+.475)/.95))*.5);return h;}
 function ballSnd(v,kind){if(time-bounceSnd<.05||v<.5)return;bounceSnd=time;const k=clamp(v/9,.12,1);
@@ -20,9 +20,11 @@ function ballCollide(b,dt,dead){let ev=null;const W=M.wid,HF=M.half;
   // 網柱
   for(const s of[-1,1]){const dz=b.z-s*(W+.9),dx=b.x,d=Math.hypot(dx,dz),R=.06+BRV;if(d<R&&b.y<2.6){const nx=dx/(d||1),nz=dz/(d||1),vn=b.vx*nx+b.vz*nz;b.x=nx*R;b.z=s*(W+.9)+nz*R;if(vn<0){b.vx-=(1+.55)*vn*nx;b.vz-=(1+.55)*vn*nz;ballSnd(-vn,'wall');ev='wall';}}}
   // 廣告牆（高 0.9 公尺的軟墊）
-  const wz=W+5.6-BRV,wx=HF+7.2-BRV;
-  if(Math.abs(b.z)>wz&&Math.abs(b.pz??b.z)<=wz+.01&&b.y<.9+BRV){const v=Math.abs(b.vz);b.z=Math.sign(b.z)*wz;b.vz*=-.45;b.vx*=.8;ballSnd(v,'wall');ev='wall';}
-  if(Math.abs(b.x)>wx&&Math.abs(b.px??b.x)<=wx+.01&&b.y<.9+BRV&&Math.abs(b.z)<W+5.6){const v=Math.abs(b.vx);b.x=Math.sign(b.x)*wx;b.vx*=-.45;b.vz*=.8;ballSnd(v,'wall');ev='wall';}
+  // 體育館的牆（下段軟墊吸收較多，上段硬牆彈得較遠）、天花板
+  const G_=window.GYM||{W:W+6,L:HF+7,H:11},wz=G_.W-BRV-.16,wx=G_.L-BRV-.16;
+  if(Math.abs(b.z)>wz&&Math.abs(b.pz??b.z)<=wz+.01){const v=Math.abs(b.vz),e=b.y<2.2?.4:.6;b.z=Math.sign(b.z)*wz;b.vz*=-e;b.vx*=.85;ballSnd(v,'wall');ev='wall';}
+  if(Math.abs(b.x)>wx&&Math.abs(b.px??b.x)<=wx+.01){const v=Math.abs(b.vx),e=b.y<2.2?.4:.6;b.x=Math.sign(b.x)*wx;b.vx*=-e;b.vz*=.85;ballSnd(v,'wall');ev='wall';}
+  if(b.y>G_.H-.9-BRV&&b.vy>0){b.y=G_.H-.9-BRV;b.vy*=-.5;ballSnd(Math.abs(b.vy)*2,'wall');ev=ev||'wall';}
   if(!dead){const h=standH(b.x,b.z);if(h>0&&h>b.y-BRV)ev='wall';return ev;}
   // 看台：一階一階，撞到階梯側面就彈回，落到階面上就彈起
   const gh=standH(b.x,b.z);

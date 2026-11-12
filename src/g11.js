@@ -5,7 +5,7 @@ const FX={crowd:null,heads:null,cw:[],cheer:0,cheerSide:0,net:null,marks:[],comp
 (function crowd(){const W=M.wid,HF=M.half,seats=[];
   const addRows=(len,dist,side,rows,axis)=>{for(let k=0;k<rows;k++){const d=dist+k*.95-.12,y=.5+k*.5;for(let u=-len/2+.5;u<len/2-.5;u+=.62){if(rnd()<.32)continue;
     const j=(rnd()-.5)*.12;seats.push(axis==='z'?{x:u+j,z:side*d,y}:{x:side*d,z:u+j,y});}}};
-  [-1,1].forEach(s=>{addRows(44,W+6.5,s,13,'z');addRows(30,HF+8,s,11,'x');});
+  const G_=window.GYM||{W:W+6};if(window.CROWD_OFF!==0)return;for(let k=0;k<4;k++){const d=G_.W-.4-(4-k)*.8,y=.45*(k+1);for(let u=-8.5;u<8.5;u+=.62){if(rnd()<.72)continue;seats.push({x:u+(rnd()-.5)*.12,z:d,y});}}
   const n=seats.length,bodyG=new TH.CylinderGeometry(.15,.21,.62,6),headG=new TH.SphereGeometry(.115,8,6);bodyG.translate(0,.31,0);headG.translate(0,.74,0);
   const bm=new TH.MeshLambertMaterial({color:'#ffffff'}),hm=new TH.MeshLambertMaterial({color:'#ffffff'});
   const B=new TH.InstancedMesh(bodyG,bm,n),H=new TH.InstancedMesh(headG,hm,n);B.instanceMatrix.setUsage(TH.DynamicDrawUsage);H.instanceMatrix.setUsage(TH.DynamicDrawUsage);
@@ -14,7 +14,7 @@ const FX={crowd:null,heads:null,cw:[],cheer:0,cheerSide:0,net:null,marks:[],comp
     s.ph=rnd()*7;s.fan=rnd();s.team=Math.sign(s.x)||1;});
   B.frustumCulled=H.frustumCulled=false;scene.add(B);scene.add(H);FX.crowd=B;FX.heads=H;FX.cw=seats;})();
 const _cm=new TH.Matrix4(),_cq=new TH.Quaternion(),_cs=new TH.Vector3(1,1,1),_cp=new TH.Vector3();let _cT=0;
-function crowdFrame(dt){if(!FX.crowd)return;const on=S.gfx>=1;FX.crowd.visible=FX.heads.visible=on;if(!on)return;_cT+=dt;if(_cT<1/30)return;const t=time;_cT=0;
+function crowdFrame(dt){if(!FX.crowd||!FX.cw.length)return;const on=S.gfx>=1;FX.crowd.visible=FX.heads.visible=on;if(!on)return;_cT+=dt;if(_cT<1/30)return;const t=time;_cT=0;
   FX.cheer=Math.max(0,FX.cheer-.011);
   FX.cw.forEach((s,i)=>{const mine=FX.cheerSide===0||Math.sign(s.x)===FX.cheerSide,e=FX.cheer*(mine?1:.35)*(s.fan>.25?1:0);
     const jump=e>0?Math.max(0,Math.sin(t*9+s.ph))*.22*e+.18*Math.min(1,e*3):Math.sin(t*1.3+s.ph)*.015;
@@ -23,7 +23,7 @@ function crowdFrame(dt){if(!FX.crowd)return;const on=S.gfx>=1;FX.crowd.visible=F
 const _ya=new TH.Vector3(0,1,0);
 // 兩端大螢幕：即時比分
 (function boards(){const HF=M.half;[-1,1].forEach(s=>{const cv=document.createElement('canvas');cv.width=512;cv.height=256;const tx=new TH.CanvasTexture(cv);
-  const m=new TH.Mesh(new TH.PlaneGeometry(6.2,3.0),new TH.MeshBasicMaterial({map:tx,fog:false}));m.position.set(s*(HF+18.28),12.4,0);m.rotation.y=s>0?-Math.PI/2:Math.PI/2;scene.add(m);FX.board.push({cv,tx,last:''});});})();
+  const m=new TH.Mesh(new TH.PlaneGeometry(6.2,3.0),new TH.MeshBasicMaterial({map:tx,fog:false}));const G_=window.GYM||{L:HF+7};m.position.set(s*(G_.L-.12),6.4,0);m.rotation.y=s>0?-Math.PI/2:Math.PI/2;{const fr=new TH.Mesh(new TH.BoxGeometry(.1,3.3,6.5),new TH.MeshLambertMaterial({color:'#20242c'}));fr.position.set(s*(G_.L-.06),6.4,0);scene.add(fr);}scene.add(m);FX.board.push({cv,tx,last:''});});})();
 function boardFrame(){if(!FX.board.length||typeof score==='undefined')return;const key=score.join(':')+state;
   FX.board.forEach(b=>{if(b.last===key)return;b.last=key;const g=b.cv.getContext('2d'),w=512,h=256;g.fillStyle='#0d1118';g.fillRect(0,0,w,h);
     g.fillStyle='#ff7a2a';g.font='bold 30px "Noto Sans TC",sans-serif';g.textAlign='center';g.fillText('熱血排球',w/2,40);
@@ -32,8 +32,8 @@ function boardFrame(){if(!FX.board.length||typeof score==='undefined')return;con
     if(state==='point'){g.fillStyle='#ffe14a';g.font='bold 24px "Noto Sans TC",sans-serif';g.fillText('POINT!',w/2,244);}
     b.tx.needsUpdate=true;});}
 // 球網：細分網格，被球打到會鼓起再晃回來
-(function netMesh(){let net=null;scene.traverse(o=>{if(o.isMesh&&o.material&&o.material.transparent&&o.material.map&&Math.abs(o.position.y-(NETH-.5))<.01&&o.position.x===0&&o.geometry.parameters&&o.geometry.parameters.width>9)net=o;});
-  if(!net)return;const W=net.geometry.parameters.width,g=new TH.PlaneGeometry(W,1,64,10);net.geometry.dispose();net.geometry=g;const P=g.attributes.position,n=P.count;
+(function netMesh(){let net=null;scene.traverse(o=>{if(o.isMesh&&o.userData.isNet)net=o;});
+  if(!net)return;const W=net.geometry.parameters.width,g=new TH.PlaneGeometry(W,1,96,12);net.geometry.dispose();net.geometry=g;const P=g.attributes.position,n=P.count;
   FX.net={m:net,P,d:new Float32Array(n),v:new Float32Array(n),u:Float32Array.from({length:n},(_,i)=>P.getX(i)),h:Float32Array.from({length:n},(_,i)=>P.getY(i)),act:0};})();
 // z：沿網子的位置；y：高度；s：力道（正負是方向，往 +x 為正）
 function netHit(z,y,s){const N=FX.net;if(!N)return;const ly=y-(NETH-.5);for(let i=0;i<N.d.length;i++){const dz=N.u[i]+z,dy=N.h[i]-ly,top=Math.max(0,(.5-N.h[i]))/1,f=Math.exp(-(dz*dz)/.5-(dy*dy)/.35)*Math.min(1,top*1.6);N.v[i]+=s*f;}N.act=2.5;}
@@ -52,7 +52,7 @@ const GradeShader={uniforms:{tDiffuse:{value:null},amt:{value:1},imp:{value:0},c
   fragmentShader:`uniform sampler2D tDiffuse;uniform float amt;uniform float imp;uniform float ca;varying vec2 vUv;
   void main(){vec4 c=texture2D(tDiffuse,vUv);vec3 col=c.rgb;
     vec2 cd=(vUv-.5)*ca*.018;col.r=texture2D(tDiffuse,vUv+cd).r;col.b=texture2D(tDiffuse,vUv-cd).b;   // 衝擊色差
-    float l=dot(col,vec3(.299,.587,.114));col=mix(vec3(l),col,1.0+.16*amt);          // 飽和
+    float l=dot(col,vec3(.299,.587,.114));col=mix(vec3(l),col,1.0+.05*amt);          // 飽和
     col=(col-.5)*(1.0+.08*amt)+.5;                                                 // 對比
     col*=mix(vec3(1.),vec3(1.03,1.0,.97),amt);                                     // 微暖
     vec2 d=vUv-.5;float v=smoothstep(.85,.25,length(d*vec2(1.25,1.)));col*=mix(1.,.72+.28*v,amt); // 暗角
@@ -66,5 +66,5 @@ function fxSetup(){if(FX.comp!==null||!renderer||!TH.EffectComposer||!TH.UnrealB
 function fxRender(dt){crowdFrame(dt);if(typeof fx2Frame==='function')fx2Frame(dt);boardFrame();netFrame(dt);marksFrame(dt);
   if(S.gfx>=1&&FX.comp===null)fxSetup();
   if(S.gfx>=1&&FX.comp){const sz=renderer.getDrawingBufferSize(new TH.Vector2());if(FX.comp._w!==sz.x||FX.comp._h!==sz.y){FX.comp._w=sz.x;FX.comp._h=sz.y;FX.comp.setSize(sz.x/renderer.getPixelRatio(),sz.y/renderer.getPixelRatio());FX.comp.setPixelRatio&&FX.comp.setPixelRatio(renderer.getPixelRatio());}
-    FX.bloom.enabled=S.gfx>=1;FX.bloom.strength=S.gfx==2?.3:.22;FX.comp.render(dt);}
+    FX.bloom.enabled=S.gfx>=1;FX.bloom.strength=S.gfx==2?.18:.12;FX.comp.render(dt);}
   else renderer.render(scene,cam);}

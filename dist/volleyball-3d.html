@@ -485,7 +485,7 @@ function point(w,why){
   if(state!=='play')return;state='point';stT=0;score[w]++;
   say(why||`${COL[w].name}得分！`,COL[w].ui,true);SFX.point();flash=.12;
   if(w!==serveTeam){if(served[w])serverIdx[w]++;served[w]=true;}serveTeam=w;
-  team(w).forEach(p=>{if(!p.human&&p.y===0&&rnd()<.5)p.jumpAt=time+.2+rnd()*.4;});
+  window.ptWin=w;
   talk(pick(team(w)),LINES.win);}
 const fault=(w,why)=>point(w,why);
 const gameOver=()=>(score[0]>=S.win||score[1]>=S.win)&&Math.abs(score[0]-score[1])>=2;
@@ -891,64 +891,100 @@ function endMatch(){state='over';if(document.pointerLockElement)document.exitPoi
 const TH=THREE,hudC=$('hud'),hctx=hudC.getContext('2d');
 let renderer=null;try{renderer=new TH.WebGLRenderer({canvas:g3,antialias:true,powerPreference:'high-performance'});}catch(e){}
 const scene=new TH.Scene(),cam=new TH.PerspectiveCamera(60,1,.1,400);
-scene.fog=new TH.Fog('#d6e6f2',60,190);
+scene.fog=new TH.Fog('#e6e2da',40,120);
 function ctex(w,h,fn,rep){const c=document.createElement('canvas');c.width=w;c.height=h;fn(c.getContext('2d'),w,h);const t=new TH.CanvasTexture(c);t.anisotropy=8;if(rep){t.wrapS=t.wrapT=TH.RepeatWrapping;t.repeat.set(rep[0],rep[1]);}return t;}
 const gm=new TH.DataTexture(new Uint8Array([120,120,120,255,200,200,200,255,255,255,255,255]),3,1,TH.RGBAFormat);gm.minFilter=gm.magFilter=TH.NearestFilter;gm.needsUpdate=true;
 const gmS=new TH.DataTexture(new Uint8Array([200,200,200,255,255,255,255,255]),2,1,TH.RGBAFormat);gmS.minFilter=gmS.magFilter=TH.NearestFilter;gmS.needsUpdate=true;
 const MC={},tm=c=>MC[c]||(MC[c]=new TH.MeshToonMaterial({color:c,gradientMap:gm}));
 const OUTM=new TH.MeshBasicMaterial({color:'#140d22',side:TH.BackSide});
 const lam=(c,map)=>new TH.MeshLambertMaterial({color:c,map:map||null});
-scene.add(new TH.HemisphereLight('#e8f3ff','#5f7270',.62));
-const sun=new TH.DirectionalLight('#fff6e4',.6);sun.position.set(9,22,7);scene.add(sun);scene.add(sun.target);
+scene.add(new TH.HemisphereLight('#fffaf0','#8a6a4a',.6));
+const sun=new TH.DirectionalLight('#fff8ec',.55);sun.position.set(3,20,5);scene.add(sun);scene.add(sun.target);
 sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-15,right:15,top:12,bottom:-12,near:2,far:60});sun.shadow.bias=-.0006;
-// 露天大球場（參考 Free Ball）：橘色場地、藍綠色外圍、白色階梯看台、上層藍色玻璃包廂、白色遮陽頂、藍天白雲
+// 室內體育館：楓木地板（整片木頭，場內顏色略深）、白線、深藍色防撞牆、淺色牆面與高窗、天花板桁架和燈板
 (function(){
-  const W=M.wid,HF=M.half;
-  const sky=ctex(1024,512,(c,w,h)=>{const g=c.createLinearGradient(0,0,0,h);g.addColorStop(0,'#3d86d8');g.addColorStop(.42,'#8cc0ee');g.addColorStop(.5,'#e4f0f9');g.addColorStop(1,'#e4f0f9');c.fillStyle=g;c.fillRect(0,0,w,h);
-    for(let i=0;i<70;i++){const x=rnd()*w,y=h*(.18+rnd()*.28),r=14+rnd()*40;const cg=c.createRadialGradient(x,y,0,x,y,r);cg.addColorStop(0,'rgba(255,255,255,.9)');cg.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=cg;c.beginPath();c.ellipse(x,y,r*1.8,r*.7,0,0,7);c.fill();}});
-  const dome=new TH.Mesh(new TH.SphereGeometry(190,32,16),new TH.MeshBasicMaterial({map:sky,side:TH.BackSide,fog:false}));scene.add(dome);
-  const wet=(base,n,rep)=>ctex(512,512,(c,w,h)=>{c.fillStyle=base;c.fillRect(0,0,w,h);for(let i=0;i<n;i++){c.fillStyle=`rgba(255,255,255,${rnd()*.06})`;c.beginPath();c.ellipse(rnd()*w,rnd()*h,8+rnd()*40,3+rnd()*10,rnd()*3,0,7);c.fill();c.fillStyle=`rgba(0,0,0,${rnd()*.05})`;c.fillRect(rnd()*w,rnd()*h,2+rnd()*6,2+rnd()*6);}},rep);
-  const floor=new TH.Mesh(new TH.PlaneGeometry(64,46),lam('#ffffff',wet('#2f9894',260,[6,4])));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
-  const court=new TH.Mesh(new TH.PlaneGeometry(HF*2,W*2),lam('#ffffff',wet('#bf5c2c',320,[2,1])));court.rotation.x=-Math.PI/2;court.position.y=.004;court.receiveShadow=true;scene.add(court);
+  const W=M.wid,HF=M.half,GW=W+6,GL=HF+7,GH=11;   // 牆：|z|=GW、|x|=GL，天花板高 GH
+  // 木地板貼圖：一條條楓木板，帶木紋、色差、接縫；場內另一張略深的
+  const wood=(tone,seed)=>{let r=seed;const R=()=>(r=(r*16807)%2147483647)/2147483647;return ctex(1024,1024,(c,w,h)=>{
+    const NP=64,pw=1024/NP;for(let i=0;i<NP;i++){let y=0;while(y<h){const L=200+R()*520,v=R();const base=tone.map((x,k)=>Math.round(x*(.9+v*.16)));
+      c.fillStyle=`rgb(${base})`;c.fillRect(i*pw,y,pw,L);
+      for(let g=0;g<4;g++){c.strokeStyle=`rgba(${tone[0]*.55|0},${tone[1]*.45|0},${tone[2]*.35|0},${.05+R()*.08})`;c.lineWidth=.6+R()*1.4;c.beginPath();const gx=i*pw+R()*pw;c.moveTo(gx,y);c.bezierCurveTo(gx+(R()-.5)*8,y+L*.3,gx+(R()-.5)*8,y+L*.6,gx+(R()-.5)*6,y+L);c.stroke();}
+      c.fillStyle='rgba(60,35,15,.28)';c.fillRect(i*pw,y,pw,1.2);y+=L;}
+      c.fillStyle='rgba(60,35,15,.22)';c.fillRect(i*pw,0,1,h);}});};
+  const woodA=wood([216,186,148],7),woodC=wood([228,196,152],11);woodA.wrapS=woodA.wrapT=woodC.wrapS=woodC.wrapT=TH.RepeatWrapping;
+  woodA.repeat.set(GL*2/4,GW*2/4);woodC.repeat.set(HF*2/4,W*2/4);woodA.anisotropy=woodC.anisotropy=16;
+  const fm=(t)=>new TH.MeshPhongMaterial({color:'#ffffff',map:t,shininess:70,specular:new TH.Color('#4a3a2a')});
+  const floor=new TH.Mesh(new TH.PlaneGeometry(GL*2,GW*2),fm(woodA));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
+  const court=new TH.Mesh(new TH.PlaneGeometry(HF*2,W*2),fm(woodC));court.rotation.x=-Math.PI/2;court.position.y=.004;court.receiveShadow=true;scene.add(court);
   const groups={};const box=(col,x,y,z,sx,sy,sz,ry=0)=>{const g=new TH.BoxGeometry(sx,sy,sz);g.rotateY(ry);g.translate(x,y,z);(groups[col]=groups[col]||[]).push(g);};
   [[0,W,HF*2+.05,.05],[0,-W,HF*2+.05,.05],[HF,0,.05,W*2],[-HF,0,.05,W*2],[0,0,.05,W*2],[3,0,.05,W*2],[-3,0,.05,W*2]].forEach(([x,z,a,b])=>box('#ffffff',x,.012,z,a,.01,b));
-  // 外圍的白色虛線（延伸攻擊線）
   [-3,3].forEach(x=>[-1,1].forEach(s=>{for(let k=0;k<4;k++)box('#ffffff',x,.012,s*(W+.5+k*.7),.05,.01,.35);}));
-  [-1,1].forEach(s=>{box('#1d2a5a',0,1.3,s*(W+.9),.11,2.6,.11);box('#ff5a6a',0,NETH+.4,s*W,.025,.9,.025);});
-  box('#f2f2f2',0,NETH-.04,0,.04,.08,W*2+1.6);
-  // 階梯看台：四面，每一層一階＋一排灰色座椅
-  const stand=(len,dist,ry,rows)=>{const sgn=Math.sign(dist);for(let k=0;k<rows;k++){const d=Math.abs(dist)+k*.95,y=.5+k*.5;
-      const P=(u,v)=>ry?[sgn*v,u]:[u,sgn*v];
-      let [px,pz]=P(0,Math.abs(d));box('#f6f8fa',px,y/2,pz,ry?.95:len,y,ry?len:.95);
-      [px,pz]=P(0,Math.abs(d)-.15);box('#c9cfd6',px,y+.17,pz,ry?.12:len-.4,.34,ry?len-.4:.12);}};
-  [-1,1].forEach(s=>{stand(44,s*(W+6.5),0,13);stand(30,s*(HF+8),1,11);});
-  // 上層：白色外牆、藍色玻璃包廂、深色大螢幕
-  [-1,1].forEach(s=>{box('#f4f6f8',0,8.3,s*(W+19.4),46,4.2,1);box('#3d7fd0',0,8.6,s*(W+18.8),40,1.4,.3);
-    box('#f4f6f8',s*(HF+19.5),8,0,1,4,32);box('#3d7fd0',s*(HF+18.9),8.2,0,.3,1.3,26);
-    box('#1a1d26',s*(HF+18.6),12.4,0,.6,3.2,6.5);});
-  // 場邊：黑色廣告牆
-  [-1,1].forEach(s=>{box('#11161c',0,.45,s*(W+5.6),36,.9,.12);box('#11161c',s*(HF+7.2),.45,0,.12,.9,22);});
-  for(const col in groups){const mt=lam(col);if(/^#(f|e|c)/.test(col))mt.emissive=new TH.Color(col).multiplyScalar(.35);const m=new TH.Mesh(mergeGeos(groups[col]),mt);m.receiveShadow=col==='#eef1f3';scene.add(m);}
-  // 白色遮陽頂（微微往外斜）
-  const roofM=new TH.MeshBasicMaterial({color:'#e9edf1',side:TH.DoubleSide});
-  [-1,1].forEach(s=>{const r=new TH.Mesh(new TH.PlaneGeometry(50,9),roofM);r.position.set(0,12.2,s*(W+16));r.rotation.x=-Math.PI/2+s*.18;scene.add(r);
-    const r2=new TH.Mesh(new TH.PlaneGeometry(9,36),roofM);r2.position.set(s*(HF+16.5),12,0);r2.rotation.x=-Math.PI/2;r2.rotation.y=-s*.18;scene.add(r2);});
-  const ban=ctex(2048,128,(g,w,h)=>{g.fillStyle='#11161c';g.fillRect(0,0,w,h);g.font='bold 74px "Noto Sans TC",sans-serif';g.textAlign='center';g.textBaseline='middle';
-    for(let i=0;i<3;i++){g.fillStyle=i===1?'#ff7a2a':'#e9f4f3';g.fillText(i===1?'熱血排球':'VOLLEY  ARENA',w*(i*2+1)/6,h/2);}});
-  [-1,1].forEach(s=>{const bm=new TH.Mesh(new TH.PlaneGeometry(36,.9),new TH.MeshBasicMaterial({map:ban}));bm.position.set(0,.45,s*(W+5.53));bm.rotation.y=s<0?0:Math.PI;scene.add(bm);});
-  const nt=ctex(256,64,(c,w,h)=>{c.strokeStyle='rgba(250,250,250,.92)';c.lineWidth=2;for(let x=0;x<=w;x+=10){c.beginPath();c.moveTo(x,0);c.lineTo(x,h);c.stroke();}for(let y=0;y<=h;y+=10){c.beginPath();c.moveTo(0,y);c.lineTo(w,y);c.stroke();}},[5,1]);
-  const net=new TH.Mesh(new TH.PlaneGeometry(W*2+1.6,1),new TH.MeshBasicMaterial({map:nt,transparent:true,side:TH.DoubleSide,depthWrite:false}));net.rotation.y=Math.PI/2;net.position.set(0,NETH-.5,0);scene.add(net);
+  // 牆：下段 2.2 公尺深藍防撞墊，上段淺灰牆，頂部一排高窗
+  [-1,1].forEach(s=>{box('#1d3357',0,1.1,s*(GW-.08),GL*2,2.2,.16);box('#e9ecef',0,(GH+2.2)/2,s*GW,GL*2,GH-2.2,.2);box('#1d3357',s*(GL-.08),1.1,0,.16,2.2,GW*2);box('#e9ecef',s*GL,(GH+2.2)/2,0,.2,GH-2.2,GW*2);
+    box('#c9d6e2',0,2.25,s*(GW-.2),GL*2,.1,.1);box('#c9d6e2',s*(GL-.2),2.25,0,.1,.1,GW*2);});
+  // 天花板桁架
+  for(let x=-GL+2;x<=GL-2;x+=4)box('#4a5260',x,GH-.4,0,.18,.5,GW*2);
+  [-1,0,1].forEach(k=>box('#4a5260',0,GH-.75,k*GW*.55,GL*2,.12,.12));
+  // 網柱（圓柱、外包防撞墊）與裁判台
+  [-1,1].forEach(s=>{box('#cfd5dc',0,1.3,s*(W+1),.09,2.6,.09);box('#1d3357',0,.95,s*(W+1),.26,1.9,.26);});
+  box('#cfd5dc',0,.7,-(W+1.55),.6,.05,.6);box('#cfd5dc',0,.35,-(W+1.55),.06,.7,.06);
+  for(const col in groups){const mt=new TH.MeshLambertMaterial({color:col});const m=new TH.Mesh(mergeGeos(groups[col]),mt);m.receiveShadow=true;m.castShadow=col==='#1d3357'&&false;scene.add(m);}
+  // 天花板、高窗、燈板（發光）
+  const ceil=new TH.Mesh(new TH.PlaneGeometry(GL*2,GW*2),new TH.MeshLambertMaterial({color:'#d9dde2'}));ceil.rotation.x=Math.PI/2;ceil.position.y=GH;scene.add(ceil);
+  const winM=new TH.MeshBasicMaterial({color:'#cfe6ff'});
+  [-1,1].forEach(s=>{for(let x=-GL+2.5;x<GL-2;x+=3.2){const w=new TH.Mesh(new TH.PlaneGeometry(2.4,1.3),winM);w.position.set(x,GH-1.6,s*(GW-.11));w.rotation.y=s>0?Math.PI:0;scene.add(w);}});
+  const lampM=new TH.MeshBasicMaterial({color:'#fffdf4'});
+  for(let x=-GL+3;x<=GL-3;x+=4)for(const z of[-GW*.55,0,GW*.55]){const l=new TH.Mesh(new TH.PlaneGeometry(1.6,.5),lampM);l.rotation.x=Math.PI/2;l.position.set(x,GH-.86,z);scene.add(l);}
+  // 牆上布條
+  const ban=ctex(2048,160,(g,w,h)=>{g.fillStyle='#1d3357';g.fillRect(0,0,w,h);g.font='bold 96px "Noto Sans TC",sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillStyle='#ff7a2a';g.fillText('熱 血 排 球',w*.3,h/2);g.fillStyle='#e9f1f7';g.font='bold 70px "Noto Sans TC",sans-serif';g.fillText('VOLLEYBALL CLUB',w*.72,h/2);});
+  const bm=new TH.Mesh(new TH.PlaneGeometry(14,1.1),new TH.MeshBasicMaterial({map:ban}));bm.position.set(0,6.2,-(GW-.11));scene.add(bm);
+  // 球網：黑色 10 公分方格、上緣 7 公分白色帶、下緣 5 公分白帶、兩側白色標誌帶（全部畫在同一張高解析貼圖上，網子晃動時一起動）
+  const NW=W*2+1.6,PX=4096,PY=Math.round(4096/NW);
+  const nt=ctex(PX,PY,(c,w,h)=>{const ppm=w/NW;c.clearRect(0,0,w,h);c.strokeStyle='rgba(18,18,22,1)';c.lineWidth=Math.max(2,ppm*.006);
+    for(let x=0;x<=w;x+=ppm*.1){c.beginPath();c.moveTo(x,0);c.lineTo(x,h);c.stroke();}for(let y=0;y<=h;y+=ppm*.1){c.beginPath();c.moveTo(0,y);c.lineTo(w,y);c.stroke();}
+    c.fillStyle='#f4f4f2';c.fillRect(0,0,w,ppm*.07);c.fillRect(0,h-ppm*.05,w,ppm*.05);
+    c.fillStyle='#d8d8d6';c.fillRect(0,ppm*.065,w,ppm*.006);
+    [-W,W].forEach(z=>{const x=(z+NW/2)*ppm;c.fillStyle='#f4f4f2';c.fillRect(x-ppm*.025,0,ppm*.05,h);});});
+  nt.anisotropy=16;
+  const net=new TH.Mesh(new TH.PlaneGeometry(NW,1),new TH.MeshLambertMaterial({map:nt,transparent:true,alphaTest:.35,side:TH.DoubleSide}));net.userData.isNet=1;net.rotation.y=Math.PI/2;net.position.set(0,NETH-.5,0);scene.add(net);
+  // 鋼索、標誌桿（紅白相間，高出網子 80 公分）
+  const cab=new TH.MeshLambertMaterial({color:'#9aa0a6'});
+  [NETH,NETH-1].forEach(y=>{const c=new TH.Mesh(new TH.CylinderGeometry(.006,.006,W*2+2,6),cab);c.rotation.x=Math.PI/2;c.position.set(0,y,0);scene.add(c);});
+  const antT=ctex(16,256,(c,w,h)=>{for(let i=0;i<18;i++){c.fillStyle=i%2?'#f2f2f2':'#e0242c';c.fillRect(0,i*h/18,w,h/18+1);}});
+  [-1,1].forEach(s=>{const a=new TH.Mesh(new TH.CylinderGeometry(.005,.005,1.8,8),new TH.MeshLambertMaterial({map:antT}));a.position.set(0,NETH-.1,s*(W+.02));scene.add(a);});
+  // 場邊少量觀眾的伸縮看台（一側 4 階）
+  for(let k=0;k<4;k++){const g=new TH.Mesh(new TH.BoxGeometry(18,.45*(k+1),.8),new TH.MeshLambertMaterial({color:k%2?'#b9c0c8':'#c8ced5'}));g.position.set(0,.45*(k+1)/2,GW-.9-(3-k)*.8+ -0);g.position.z=GW-.4-(4-k)*.8;g.receiveShadow=true;scene.add(g);}
+  window.GYM={W:GW,L:GL,H:GH};
 })();
 function mergeGeos(list){let n=0;list.forEach(g=>{n+=(g.index?g.index.count:g.attributes.position.count);});const pos=new Float32Array(n*3),nor=new Float32Array(n*3);let o=0;
   list.forEach(g0=>{const g=g0.index?g0.toNonIndexed():g0,P=g.attributes.position.array,N=g.attributes.normal.array;pos.set(P,o);nor.set(N,o);o+=P.length;});
   const geo=new TH.BufferGeometry();geo.setAttribute('position',new TH.BufferAttribute(pos,3));geo.setAttribute('normal',new TH.BufferAttribute(nor,3));return geo;}
-// 網的黃色外框：上緣、下緣、兩側，遠遠就看得到網的高度
-{const ym=new TH.MeshBasicMaterial({color:'#e6ff2e'}),W=M.wid+.02,t=.035,box=(sx,sy,sz,x,y,z)=>{const m=new TH.Mesh(new TH.BoxGeometry(sx,sy,sz),ym);m.position.set(x,y,z);scene.add(m);};
-  box(t,t,W*2,0,NETH,0);box(t,t,W*2,0,NETH-1,0);[-1,1].forEach(s=>box(t,1+t,t,0,NETH-.5,s*W));}
 // 球、影子、落點、拖影、粒子
-const bTex=ctex(256,128,(c,w,h)=>{const cs=['#ffd21a','#2a4fd0','#ffd21a','#2a4fd0','#ffd21a','#2a4fd0'];for(let i=0;i<6;i++){c.fillStyle=cs[i];c.beginPath();for(let x=0;x<=w;x+=4){const y=(i/6)*h+Math.sin(x/w*Math.PI*4)*6;x?c.lineTo(x,y):c.moveTo(x,y);}for(let x=w;x>=0;x-=4)c.lineTo(x,((i+1)/6)*h+Math.sin(x/w*Math.PI*4)*6);c.fill();}});
-const ballM=new TH.MeshToonMaterial({map:bTex,gradientMap:gm,emissive:new TH.Color('#000')});
-const ballMesh=new TH.Mesh(new TH.SphereGeometry(BR*1.15,24,16),ballM);scene.add(ballMesh);{const o=new TH.Mesh(ballMesh.geometry,OUTM);o.scale.setScalar(1.16);ballMesh.add(o);}
+// 球：經典 18 片排球（6 個面、每面 3 條皮片，相鄰面的皮片方向互相垂直），皮片之間有縫線凹槽
+const BALLC=[['#f6f4ee','#1f4fb8','#f6f4ee'],['#f6f4ee','#f2b81c','#f6f4ee'],['#f6f4ee','#f6f4ee','#f6f4ee']];
+const bTex=ctex(1536,1024,(c,w,h)=>{const fw=w/3,fh=h/2;
+  for(let f=0;f<6;f++){const ox=(f%3)*fw,oy=Math.floor(f/3)*fh,cols=BALLC[Math.floor(f/2)],vert=Math.floor(f/2)===0;
+    for(let k=0;k<3;k++){c.fillStyle=cols[k];if(vert)c.fillRect(ox+k*fw/3,oy,fw/3+1,fh);else c.fillRect(ox,oy+k*fh/3,fw,fh/3+1);}
+    // 皮革細紋
+    for(let i=0;i<900;i++){c.fillStyle=`rgba(0,0,0,${Math.random()*.035})`;c.fillRect(ox+Math.random()*fw,oy+Math.random()*fh,2,2);}
+    // 縫線：深色細線＋兩側淡陰影
+    c.lineCap='butt';const seam=(x1,y1,x2,y2)=>{c.strokeStyle='rgba(40,40,50,.18)';c.lineWidth=12;c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke();c.strokeStyle='rgba(30,30,40,.75)';c.lineWidth=3.5;c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke();};
+    for(let k=1;k<3;k++){if(vert)seam(ox+k*fw/3,oy,ox+k*fw/3,oy+fh);else seam(ox,oy+k*fh/3,ox+fw,oy+k*fh/3);}
+    seam(ox,oy,ox+fw,oy);seam(ox,oy+fh,ox+fw,oy+fh);seam(ox,oy,ox,oy+fh);seam(ox+fw,oy,ox+fw,oy+fh);}});
+bTex.anisotropy=8;
+function ballGeo(r,n){const P=[],U=[],N=[],I=[];const F=[[[0,0,1],[1,0,0],[0,1,0]],[[0,0,-1],[-1,0,0],[0,1,0]],[[1,0,0],[0,0,-1],[0,1,0]],[[-1,0,0],[0,0,1],[0,1,0]],[[0,1,0],[1,0,0],[0,0,-1]],[[0,-1,0],[1,0,0],[0,0,1]]];
+  const order=[0,1,2,3,4,5];   // 面對應的貼圖格：Z 面直條、X 面和 Y 面橫條，相鄰面的皮片互相垂直
+  F.forEach(([nn,uu,vv],fi)=>{const cell=order[fi],ox=(cell%3)/3,oy=Math.floor(cell/3)/2,base=P.length/3;
+    for(let j=0;j<=n;j++)for(let i=0;i<=n;i++){const a=i/n*2-1,b=j/n*2-1,x=nn[0]+uu[0]*a+vv[0]*b,y=nn[1]+uu[1]*a+vv[1]*b,z=nn[2]+uu[2]*a+vv[2]*b,
+      // 方塊投影到球面（點分布比較均勻）
+      x2=x*x,y2=y*y,z2=z*z,sx=x*Math.sqrt(1-y2/2-z2/2+y2*z2/3),sy=y*Math.sqrt(1-z2/2-x2/2+z2*x2/3),sz=z*Math.sqrt(1-x2/2-y2/2+x2*y2/3);
+      P.push(sx*r,sy*r,sz*r);N.push(sx,sy,sz);U.push(ox+(i/n)/3*.998+.001/3,1-(oy+(j/n)/2*.998+.001/2));}
+    for(let j=0;j<n;j++)for(let i=0;i<n;i++){const q=base+j*(n+1)+i;I.push(q,q+1,q+n+1,q+1,q+n+2,q+n+1);}});
+  const g=new TH.BufferGeometry();g.setAttribute('position',new TH.Float32BufferAttribute(P,3));g.setAttribute('normal',new TH.Float32BufferAttribute(N,3));g.setAttribute('uv',new TH.Float32BufferAttribute(U,2));g.setIndex(I);
+  // 繞法統一朝外
+  const a0=new TH.Vector3().fromArray(P,0);return g;}
+const ballM=new TH.MeshPhongMaterial({map:bTex,shininess:28,specular:new TH.Color('#3a3a3a'),emissive:new TH.Color('#000')});
+const ballMesh=new TH.Mesh(ballGeo(BR*1.15,10),ballM);ballMesh.castShadow=true;scene.add(ballMesh);{const o=new TH.Mesh(ballMesh.geometry,OUTM);o.scale.setScalar(1.06);ballMesh.add(o);}
 const glow=new TH.Mesh(new TH.SphereGeometry(BR*2.4,16,12),new TH.MeshBasicMaterial({color:'#ff8a2a',transparent:true,opacity:.35,blending:TH.AdditiveBlending,depthWrite:false}));scene.add(glow);
 const flatM=(c,o,top)=>new TH.MeshBasicMaterial({color:c,transparent:true,opacity:o,depthWrite:false,depthTest:!top,side:TH.DoubleSide});
 const flat=(geo,c,o,top)=>{const m=new TH.Mesh(geo,flatM(c,o,top));m.rotation.x=-Math.PI/2;if(top)m.renderOrder=10;scene.add(m);return m;};
@@ -1074,10 +1110,10 @@ function attachGLB(R,p,hair){
     const top=hb.getWorldPosition(new TH.Vector3());top.y+=B.Head?.1:.2;hb.add(hair);hair.position.copy(hb.worldToLocal(top));hair.quaternion.copy(hq.invert().multiply(q));hair.scale.set(1/hs.x,1/hs.y,1/hs.z);}
   // 手指：記下每節手指的綁定姿勢和「往掌心彎」的軸，之後依動作握拳或張開
   const fing=[];['Left','Right'].forEach(sd_=>{const hb=B[sd_+'Hand'];if(!hb)return;const hp=hb.getWorldPosition(new TH.Vector3()),down=new TH.Vector3(0,-1,0);
-    hb.traverse(o=>{if(!o.isBone||o===hb||o.isBone&&/thumb/i.test(o.name))return;if(!o.parent||!o.parent.isBone)return;const a=o.parent===hb?o.getWorldPosition(new TH.Vector3()):o.parent.getWorldPosition(new TH.Vector3()),
+    hb.traverse(o=>{if(!o.isBone||o===hb)return;const thumb=/thumb/i.test(o.name);if(!o.parent||!o.parent.isBone)return;const a=o.parent===hb?o.getWorldPosition(new TH.Vector3()):o.parent.getWorldPosition(new TH.Vector3()),
       b=o.children.find(c=>c.isBone),fd=(b?b.getWorldPosition(new TH.Vector3()):o.getWorldPosition(new TH.Vector3())).sub(o===hb?hp:o.getWorldPosition(new TH.Vector3()));
       if(fd.lengthSq()<1e-8)fd.copy(o.getWorldPosition(new TH.Vector3()).sub(a));fd.normalize();const ax=new TH.Vector3().crossVectors(fd,down);if(ax.lengthSq()<1e-6)return;
-      const pinv=new TH.Matrix4().copy(o.matrixWorld).invert();ax.normalize().transformDirection(pinv);let depth=0;for(let q=o;q&&q!==hb;q=q.parent)depth++;fing.push({b:o,q0:o.quaternion.clone(),ax,k:[.75,.95,.7][Math.min(2,depth-1)]});});});
+      const pinv=new TH.Matrix4().copy(o.matrixWorld).invert();ax.normalize().transformDirection(pinv);let depth=0;for(let q=o;q&&q!==hb;q=q.parent)depth++;fing.push({b:o,q0:o.quaternion.clone(),ax,k:thumb?[.25,.45,.4][Math.min(2,depth-1)]:[.75,.95,.7][Math.min(2,depth-1)]});});});
   R.glb={m,B,J,legMid,fing};if(sk)R.glb.vx=vrmSetup(R,m,src);R.simple.forEach(o=>o.visible=false);return true;}
 const RT={q1:new TH.Quaternion(),q2:new TH.Quaternion(),q3:new TH.Quaternion(),f0:new TH.Quaternion(),f1:new TH.Quaternion(),rq:new TH.Quaternion(),
   a0:new TH.Vector3(),l0:new TH.Vector3(),d:new TH.Vector3(),x:new TH.Vector3(),y:new TH.Vector3(),z:new TH.Vector3(),m:new TH.Matrix4(),w:new TH.Vector3(),mid:new TH.Vector3()};
@@ -1142,17 +1178,28 @@ function footLock(p,R,dt,onFeet){if(window.__nofl)return;R.fl=R.fl||[{on:0,k:0,W
 const legH=(t,k)=>L1*Math.cos(t)+L2*Math.cos(t+k);
 // 姿勢：每個關節的目標角度，平滑靠近；站地時用腿角反推骨盆高度，腳踩地
 const _fq=new TH.Quaternion();
+// 人體關節範圍（弧度）：手肘只能往前彎、膝蓋只能往後彎、肩膀往後最多約 55°、大腿往後最多約 40°
+const JLIM={eL:[-2.5,0],eR:[-2.5,0],kL:[0,2.5],kR:[0,2.5],aLx:[-3.15,.95],aRx:[-3.15,.95],tL:[-2.3,.7],tR:[-2.3,.7],aLz:[-1.3,.75],aRz:[-.75,1.3],sx:[-.45,1.1]};
 function poseRig(p,R,dt){
   const a=ALPHA,[aL,aR]=R.arms,[gL,gR]=R.legs;
   R.g.position.set(lerp(p.ox,p.x,a),lerp(p.oy,p.y,a),lerp(p.oz,p.z,a));R.g.rotation.y=angLerp(p.oyaw??p.yaw,p.yaw,a);
   const air=p.y>0,sp=Math.hypot(p.vx,p.vz),run=sp>.6&&!air&&p.dive<=0&&p.stun<=0&&p.rec<=0;R.ph=(R.ph||0)+dt*(2.2+sp*1.6);
   const T={pt:0,hy:HIPY,sx:.22,sy:0,tL:-.38,tR:-.38,kL:.75,kR:.75,aLx:-.55,aLz:-.14,aRx:-.55,aRz:.14,eL:-1.15,eR:-1.15};
-  if(state==='menu'||(state==='point'&&!air)){T.sx=.05;T.tL=T.tR=-.05;T.kL=T.kR=.1;T.aLx=T.aRx=.05;T.eL=T.eR=-.25;}
+  if(state==='menu'){T.sx=.05;T.tL=T.tR=-.05;T.kL=T.kR=.1;T.aLx=T.aRx=.05;T.eL=T.eR=-.25;}
+  // 得分慶祝（不跳）：贏的一方握拳、雙手舉高、拍手、雙拳收在胸前；輸的一方雙手插腰或手撐膝蓋。每個人錯開一點時間開始
+  if(state==='point'&&!air){const i=players.indexOf(p),t=Math.max(0,stT-.12-(i%4)*.09),win=p.team===window.ptWin,pump=.5+.5*Math.sin(t*6.2-1.57),v=i%4;
+    T.tL=T.tR=-.08;T.kL=T.kR=.16;T.sx=.06;T.sy=0;T.aLx=T.aRx=.05;T.aLz=-.12;T.aRz=.12;T.eL=T.eR=-.3;
+    if(t>0){if(win){if(v===0){T.aRx=lerp(-2.5,-1.45,pump);T.aRz=.3;T.eR=-2.05;T.aLx=-.35;T.eL=-.7;T.sx=.16;T.tL=T.tR=-.3;T.kL=T.kR=.38;T.sy=-.12;}
+        else if(v===1){T.aLx=T.aRx=-2.7;T.aLz=-.42;T.aRz=.42;T.eL=T.eR=-.22;T.sx=-.1;T.sy=.08*Math.sin(t*3);}
+        else if(v===2){const c=.5+.16*Math.sin(t*13);T.aLx=T.aRx=-1.2;T.aLz=c;T.aRz=-c;T.eL=T.eR=-1.15;T.sx=.12;}
+        else{T.aLx=T.aRx=lerp(-1.05,-.6,pump);T.aLz=.12;T.aRz=-.12;T.eL=T.eR=-2.15;T.sx=.24;T.tL=T.tR=-.42;T.kL=T.kR=.55;}}
+      else if(i%2){T.pt=.22;T.sx=.6;T.tL=T.tR=-.48;T.kL=T.kR=.6;T.aLx=T.aRx=-.62;T.eL=T.eR=-.12;T.aLz=.08;T.aRz=-.08;}
+      else{T.aLx=T.aRx=.12;T.aLz=-.72;T.aRz=.72;T.eL=T.eR=-1.75;T.sx=.04;}}}
   // 跑步（運動員跑法）：骨盆微前傾，手肘約 90 度彎、和腳反向前後擺，往前擺時彎更多、手到胸前，往後擺時手到臀部
   // 跑步：上身挺直（整體只前傾約 3–6 度），支撐腳伸直推地，膝蓋在腳往前擺的時候彎最多（真人跑步的時序）
   if(run){const s=Math.sin(R.ph),f=clamp(sp/7,.4,1),kl=Math.max(0,Math.sin(R.ph+1.0)),kr=Math.max(0,Math.sin(R.ph+Math.PI+1.0));T.pt=.03+.03*f;
-    T.tL=-.82*s*f-.07-T.pt;T.tR=.82*s*f-.07-T.pt;T.kL=.12+1.5*kl*f;T.kR=.12+1.5*kr*f;
-    T.aLx=1.0*s*f+.1;T.aRx=-1.0*s*f+.1;T.eL=-1.25-.5*Math.max(0,-s)*f;T.eR=-1.25-.5*Math.max(0,s)*f;R.bnc=.085*f*s*s;T.sx=-.02+.03*f;T.sy=.12*s*f;T.aLz=-.12;T.aRz=.12;}else R.bnc=0;
+    const ts=x=>x>0?.88*x:.5*x;T.tL=-ts(s)*f-.07-T.pt;T.tR=-ts(-s)*f-.07-T.pt;T.kL=.12+1.5*kl*f;T.kR=.12+1.5*kr*f;
+    const as=x=>x>0?.62*x:.92*x;T.aLx=as(s)*f-.04;T.aRx=as(-s)*f-.04;T.eL=-1.25-.5*Math.max(0,-s)*f;T.eR=-1.25-.5*Math.max(0,s)*f;R.bnc=.085*f*s*s;T.sx=-.02+.03*f;T.sy=.12*s*f;T.aLz=-.12;T.aRz=.12;}else R.bnc=0;
   const pose=p.stun>0?'stun':p.dive>0?'dive':p.rec>0?'getup':p.swing>0?p.pose:'';
   const blk=air&&Math.abs(p.x)<1.4&&state==='play'&&ball&&ball.lastTeam!==p.team&&Math.sign(ball.x)!==sd(p.team);
   const hitter=air&&!blk&&ball&&((state==='play'&&(p.human||(ball.setInfo&&ball.setInfo.hitter===p)))||(state==='serve'&&server===p));
@@ -1197,13 +1244,17 @@ function poseRig(p,R,dt){
   // 慣性過渡（Inertialization，《戰爭機器》的作法）：輸出＝新目標＋一段會自己消失的「差值」。
   // 目標突然換姿勢時，跳掉的那段不直接套上，而是記成差值，並把當下的關節速度一起帶過去，再用臨界阻尼彈簧收斂到 0。
   // 好處：新動作立刻以完整幅度播放（跑步擺臂不會被削弱），切換時又保留原本的速度，不會頓一下或跳格。
-  const hl=pose==='spike'||pose==='serve'?.045:p.charging||p.loadT>0?.07:pose==='bump'||pose==='dig'?.06:pose==='dive'||pose==='stun'||pose==='getup'?.1:p.landT>0?.09:.12,w=1.68/hl;
+  const hl=pose==='spike'||pose==='serve'?.065:p.charging||p.loadT>0?.07:pose==='bump'||pose==='dig'?.06:pose==='dive'||pose==='stun'||pose==='getup'?.1:p.landT>0?.09:.12,w=1.68/hl;
   const C=R.c||(R.c={...T}),O=R.o||(R.o={}),OV=R.ov||(R.ov={}),TP=R.tp||(R.tp={...T}),CV=R.cv||(R.cv={});
-  const lim=(pose==='spike'||pose==='serve'?30:9)*dt,idt=1/Math.max(dt,1e-4);
+  const lim=(pose==='spike'||pose==='serve'?16:9)*dt,idt=1/Math.max(dt,1e-4);
   for(const key in T){const t=T[key],tp=TP[key]??t,d=t-tp,ok=clamp(d,-lim,lim),ex=d-ok;let o=O[key]||0,ov=OV[key]||0;
     if(Math.abs(ex)>1e-5){o-=ex;ov=(CV[key]||0)-ok*idt;}
-    const e=Math.exp(-w*dt),j=ov+w*o;o=(o+j*dt)*e;ov=(ov-w*j*dt)*e;ov=clamp(ov,-60,60);
+    const e=Math.exp(-w*dt),j=ov+w*o;o=(o+j*dt)*e;ov=(ov-w*j*dt)*e;ov=clamp(ov,-24,24);
     const out=t+o;CV[key]=(out-(C[key]??out))*idt;C[key]=out;O[key]=o;OV[key]=ov;TP[key]=t;}
+  // 最後一道：每個關節每秒最多轉幾弧度（扣球、發球揮臂 20，其他 11），大轉換會分好幾格走完，不會一格跳過去
+  {const CP=R.cp||(R.cp={...C}),mr=(pose==='spike'||pose==='serve'?20:11)*dt;for(const k in C){const pv=CP[k];if(pv!==undefined){const d=C[k]-pv;if(d>mr)C[k]=pv+mr;else if(d<-mr)C[k]=pv-mr;}}}
+  for(const k in JLIM)if(C[k]!==undefined){const [a,b]=JLIM[k],v=C[k];if(v>b){const o=v-b;C[k]=b+o/(1+o/.06);}else if(v<a){const o=a-v;C[k]=a-o/(1+o/.06);}}
+  Object.assign(R.cp,C);
   const onFeet=!air&&pose!=='dive'&&pose!=='getup'&&pose!=='stun';
   R.hips.position.y=onFeet?Math.max(legH(C.pt+C.tL,C.kL),legH(C.pt+C.tR,C.kR))+FOOT+.03+(R.bnc||0):(air?HIPY:C.hy);
   R.hips.rotation.x=C.pt;R.spine.rotation.set(C.sx,C.sy,0);
@@ -1521,7 +1572,7 @@ function vrmPost(R,dt){const V=R.glb&&R.glb.vx;if(!V)return;if(V.cons.length)app
 // 數值：排球對木地板的恢復係數約 0.6–0.7（2 公尺落下約彈回 0.8 公尺）；廣告牆是軟墊、網子會吃掉大部分速度
 const BRV=BR*1.55,BALL_E=.64,ROLLF=.55;
 let bounceSnd=0;
-function standH(x,z){const W=M.wid,HF=M.half;let h=0;
+function standH(x,z){return 0;const W=M.wid,HF=M.half;let h=0;
   const az=Math.abs(z)-(W+6.5);if(az>-.475&&Math.abs(x)<22)h=Math.max(h,.5+Math.min(12,Math.floor((az+.475)/.95))*.5);
   const ax=Math.abs(x)-(HF+8);if(ax>-.475&&Math.abs(z)<15)h=Math.max(h,.5+Math.min(10,Math.floor((ax+.475)/.95))*.5);return h;}
 function ballSnd(v,kind){if(time-bounceSnd<.05||v<.5)return;bounceSnd=time;const k=clamp(v/9,.12,1);
@@ -1538,9 +1589,11 @@ function ballCollide(b,dt,dead){let ev=null;const W=M.wid,HF=M.half;
   // 網柱
   for(const s of[-1,1]){const dz=b.z-s*(W+.9),dx=b.x,d=Math.hypot(dx,dz),R=.06+BRV;if(d<R&&b.y<2.6){const nx=dx/(d||1),nz=dz/(d||1),vn=b.vx*nx+b.vz*nz;b.x=nx*R;b.z=s*(W+.9)+nz*R;if(vn<0){b.vx-=(1+.55)*vn*nx;b.vz-=(1+.55)*vn*nz;ballSnd(-vn,'wall');ev='wall';}}}
   // 廣告牆（高 0.9 公尺的軟墊）
-  const wz=W+5.6-BRV,wx=HF+7.2-BRV;
-  if(Math.abs(b.z)>wz&&Math.abs(b.pz??b.z)<=wz+.01&&b.y<.9+BRV){const v=Math.abs(b.vz);b.z=Math.sign(b.z)*wz;b.vz*=-.45;b.vx*=.8;ballSnd(v,'wall');ev='wall';}
-  if(Math.abs(b.x)>wx&&Math.abs(b.px??b.x)<=wx+.01&&b.y<.9+BRV&&Math.abs(b.z)<W+5.6){const v=Math.abs(b.vx);b.x=Math.sign(b.x)*wx;b.vx*=-.45;b.vz*=.8;ballSnd(v,'wall');ev='wall';}
+  // 體育館的牆（下段軟墊吸收較多，上段硬牆彈得較遠）、天花板
+  const G_=window.GYM||{W:W+6,L:HF+7,H:11},wz=G_.W-BRV-.16,wx=G_.L-BRV-.16;
+  if(Math.abs(b.z)>wz&&Math.abs(b.pz??b.z)<=wz+.01){const v=Math.abs(b.vz),e=b.y<2.2?.4:.6;b.z=Math.sign(b.z)*wz;b.vz*=-e;b.vx*=.85;ballSnd(v,'wall');ev='wall';}
+  if(Math.abs(b.x)>wx&&Math.abs(b.px??b.x)<=wx+.01){const v=Math.abs(b.vx),e=b.y<2.2?.4:.6;b.x=Math.sign(b.x)*wx;b.vx*=-e;b.vz*=.85;ballSnd(v,'wall');ev='wall';}
+  if(b.y>G_.H-.9-BRV&&b.vy>0){b.y=G_.H-.9-BRV;b.vy*=-.5;ballSnd(Math.abs(b.vy)*2,'wall');ev=ev||'wall';}
   if(!dead){const h=standH(b.x,b.z);if(h>0&&h>b.y-BRV)ev='wall';return ev;}
   // 看台：一階一階，撞到階梯側面就彈回，落到階面上就彈起
   const gh=standH(b.x,b.z);
@@ -1576,7 +1629,7 @@ const FX={crowd:null,heads:null,cw:[],cheer:0,cheerSide:0,net:null,marks:[],comp
 (function crowd(){const W=M.wid,HF=M.half,seats=[];
   const addRows=(len,dist,side,rows,axis)=>{for(let k=0;k<rows;k++){const d=dist+k*.95-.12,y=.5+k*.5;for(let u=-len/2+.5;u<len/2-.5;u+=.62){if(rnd()<.32)continue;
     const j=(rnd()-.5)*.12;seats.push(axis==='z'?{x:u+j,z:side*d,y}:{x:side*d,z:u+j,y});}}};
-  [-1,1].forEach(s=>{addRows(44,W+6.5,s,13,'z');addRows(30,HF+8,s,11,'x');});
+  const G_=window.GYM||{W:W+6};if(window.CROWD_OFF!==0)return;for(let k=0;k<4;k++){const d=G_.W-.4-(4-k)*.8,y=.45*(k+1);for(let u=-8.5;u<8.5;u+=.62){if(rnd()<.72)continue;seats.push({x:u+(rnd()-.5)*.12,z:d,y});}}
   const n=seats.length,bodyG=new TH.CylinderGeometry(.15,.21,.62,6),headG=new TH.SphereGeometry(.115,8,6);bodyG.translate(0,.31,0);headG.translate(0,.74,0);
   const bm=new TH.MeshLambertMaterial({color:'#ffffff'}),hm=new TH.MeshLambertMaterial({color:'#ffffff'});
   const B=new TH.InstancedMesh(bodyG,bm,n),H=new TH.InstancedMesh(headG,hm,n);B.instanceMatrix.setUsage(TH.DynamicDrawUsage);H.instanceMatrix.setUsage(TH.DynamicDrawUsage);
@@ -1585,7 +1638,7 @@ const FX={crowd:null,heads:null,cw:[],cheer:0,cheerSide:0,net:null,marks:[],comp
     s.ph=rnd()*7;s.fan=rnd();s.team=Math.sign(s.x)||1;});
   B.frustumCulled=H.frustumCulled=false;scene.add(B);scene.add(H);FX.crowd=B;FX.heads=H;FX.cw=seats;})();
 const _cm=new TH.Matrix4(),_cq=new TH.Quaternion(),_cs=new TH.Vector3(1,1,1),_cp=new TH.Vector3();let _cT=0;
-function crowdFrame(dt){if(!FX.crowd)return;const on=S.gfx>=1;FX.crowd.visible=FX.heads.visible=on;if(!on)return;_cT+=dt;if(_cT<1/30)return;const t=time;_cT=0;
+function crowdFrame(dt){if(!FX.crowd||!FX.cw.length)return;const on=S.gfx>=1;FX.crowd.visible=FX.heads.visible=on;if(!on)return;_cT+=dt;if(_cT<1/30)return;const t=time;_cT=0;
   FX.cheer=Math.max(0,FX.cheer-.011);
   FX.cw.forEach((s,i)=>{const mine=FX.cheerSide===0||Math.sign(s.x)===FX.cheerSide,e=FX.cheer*(mine?1:.35)*(s.fan>.25?1:0);
     const jump=e>0?Math.max(0,Math.sin(t*9+s.ph))*.22*e+.18*Math.min(1,e*3):Math.sin(t*1.3+s.ph)*.015;
@@ -1594,7 +1647,7 @@ function crowdFrame(dt){if(!FX.crowd)return;const on=S.gfx>=1;FX.crowd.visible=F
 const _ya=new TH.Vector3(0,1,0);
 // 兩端大螢幕：即時比分
 (function boards(){const HF=M.half;[-1,1].forEach(s=>{const cv=document.createElement('canvas');cv.width=512;cv.height=256;const tx=new TH.CanvasTexture(cv);
-  const m=new TH.Mesh(new TH.PlaneGeometry(6.2,3.0),new TH.MeshBasicMaterial({map:tx,fog:false}));m.position.set(s*(HF+18.28),12.4,0);m.rotation.y=s>0?-Math.PI/2:Math.PI/2;scene.add(m);FX.board.push({cv,tx,last:''});});})();
+  const m=new TH.Mesh(new TH.PlaneGeometry(6.2,3.0),new TH.MeshBasicMaterial({map:tx,fog:false}));const G_=window.GYM||{L:HF+7};m.position.set(s*(G_.L-.12),6.4,0);m.rotation.y=s>0?-Math.PI/2:Math.PI/2;{const fr=new TH.Mesh(new TH.BoxGeometry(.1,3.3,6.5),new TH.MeshLambertMaterial({color:'#20242c'}));fr.position.set(s*(G_.L-.06),6.4,0);scene.add(fr);}scene.add(m);FX.board.push({cv,tx,last:''});});})();
 function boardFrame(){if(!FX.board.length||typeof score==='undefined')return;const key=score.join(':')+state;
   FX.board.forEach(b=>{if(b.last===key)return;b.last=key;const g=b.cv.getContext('2d'),w=512,h=256;g.fillStyle='#0d1118';g.fillRect(0,0,w,h);
     g.fillStyle='#ff7a2a';g.font='bold 30px "Noto Sans TC",sans-serif';g.textAlign='center';g.fillText('熱血排球',w/2,40);
@@ -1603,8 +1656,8 @@ function boardFrame(){if(!FX.board.length||typeof score==='undefined')return;con
     if(state==='point'){g.fillStyle='#ffe14a';g.font='bold 24px "Noto Sans TC",sans-serif';g.fillText('POINT!',w/2,244);}
     b.tx.needsUpdate=true;});}
 // 球網：細分網格，被球打到會鼓起再晃回來
-(function netMesh(){let net=null;scene.traverse(o=>{if(o.isMesh&&o.material&&o.material.transparent&&o.material.map&&Math.abs(o.position.y-(NETH-.5))<.01&&o.position.x===0&&o.geometry.parameters&&o.geometry.parameters.width>9)net=o;});
-  if(!net)return;const W=net.geometry.parameters.width,g=new TH.PlaneGeometry(W,1,64,10);net.geometry.dispose();net.geometry=g;const P=g.attributes.position,n=P.count;
+(function netMesh(){let net=null;scene.traverse(o=>{if(o.isMesh&&o.userData.isNet)net=o;});
+  if(!net)return;const W=net.geometry.parameters.width,g=new TH.PlaneGeometry(W,1,96,12);net.geometry.dispose();net.geometry=g;const P=g.attributes.position,n=P.count;
   FX.net={m:net,P,d:new Float32Array(n),v:new Float32Array(n),u:Float32Array.from({length:n},(_,i)=>P.getX(i)),h:Float32Array.from({length:n},(_,i)=>P.getY(i)),act:0};})();
 // z：沿網子的位置；y：高度；s：力道（正負是方向，往 +x 為正）
 function netHit(z,y,s){const N=FX.net;if(!N)return;const ly=y-(NETH-.5);for(let i=0;i<N.d.length;i++){const dz=N.u[i]+z,dy=N.h[i]-ly,top=Math.max(0,(.5-N.h[i]))/1,f=Math.exp(-(dz*dz)/.5-(dy*dy)/.35)*Math.min(1,top*1.6);N.v[i]+=s*f;}N.act=2.5;}
@@ -1623,7 +1676,7 @@ const GradeShader={uniforms:{tDiffuse:{value:null},amt:{value:1},imp:{value:0},c
   fragmentShader:`uniform sampler2D tDiffuse;uniform float amt;uniform float imp;uniform float ca;varying vec2 vUv;
   void main(){vec4 c=texture2D(tDiffuse,vUv);vec3 col=c.rgb;
     vec2 cd=(vUv-.5)*ca*.018;col.r=texture2D(tDiffuse,vUv+cd).r;col.b=texture2D(tDiffuse,vUv-cd).b;   // 衝擊色差
-    float l=dot(col,vec3(.299,.587,.114));col=mix(vec3(l),col,1.0+.16*amt);          // 飽和
+    float l=dot(col,vec3(.299,.587,.114));col=mix(vec3(l),col,1.0+.05*amt);          // 飽和
     col=(col-.5)*(1.0+.08*amt)+.5;                                                 // 對比
     col*=mix(vec3(1.),vec3(1.03,1.0,.97),amt);                                     // 微暖
     vec2 d=vUv-.5;float v=smoothstep(.85,.25,length(d*vec2(1.25,1.)));col*=mix(1.,.72+.28*v,amt); // 暗角
@@ -1637,7 +1690,7 @@ function fxSetup(){if(FX.comp!==null||!renderer||!TH.EffectComposer||!TH.UnrealB
 function fxRender(dt){crowdFrame(dt);if(typeof fx2Frame==='function')fx2Frame(dt);boardFrame();netFrame(dt);marksFrame(dt);
   if(S.gfx>=1&&FX.comp===null)fxSetup();
   if(S.gfx>=1&&FX.comp){const sz=renderer.getDrawingBufferSize(new TH.Vector2());if(FX.comp._w!==sz.x||FX.comp._h!==sz.y){FX.comp._w=sz.x;FX.comp._h=sz.y;FX.comp.setSize(sz.x/renderer.getPixelRatio(),sz.y/renderer.getPixelRatio());FX.comp.setPixelRatio&&FX.comp.setPixelRatio(renderer.getPixelRatio());}
-    FX.bloom.enabled=S.gfx>=1;FX.bloom.strength=S.gfx==2?.3:.22;FX.comp.render(dt);}
+    FX.bloom.enabled=S.gfx>=1;FX.bloom.strength=S.gfx==2?.18:.12;FX.comp.render(dt);}
   else renderer.render(scene,cam);}
 
 // ---------------- 打擊、接球特效 ----------------
@@ -1731,7 +1784,7 @@ function cueInfo(){if(!human||state!=='play'||!ball.setInfo||ball.setInfo.hitter
   const app=human.y>0?human.app:human.run,J=jumpProf(human,app),Lh=predict(HANDUP+J.hApex-.05);if(!Lh||Math.sign(Lh.x)!==sd(human.team))return null;
   return{x:Lh.x-tnet(human.team)*.3,z:Lh.z,toJump:Lh.t-J.tApex,hy:HANDUP+J.hApex};}
 function shotFor(){const h=human;if(!h)return'ground';
-  if(state==='point')return'point';
+  if(state==='point')return camShot||'ground';
   if(state==='serve')return server===h?'serve':'wait';
   if(h.y>.2){const blk=Math.abs(h.x)<1.6&&ball.lastTeam!==h.team&&Math.sign(ball.x)!==sd(h.team);return blk?'block':'air';}
   if(h.dive>0||h.rec>0)return'dive';
@@ -1755,15 +1808,18 @@ function updateCamera(dt){
     const hx=lerp(h.ox,h.x,ALPHA),hz=lerp(h.oz,h.z,ALPHA),hy=lerp(h.oy,h.y,ALPHA),pt=clamp(camPitch+cs.pt,-.2,1.25);
     _T.set(hx,1.45+hy*.75+cs.l,hz);const fx=Math.sin(camYaw)*Math.cos(pt),fy=-Math.sin(pt),fz=Math.cos(camYaw)*Math.cos(pt);
     // 鏡頭方向立即跟滑鼠，只有位置（跳起來、換動作）用很快的平滑，看起來不會卡也不會晃
-    const ptCam=state==='point'&&stT>.3;
-    if(!ptCam){camS.l.copy(_T);_P.set(_T.x-fx*cs.d,Math.max(.35,_T.y-fy*cs.d),_T.z-fz*cs.d);camS.p.lerp(_P,1-Math.exp(-dt*12));
-    camS.l.set(camS.p.x+fx*10,camS.p.y+fy*10,camS.p.z+fz*10);}
+    // 得分後鏡頭不轉、不移動，停在得分那一刻的位置看大家慶祝
+    const ptCam=state==='point';
+    if(ptCam)camS.ptEnd=time;
+    // 得分結束、回到發球站位時，鏡頭位置和方向都用 1 秒慢慢滑過去，不會一下子跳走
+    if(!ptCam){const tr=time-(camS.ptEnd??-9)<1.2,kp=1-Math.exp(-dt*(tr?3.5:12));_P.set(_T.x-fx*cs.d,Math.max(.35,_T.y-fy*cs.d),_T.z-fz*cs.d);camS.p.lerp(_P,kp);
+      _L.set(camS.p.x+fx*10,camS.p.y+fy*10,camS.p.z+fz*10);if(tr)camS.l.lerp(_L,1-Math.exp(-dt*4));else camS.l.copy(_L);}
     // 得分：鏡頭甩過球網，從高空俯看落點，3 秒後甩回發球位置（甩動時加動態模糊）
-    if(state==='point'&&stT>.3){const L=lastLand,side=sd(h.team),a=(stT-.3)*.12;
+    if(false){const L=lastLand,side=sd(h.team),a=(stT-.3)*.12;
       // 影片：鏡頭移到網柱旁邊、約 5 公尺高，斜斜往下看網前的球員
       const zs=Math.sign(L.z)||1;_P.set(L.x*.25+side*1.2*Math.sin(a),4.8,zs*(M.wid+4.2));_L.set(L.x*.55,.8,L.z*.35);
       const k=stT<.7?1-Math.exp(-dt*9):1-Math.exp(-dt*2.5);camS.p.lerp(_P,k);pointLook.lerp(_L,k);camS.l.copy(pointLook);fov=62;}
-    else pointLook.copy(camS.l);}
+    else if(state!=='point')pointLook.copy(camS.l);}
   {const v=camPrev.distanceTo(camS.p)/Math.max(dt,1e-3);camPrev.copy(camS.p);const want=clamp((v-14)/5,0,7)|0;if(want!==blurPx){blurPx=want;g3.style.filter=want?`blur(${want}px)`:'';}}
   if(camKick>0)camKick=Math.max(0,camKick-dt*.6);if(fovKick>0)fovKick=Math.max(0,fovKick-dt*30);
   const s=shake>0?shake*.15:0;cam.position.set(camS.p.x+(rnd()-.5)*s,camS.p.y+(rnd()-.5)*s,camS.p.z+(rnd()-.5)*s);cam.position.y-=camKick*Math.sin(Math.min(1,camKick/.11)*Math.PI);cam.lookAt(camS.l);
