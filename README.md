@@ -28,6 +28,7 @@
 | `tools/` | `vrmshrink.py`（縮小 VRM 貼圖、去掉表情資料）、`make_offline.py`（產生離線包） |
 | `tests/` | 自動測試（見下方） |
 | `docs/SPEC.md` | 設計規格與每次修改紀錄 |
+| `legacy/volleyball-2d.html` | 2D 版「熱血排球大會」（3 對 3，像素風）。單檔網頁，直接雙擊就能玩；3D 版的 AI 決策（接球分配、舉球選擇、讀攔網扣球）就是參考它寫的 |
 
 ## 建置與測試
 ```bash
