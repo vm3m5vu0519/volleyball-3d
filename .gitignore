@@ -1,0 +1,7 @@
+node_modules/
+test.html
+out/
+__pycache__/
+*.jpg
+*.png
+*.log

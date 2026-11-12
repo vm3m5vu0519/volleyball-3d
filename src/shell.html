@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>熱血排球 3D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&display=swap">
+<style>
+/* layout: full-window 3D court with a 2D HUD canvas on top; menus are full-screen overlay pages over a live attract scene */
+:root{
+  --bg:#0b1a22; --panel:rgba(10,28,36,.88); --panel2:#17394a; --ink:#f2f7f8; --dim:#8fb0b8; --red:#e8433a; --blue:#3a7be8; --gold:#ff8a2a; --mint:#3ed3b8; --violet:#9fd8ff;
+  --pix:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+.mb,.tb,.pill,.tab,.sec,.cc,.opt,.node,.uc,.talSide{border-radius:8px}
+.mb.big,.pill[aria-pressed="true"],.tab[aria-selected="true"]{color:#fff}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:var(--pix);overflow:hidden;-webkit-user-select:none;user-select:none}
+#g3,#hud{position:fixed;inset:0;width:100%;height:100%;display:block}
+#g3{outline:none;cursor:crosshair}
+#hud{pointer-events:none}
+button{font-family:var(--pix);color:var(--ink);cursor:pointer}
+button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.page{position:fixed;inset:0;overflow:auto;box-sizing:border-box;background:rgba(8,22,30,.86);
+  padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.page.clear{background:linear-gradient(90deg,rgba(8,22,30,.92) 0%,rgba(8,22,30,.6) 55%,rgba(8,22,30,.15) 100%)}
+.wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.logo h1{margin:0;font-weight:900;font-style:italic;font-size:clamp(52px,10vw,104px);line-height:1;color:#fff;text-shadow:0 4px 24px rgba(0,0,0,.45);letter-spacing:.06em}
+.logo .kick{display:block;color:var(--dim);font-size:15px;letter-spacing:.2em;margin-bottom:8px}
+.logo .tag{display:inline-block;margin-top:14px;font-size:16px;font-weight:700;color:#fff;background:var(--gold);padding:3px 12px;border-radius:4px;transform:skewX(-10deg)}
+.menuNav{display:flex;flex-direction:column;gap:10px;width:min(320px,100%);margin-top:20px}
+.sub{margin:0;color:var(--dim);font-size:14px;line-height:1.6}
+.mb{font-size:18px;padding:8px 14px;border:1px solid rgba(255,255,255,.14);background:var(--panel2);box-shadow:none;text-align:left}
+.mb:hover{background:var(--red)}
+.mb.big{font-size:24px;padding:12px 14px;background:var(--red)}.mb.big:hover{background:#ff6a5a}
+.tb{font-size:16px;padding:6px 16px;border:1px solid rgba(255,255,255,.14);background:var(--panel2);box-shadow:none}
+.tb:hover{background:#3a2c5e}
+.head{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.head h2{margin:0;font-weight:900;font-size:28px;color:var(--gold);text-shadow:none}
+.sec{display:flex;flex-direction:column;gap:10px;background:var(--panel);border:1px solid rgba(255,255,255,.14);padding:14px}
+.sec h3{margin:0;font-weight:900;font-size:18px;color:var(--gold);letter-spacing:.06em}
+.sec h3 small{color:var(--dim);font-size:13px;margin-left:8px;letter-spacing:0}
+.big2{display:flex;gap:10px;flex-wrap:wrap}
+.pill{font-size:17px;padding:9px 18px;border:1px solid rgba(255,255,255,.14);background:var(--panel2);color:var(--dim);box-shadow:none}
+.pill[aria-pressed="true"]{background:var(--gold);color:#000}
+.pill.red[aria-pressed="true"]{background:#ff5a6a;color:#000}.pill.blue[aria-pressed="true"]{background:#4a8cff;color:#000}
+.line{display:grid;grid-template-columns:86px minmax(0,1fr);gap:10px;align-items:start}
+.line>.lbl{font-size:16px;padding-top:8px}.line>.lbl small{display:block;color:var(--gold);font-size:12px}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:720px){.line{grid-template-columns:1fr}.cards{grid-template-columns:1fr}}
+.cc{display:flex;flex-direction:column;gap:6px;text-align:left;padding:10px;border:1px solid rgba(255,255,255,.14);background:#120d1c;min-width:0}
+.cc[aria-pressed="true"]{background:var(--panel2);box-shadow:0 0 0 3px var(--gold)}
+.cc .top{display:flex;gap:10px;align-items:center}
+.cc .sw{width:28px;height:28px;border:1px solid rgba(255,255,255,.2);flex:none}
+.cc .nm{font-size:16px}.cc .ty{font-size:12px;color:var(--gold)}
+.cc .nt{font-size:12px;color:#c9bde0;line-height:1.4}
+.stats{display:grid;grid-template-columns:2.4em minmax(0,1fr) 1.6em;gap:2px 6px;align-items:center;font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums}
+.stats i{display:block;height:6px;background:#2c2147;position:relative}
+.stats i b{position:absolute;inset:0 auto 0 0;background:var(--mint)}
+.stats i em{position:absolute;inset:0 auto 0 0;background:var(--gold)}
+.stats span:nth-child(3n){color:var(--ink);text-align:right}
+.ults{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:720px){.ults{grid-template-columns:1fr}}
+.uc{display:flex;flex-direction:column;gap:5px;text-align:left;padding:10px;border:1px solid rgba(255,255,255,.14);background:#120d1c;color:#d9cfee;font-size:13px;line-height:1.45;min-width:0}
+.uc[aria-pressed="true"]{background:var(--panel2);box-shadow:0 0 0 3px var(--gold)}
+.uc .un{font-size:20px}.uc .ctx{color:var(--dim)}.uc .ctx b{font-weight:normal;color:var(--ink);margin-right:4px}
+.go{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tab{font-size:17px;padding:8px 18px;border:1px solid rgba(255,255,255,.14);background:var(--panel2);color:var(--dim);box-shadow:none}
+.tab[aria-selected="true"]{background:var(--gold);color:#000}
+.talBody{display:grid;grid-template-columns:250px minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:760px){.talBody{grid-template-columns:1fr}}
+.talSide{display:flex;flex-direction:column;gap:10px;background:var(--panel);border:1px solid rgba(255,255,255,.14);padding:12px;min-width:0}
+.talSide .stats{font-size:13px;gap:5px 8px}.talSide .stats i{height:9px}
+#talInfo{font-size:14px;line-height:1.6;color:#d9cfee}
+.pts{font-size:17px;color:var(--gold)}
+.tree{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.node{display:flex;flex-direction:column;gap:4px;text-align:left;padding:8px 10px;border:1px solid rgba(255,255,255,.14);background:#120d1c;color:var(--dim);min-width:0}
+.node b{font-weight:normal;font-size:15px;color:var(--ink)}.node small{font-size:12px;line-height:1.4}.node .tag{font-size:11px;color:var(--gold)}
+.node.can{background:var(--panel2);box-shadow:none}.node.can:hover{background:#3d2f62}
+.node.got{background:var(--mint);color:#06281a}.node.got b,.node.got .tag{color:#000}
+.node.lock{opacity:.4;text-decoration:line-through}.node:disabled{cursor:not-allowed}
+@media (max-width:560px){.tree{grid-template-columns:repeat(2,minmax(0,1fr))}.tree .node{grid-column:auto!important}}
+.help{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px;align-items:start}
+.cg{background:var(--panel);border:1px solid rgba(255,255,255,.14);padding:10px 12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.cg h4{margin:0 0 2px;font-weight:normal;font-size:16px;color:var(--gold)}
+.cg h4 small{margin-left:8px;font-size:12px;color:var(--dim)}
+.cr{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:8px;align-items:center;font-size:13px;color:#d9cfee;line-height:1.4}
+.ck{display:flex;flex-wrap:wrap;align-items:center;gap:3px;color:var(--dim)}.ck i{font-style:normal;font-size:12px;color:var(--mint)}
+.cg ul{margin:0;padding-left:18px;font-size:13px;line-height:1.6;color:#d9cfee}
+kbd{color:var(--ink);background:#000;padding:1px 7px;border:2px solid var(--dim);font-family:var(--pix);font-size:12px;white-space:nowrap}
+.box{background:var(--panel);border:4px solid #000;box-shadow:0 0 0 3px var(--gold),6px 6px 0 3px #000;padding:18px 22px;width:min(640px,100%);margin:0 auto;display:flex;flex-direction:column;gap:12px;box-sizing:border-box}
+.box.small{width:min(420px,100%)}
+.box h2{margin:0;font-weight:normal;color:var(--gold);text-align:center;font-size:26px;text-shadow:none}
+.box h3{margin:6px 0 0;font-weight:normal;color:var(--gold);text-align:center;font-size:18px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.row>span{font-size:16px}
+.seg{display:flex;gap:4px;flex-wrap:wrap}
+.opt{font-size:14px;padding:5px 10px;border:1px solid rgba(255,255,255,.2);background:#120d1c;color:var(--dim)}
+.opt[aria-pressed="true"]{background:var(--gold);color:#000}
+.kb{display:grid;grid-template-columns:minmax(0,1fr) 120px 120px;gap:6px;align-items:center;font-size:14px}
+.kb .kbtn{font-size:14px;padding:5px 4px;border:1px solid rgba(255,255,255,.2);background:#120d1c;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kb .kbtn.wait{background:var(--gold);color:#000}.kb .kbtn.empty{color:#5c5078}
+@media (max-width:480px){.kb{grid-template-columns:minmax(0,1fr) 90px 90px}}
+.center{min-height:100%;display:flex;align-items:center}
+.skList{display:flex;flex-direction:column;gap:6px}
+.skRow{display:flex;gap:8px;align-items:stretch}.skRow.on .skName{box-shadow:0 0 0 2px var(--gold)}
+.skName{flex:1;min-width:0;text-align:left;display:flex;flex-direction:column;gap:2px;padding:8px 12px;border:1px solid rgba(255,255,255,.14);border-radius:8px;background:var(--panel2)}
+.skName b{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.skName small{font-size:12px;color:var(--dim)}.skName:disabled{opacity:.7;cursor:default}
+.skAssign{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}@media (max-width:520px){.skAssign{grid-template-columns:1fr}}
+.skAs{display:flex;flex-direction:column;gap:6px;font-size:15px}.skAs small{display:block;font-size:12px;color:var(--dim)}
+.skAs select{font:inherit;font-size:14px;color:var(--ink);background:var(--panel2);border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:6px 8px;min-width:0}
+.mcGrid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:820px){.mcGrid{grid-template-columns:1fr}}
+.mcVid{position:relative;background:#000;border:1px solid rgba(255,255,255,.2);aspect-ratio:16/9;max-width:100%}
+.mcVid video,.mcVid canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+#mcView{width:100%;aspect-ratio:4/3;max-width:100%;background:#1a1330;border:1px solid rgba(255,255,255,.2);display:block}
+.mcMarks{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.mcList{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.mcItem{display:flex;flex-direction:column;gap:6px;padding:10px;border:1px solid rgba(255,255,255,.14);background:#120d1c;min-width:0}
+.mcItem b{font-weight:normal;font-size:16px}.mcItem .sub{font-size:12px}.mcItem.on{background:var(--panel2)}
+.mcItem .big2{gap:6px}.mcItem .tb{font-size:13px;padding:4px 10px}
+.res h2{font-size:54px}.res .sc{text-align:center;font-size:40px}
+</style>
+</head>
+<body>
+<canvas id="g3" tabindex="0" aria-label="排球比賽 3D 畫面"></canvas>
+<canvas id="hud" aria-hidden="true"></canvas>
+
+<div class="page clear" id="vMenu">
+  <div class="wrap center"><div>
+    <div class="logo"><span class="kick">VOLLEY ARENA・4 VS 4</span><h1>熱血排球</h1><span class="tag">3D・4 對 4 排球</span></div>
+    <nav class="menuNav">
+      <button class="mb big" id="mStart">開始比賽</button>
+      <button class="mb" id="mSettings">遊戲設定・按鍵</button>
+      <button class="mb" id="mHelp">操作說明</button>
+      <button class="mb" id="mSkin">角色外觀（套皮）</button>
+      <button class="mb" id="mMocap">動作擷取（真人影片）</button>
+    </nav>
+    <p class="sub" style="margin-top:16px;max-width:30em">4 對 4 第三人稱排球。滑鼠轉鏡頭、WASD 跑位，準星看哪裡球就往哪裡打。舉球手由 AI 負責。</p>
+    <p class="sub" style="font-size:12px;max-width:34em;opacity:.8">角色模型：three-vrm-girl、VRM1_Constraint_Twist_Sample © pixiv Inc.；Seed-san model by VirtualCast, Inc.（VRM Public License 1.0）；人偶 Quaternius（CC0）。</p>
+  </div></div>
+</div>
+
+<div class="page" id="vPrep" hidden><div class="wrap">
+  <div class="head"><button class="tb" data-go="vMenu">← 主選單</button><h2>賽前準備</h2></div>
+  <div class="sec"><h3>隊伍<small>兩邊打起來完全一樣</small></h3>
+    <div class="big2" id="pSide"><button class="pill red" data-v="0">紅隊</button><button class="pill blue" data-v="1">藍隊</button></div></div>
+  <div class="sec"><h3>你的位置<small>整場比賽都操控這名球員，舉球手由 AI 負責</small></h3><div class="big2" id="pRole"></div></div>
+  <div class="sec"><h3>陣容<small>每個位置挑一名球員，標「你」的是你操控的人</small></h3><div id="pChars" style="display:flex;flex-direction:column;gap:12px"></div></div>
+  <div class="go"><button class="mb big" id="pGo">開始比賽 ▶</button></div>
+</div></div>
+
+<div class="page" id="vHelp" hidden><div class="wrap">
+  <div class="head"><button class="tb" data-go="vMenu">← 主選單</button><h2>操作說明</h2></div>
+  <div class="help" id="helpList"></div>
+</div></div>
+
+<div class="page" id="vSkin" hidden><div class="wrap">
+  <div class="head"><button class="tb" data-go="vMenu">← 主選單</button><h2>角色外觀（套皮）</h2></div>
+  <p class="sub">把你喜歡的角色模型換到球員身上。模型只存在你的瀏覽器裡，不會上傳到任何地方。動作由遊戲自動套上去，模型本身不需要有動畫。</p>
+  <div class="mcGrid">
+    <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+      <div class="sec"><h3>1. 上傳模型<small>.vrm 或 .glb，60 MB 以內</small></h3>
+        <div class="big2"><label class="pill" for="skFile" style="cursor:pointer">選擇模型檔…</label><input type="file" id="skFile" accept=".vrm,.glb" hidden></div>
+        <p class="sub" id="skMsg" aria-live="polite"></p></div>
+      <div class="sec"><h3>2. 我的角色<small>點名字可以預覽</small></h3><div id="skList" class="skList"></div></div>
+      <div class="sec"><h3>3. 套用到球員<small>只換我方隊伍</small></h3><div id="skAssign" class="skAssign"></div></div>
+      <div class="sec"><h3>模型從哪裡來？</h3>
+        <p class="sub"><b>VRoid Studio</b>（免費）：捏好角色後「匯出 VRM」，直接上傳。VRoid Hub 上標示可下載的角色也能用（請遵守作者的使用條款）。<br>
+        <b>Mixamo</b>（免費）：上傳你的模型讓它自動綁骨架，下載 FBX 後用 Blender 匯出成 GLB。<br>
+        <b>MMD（.pmx）</b>：用 Blender 的 MMD Tools 匯入，再匯出 GLB。<br>
+        只要是一般人形骨架（有骨盆、脊椎、手臂、腿），名稱是 VRM、Mixamo、Unreal 或常見英文命名都能自動對上。</p></div>
+    </div>
+    <div class="sec" style="min-width:0"><h3>預覽<small>拖曳可以轉角度</small></h3>
+      <canvas id="skView" style="width:100%;height:420px;display:block;border-radius:6px;touch-action:none;cursor:grab"></canvas>
+      <div class="big2" id="skPose"><button class="pill" data-m="auto">輪播</button><button class="pill" data-m="stand">站姿</button><button class="pill" data-m="run">跑步</button><button class="pill" data-m="ready">接球</button><button class="pill" data-m="spike">扣球</button><button class="pill" data-m="bump">墊球</button></div></div>
+  </div>
+</div></div>
+<div class="page" id="vMocap" hidden><div class="wrap">
+  <div class="head"><button class="tb" data-go="vMenu">← 主選單</button><h2>動作擷取</h2></div>
+  <p class="sub">上傳一段真人排球影片，讓瀏覽器找出人體關節，再挑出一個動作存起來，比賽中的球員就會用這個動作。影片只在你的瀏覽器裡分析，不會上傳到任何地方。</p>
+  <div class="sec"><h3>1. 選影片<small>一個人、全身入鏡、側面或斜前方拍，背景越單純越準</small></h3>
+    <div class="big2"><label class="pill" for="mcFile" style="cursor:pointer">選擇影片檔…</label><input type="file" id="mcFile" accept="video/*" hidden>
+      <span class="sub" id="mcFileName" style="align-self:center">還沒有選影片</span></div></div>
+  <div class="mcGrid">
+    <div class="sec"><h3>2. 分析<small>每秒取 30 格，最長 30 秒</small></h3>
+      <div class="mcVid"><video id="mcVideo" muted playsinline></video><canvas id="mcOver"></canvas></div>
+      <div class="big2"><button class="pill" id="mcRun" disabled>分析這段影片</button><button class="pill" id="mcStop" hidden>停止</button>
+        <div class="seg" data-mc="cx"><button class="opt" data-v="1" aria-pressed="true">精準</button><button class="opt" data-v="0" aria-pressed="false">快速</button></div></div>
+      <p class="sub" id="mcStat">分析時會一格一格處理，電腦越快越快完成。</p>
+      <input type="range" id="mcTime" min="0" max="0" value="0" step="1" disabled aria-label="影片時間軸" style="width:100%">
+      <div class="mcMarks"><button class="tb" id="mcA" disabled>設為起點</button><button class="tb" id="mcK" disabled>設為關鍵</button><button class="tb" id="mcB" disabled>設為終點</button><span class="sub" id="mcRange"></span></div>
+    </div>
+    <div class="sec"><h3>3. 預覽與儲存<small>遊戲人物照擷取的動作重播</small></h3>
+      <canvas id="mcView"></canvas>
+      <div class="big2" id="mcSlots"></div>
+      <p class="sub" id="mcSlotTip"></p>
+      <div class="big2"><label class="sub" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="mcMirror">左右鏡像（左撇子影片或想換手）</label></div>
+      <div class="go"><button class="mb big" id="mcSave" disabled style="text-align:center">存成這個動作</button></div>
+    </div>
+  </div>
+  <div class="sec"><h3>已存的動作<small>沒有擷取的動作會用遊戲內建的姿勢</small></h3><div class="mcList" id="mcList"></div></div>
+  <div class="sec"><h3>備份與分享<small>把動作資料複製起來，換電腦或傳給別人時貼回來</small></h3>
+    <textarea id="mcJson" rows="3" spellcheck="false" style="width:100%;box-sizing:border-box;background:#120d1c;color:var(--ink);border:1px solid rgba(255,255,255,.2);font:12px monospace"></textarea>
+    <div class="big2"><button class="tb" id="mcCopy">複製全部動作</button><button class="tb" id="mcPaste">貼上並匯入</button><span class="sub" id="mcJsonMsg" style="align-self:center"></span></div></div>
+</div></div>
+
+<div class="page" id="vPause" hidden><div class="wrap center"><div class="box small">
+  <h2>暫停</h2>
+  <button class="mb" id="bResume">繼續比賽</button>
+  <button class="mb" id="bPSet">遊戲設定・按鍵</button>
+  <button class="mb" id="bRestart">重新開始</button>
+  <button class="mb" id="bTitle">放棄比賽・回主選單</button>
+</div></div></div>
+
+<div class="page" id="vOver" hidden><div class="wrap center"><div class="box small res">
+  <h2 id="resT">優勝！</h2><div class="sc" id="resS">11 - 7</div>
+  <p class="sub" id="resN" style="text-align:center"></p>
+  <button class="mb big" id="bAgain">再來一場</button><button class="mb" id="bMenu">回主選單</button>
+</div></div></div>
+
+<div class="page" id="vSet" hidden style="z-index:20"><div class="wrap"><div class="box">
+  <h2>遊戲設定</h2>
+  <div class="row"><span>難度</span><div class="seg" data-k="diff"><button class="opt" data-v="easy">簡單</button><button class="opt" data-v="normal">普通</button><button class="opt" data-v="hard">困難</button></div></div>
+  <div class="row"><span>遊戲節奏</span><div class="seg" data-k="pace"><button class="opt" data-v="0.75">慢</button><button class="opt" data-v="0.85">標準</button><button class="opt" data-v="1">原作速度</button></div></div>
+  <div class="row"><span>勝利分數</span><div class="seg" data-k="win"><button class="opt" data-v="15">15</button><button class="opt" data-v="21">21</button><button class="opt" data-v="25">25</button></div></div>
+  <div class="row"><span>鏡頭</span><div class="seg" data-k="cam"><button class="opt" data-v="0">動作視角</button><button class="opt" data-v="1">固定視角</button><button class="opt" data-v="2">轉播</button></div></div>
+  <div class="row"><span>滑鼠靈敏度</span><div class="seg" data-k="sens"><button class="opt" data-v="0.6">低</button><button class="opt" data-v="1">中</button><button class="opt" data-v="1.6">高</button></div></div>
+  <div class="row"><span>對方扣球預判</span><div class="seg" data-k="tell"><button class="opt" data-v="1">開</button><button class="opt" data-v="0">關</button></div></div>
+  <div class="row"><span>球的軌跡線</span><div class="seg" data-k="traj"><button class="opt" data-v="1">開</button><button class="opt" data-v="0">關</button></div></div>
+  <div class="row"><span>落點光圈</span><div class="seg" data-k="hint"><button class="opt" data-v="1">開</button><button class="opt" data-v="0">關</button></div></div>
+  <div class="row"><span>扣球慢動作</span><div class="seg" data-k="slow"><button class="opt" data-v="1">開</button><button class="opt" data-v="0">關</button></div></div>
+  <div class="row"><span>音效</span><div class="seg" data-k="sound"><button class="opt" data-v="1">開</button><button class="opt" data-v="0">關</button></div></div>
+  <div class="row"><span>畫面震動</span><div class="seg" data-k="shake"><button class="opt" data-v="1">開</button><button class="opt" data-v="0">關</button></div></div>
+  <div class="row"><span>畫質</span><div class="seg" data-k="gfx"><button class="opt" data-v="2">高</button><button class="opt" data-v="1">中</button><button class="opt" data-v="0">低</button></div></div>
+  <h3>按鍵設定</h3>
+  <p class="sub">點一下按鈕，再按想要的鍵盤按鍵或滑鼠按鍵。Backspace 清除這一格，Esc 取消。每個動作可以設兩個按鍵。</p>
+  <div class="kb" id="kbList"></div>
+  <button class="tb" id="kbReset">恢復預設按鍵</button>
+  <button class="mb big" id="bBack" style="text-align:center">返回</button>
+</div></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script>/*GLB*/</script>
+<script>/*GAME*/</script>
+</body>
+</html>
