@@ -71,7 +71,7 @@ function jumpAssist(p){const tA=timeToApex(p)||.3;
   if(state==='play'&&ball.lastTeam===p.team&&ball.touches>=1&&Math.sign(ball.x)===sd(p.team)){
     const Lh=predict(heightAfter(p,tA)+HANDUP-.05);if(!Lh)return;const fx=Math.sin(p.yaw),fz=Math.cos(p.yaw),tx=Lh.x-fx*.3,tz=Lh.z-fz*.3,tt=Math.max(.2,Math.min(tA+.08,Lh.t));
     let vx=(tx-p.x)/tt,vz=(tz-p.z)/tt;const l=Math.hypot(vx,vz),mx=p.human?5.5:5;if(l>mx){vx*=mx/l;vz*=mx/l;}p.vx=vx;p.vz=vz;p.assist=true;}
-  else if(state==='play'&&ball.lastTeam!==p.team&&Math.abs(p.x)<1.6){const L=predict(NETH+.3),tz=L?L.z:ball.z;p.vz=clamp((tz-p.z)/tA,-2.5,2.5);p.vx=0;p.assist=true;}}
+  else if(state==='play'&&ball.lastTeam!==p.team&&Math.abs(p.x)<1.6){const L=predict(NETH+.3),tz=L?L.z:ball.z;p.vz=clamp((tz-p.z)/tA,p.human?-1.3:-2.5,p.human?1.3:2.5);p.vx=0;p.assist=true;}}
 
 // ---------------- 玩家扣球：保證打得到 ----------------
 // 空中按攻擊＝出手。球已經在手邊就馬上打；還沒到就等球過來，在球最靠近手的那一刻自動打到（球會被吸到手上）。
@@ -239,9 +239,9 @@ function crossNet(px,py,pz){
   if(ball.lastTeam===atkT&&yc>NETH-.15&&(ball.atk||ball.tip)){
     for(const b of team(defT)){
       if(b.y<.25||Math.abs(b.x)>1.1||b.stun>0)continue;
-      const w=.5+b.st.blk*.03;
+      const w=(b.human?.38:.5)+b.st.blk*.03; // 玩家攔網範圍縮小（原本站中間幾乎什麼都攔得到）
       if(Math.abs(zc-b.z)>w||yc>b.y+HANDUP+.3)continue;
-      const apex=1-Math.min(1,Math.abs(b.vy)/3),pw=(ball.power||2)+rnd()*4,bk=b.st.blk*1.1+apex*3+rnd()*4+(b.human?1.5:0),diff=bk-pw;
+      const apex=1-Math.min(1,Math.abs(b.vy)/3),pw=(ball.power||2)+rnd()*4,bk=b.human?b.st.blk*.75+apex*2.6+rnd()*4+.3:b.st.blk*1.1+apex*3+rnd()*4,diff=bk-pw;
       b.swing=.4;b.pose='block';b.touchFx=.8;b.touchN='攔';ball.cool=.12;ball.serial=++SERIAL;ball.letGo=null;PC={};freeze(b.human?.1:.06);
       const own=(vx,vy)=>{ball.drive=false;ball.vx=vx;ball.vy=vy;ball.lastTeam=defT;ball.lastP=b;ball.touches=0;ball.blockTouch=true;ball.atk=false;ball.heavy=false;};
       if((diff<=-3&&rnd()<.25)||(ball.toolAim&&diff<1.5&&rnd()<.55)){ball.x=sd(defT)*.15;lobTo(sd(defT)*(M.half+.5+rnd()),0,Math.sign(zc||1)*(M.wid+.6+rnd()*1.5),ball.y+.8);

@@ -53,8 +53,8 @@ function freeze(t){hitstop=Math.max(hitstop,t);}
 
 // ---------------- 規則 ----------------
 // Free Ball：接發球時玩家站後排中間；原本站中間的人換到玩家的位置
-// 接發站位：玩家是攻手時跟中間手交換到中間接球；玩家是舉球員就照舉球員站位（網前等一傳），三個攻手照常接發
-const spot=(p,k)=>{if(k==='r'&&human&&p.team===human.team&&human.role!=='mb'&&human.role!=='set'){if(p===human)return SPOT.mb.r;if(p.role==='mb')return SPOT[human.role].r;}return SPOT[p.role][k];};
+// 站位：每個人照自己位置站（左攻左、右攻右、中間中、舉球員網前）。以前玩家會跟中間手換到中間接球，玩家選右攻也站中間，已取消
+const spot=(p,k)=>SPOT[p.role][k];
 function newGame(){
   players=[];PID=0;ME=prep.side;
   for(const t of [0,1])for(const r of ROLES){
