@@ -144,6 +144,9 @@ function drawHUD(){
       {const L=SET_TYPES,bw=64*sc,bh=26*sc,x0=cw/2-(L.length*bw)/2,y0=ch*.78+38*sc;rr(g,x0-8*sc,y0-4*sc,L.length*bw+16*sc,bh+8*sc,8,'rgba(8,22,30,.7)');
         L.forEach((t,i)=>{const on=(human.setType||'auto')===t,x=x0+i*bw;if(on)rr(g,x+2*sc,y0,bw-4*sc,bh,6,'rgba(255,214,90,.9)');T2(g,SET_TN[t],x+bw/2,y0+bh/2+1,13*sc,on?'#1a1206':'#e6eef2');});
         T2(g,`${k1('stype')}／滾輪 切換　→ 這球：${SET_TN[ty]}`,cw/2,y0+bh+16*sc,12*sc,'#cfe2ea');}}}
+  // 3c) 還沒輪到舉球時：顯示預先選好的下一球（可以在對方發球、進攻時就先決定）
+  else if(human&&human.role==='set'&&(state==='play'||state==='serve')){const pk=human.setPick&&human.setPick.s===-1?{oh:'左攻',mb:'中間',op:'右攻'}[human.setPick.r]:'看準星';
+    const tx=`下一球：${SET_TN[human.setType||'auto']}・${pk}　（${k1('stype')} 切換方式、${k1('s1')}/${k1('s2')}/${k1('s3')} 先選人）`;g.font=`700 ${12*sc}px "Noto Sans TC",sans-serif`;const tw=g.measureText(tx).width+24;rr(g,cw/2-tw/2,ch*.86,tw,24*sc,12,'rgba(8,22,30,.6)');T2(g,tx,cw/2,ch*.86+12*sc,12*sc,'#e6eef2');}
   // 4) 比分：上方中間兩塊斜切的隊伍色牌子，只有數字
   {const w=76*sc,h=28*sc,y=6,cx=cw/2,sl=9*sc,panel=(x0,dir,col,txt)=>{g.beginPath();if(dir<0){g.moveTo(x0-w,y);g.lineTo(x0,y);g.lineTo(x0,y+h);g.lineTo(x0-w+sl,y+h);}else{g.moveTo(x0,y);g.lineTo(x0+w,y);g.lineTo(x0+w-sl,y+h);g.lineTo(x0,y+h);}g.closePath();
       const gr=g.createLinearGradient(x0+dir*w,y,x0,y);gr.addColorStop(0,col+'55');gr.addColorStop(1,col+'ee');g.fillStyle=gr;g.fill();T2(g,txt,x0+dir*w*.5,y+h/2+1,18*sc,'#fff');};
@@ -242,7 +245,7 @@ function renderHelp(){
   const K=a=>`<kbd>${k1(a)}</kbd>`,air='<i>空中</i>',hold='<i>按住</i>';
   const G=[{t:'移動與鏡頭',rows:[['滑鼠','轉鏡頭（點一下畫面鎖定游標）'],[`${K('fwd')}${K('left')}${K('back')}${K('right')}`,'往鏡頭方向跑'],[K('jump'),'跳；往網前跑幾步再跳＝助跑，跳更高、打更重'],[K('cam'),'切換鏡頭：動作視角／固定視角／轉播']]},
    {t:'進攻',sub:'球托給你時',rows:[[`${K('jump')} → ${air}${K('atk')}`,'扣球：按下去就一定打得到，在跳躍最高點出手最強'],['準星','畫面中央的準星指到哪裡，球就往哪裡打'],[`${air}${K('tip')}`,'輕打：把球輕輕推到準星位置'],[K('call'),'叫球：要舉球手托給你']]},
-   {t:'舉球',sub:'你選舉球手時，隊友一傳後輪到你',rows:[['黃圈','地上的黃圈是球落到頭上的位置，跑過去'],['準星','對準要托給的攻手（頭上出現黃色標記）'],[K('atk'),'舉球（差一點會自動跨一步）'],[`${K('s1')}${K('s2')}${K('s3')}`,'直接指定托給左攻／中間／右攻（不按就看準星）'],[`${K('stype')}／滾輪`,'切換攻擊方式：自動、高球（最穩）、平快（低平快，攔網來不及）、快攻（托在身邊、第一時間打）；一傳太差時會改托修正高球'],[K('tip'),'二次吊球：直接把球推過網'],[`${hold}${K('rcv')}`,'墊球舉：比較保險，但沒那麼準']]},
+   {t:'舉球',sub:'你選舉球手時，隊友一傳後輪到你',rows:[['黃圈','地上的黃圈是球落到頭上的位置，跑過去（一傳會傳高一點，球飛過來時畫面變慢，慢的程度在設定「舉球思考時間」調整）'],['準星','對準要托給的攻手（頭上出現黃色標記）'],[K('atk'),'舉球（差一點會自動跨一步）'],[`${K('s1')}${K('s2')}${K('s3')}`,'直接指定托給左攻／中間／右攻（不按就看準星）；對方發球或進攻時就能先選好下一球'],[`${K('stype')}／滾輪`,'切換攻擊方式：自動、高球（最穩）、平快（低平快，攔網來不及）、快攻（托在身邊、第一時間打）；一傳太差時會改托修正高球'],[K('tip'),'二次吊球：直接把球推過網'],[`${hold}${K('rcv')}`,'墊球舉：比較保險，但沒那麼準']]},
    {t:'接球・防守',rows:[[`${hold}${K('rcv')}`,'接球姿勢：球掉進手臂就自動墊給舉球手'],[`<i>跑動中</i>${K('rcv')}`,'球太遠時飛撲'],[`<i>網前</i>${K('block')}`,'攔網：對方攻手起跳時按，原地起跳、手自動舉高、會往球的位置橫移']]},
    {t:'發球',sub:'輪到你發球時',rows:[[K('atk'),'拋球，球到手上方再按一次'],[`${hold}${K('mod')}＋${K('atk')}`,'跳發：快又重'],['準星','發球落點']]},
    {t:'其他',rows:[[K('pause'),'暫停（Esc 也會放開滑鼠）']]}];
@@ -258,7 +261,8 @@ function demo(){players=[];PID=0;
 const STEP=1/60;let acc=0,last=0;
 function snap(){players.forEach(p=>{p.ox=p.x;p.oy=p.y;p.oz=p.z;p.oyaw=p.yaw;});if(ball){ball.ox=ball.x;ball.oy=ball.y;ball.oz=ball.z;}}
 // 空中慢動作：你是這一球的攻手、在空中、球離手不到 2.2 公尺時放慢（每次跳最多 0.6 秒）
-function bulletScale(d){if(!S.slow||!human||state!=='play'||human.y<=.2){if(human&&human.y===0)bulletT=0;return 1;}
+function bulletScale(d){if(human&&+S.setSlow&&typeof setPhase==='function'&&setPhase(human))return +S.setSlow===2?.4:.6;
+  if(!S.slow||!human||state!=='play'||human.y<=.2){if(human&&human.y===0)bulletT=0;return 1;}
   if(!human.swingReq)return 1;const dd=Math.hypot(ball.x-human.x,ball.y-human.y-HANDUP,ball.z-human.z);if(dd<2.6&&bulletT<.4){bulletT+=d;return .6;}return 1;}
 const PF={sim:0,ren:0,hud:0,n:0,worst:0};
 const DRS={k:1,t:0};

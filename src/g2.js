@@ -118,7 +118,7 @@ function touch(p,z,intent){
   const wasAtk=fresh&&(ball.atk||ball.serve),heavy=fresh&&ball.heavy,v=Math.hypot(ball.vx,ball.vy,ball.vz);
   if(fresh){ball.touches=0;ball.setInfo=null;ball.setter=null;ball.quickMB=null;}
   ball.touches++;if(ball.touches>3){fault(1-t,'四次擊球');return;}
-  ball.serial=++SERIAL;ball.lastTeam=t;ball.lastP=p;ball.blockTouch=false;ball.cool=.2;ball.letGo=null;if(ball.touches===1)ball.passSer=ball.serial;
+  ball.serial=++SERIAL;ball.lastTeam=t;ball.lastP=p;ball.blockTouch=false;ball.cool=.2;ball.letGo=null;if(ball.touches===1){ball.passSer=ball.serial;if(human&&human.team===t&&human.setPick&&human.setPick.s===-1)human.setPick.s=ball.serial;}
   ball.serve=false;ball.atk=false;ball.heavy=false;ball.float=0;ball.tip=false;
   p.touchFx=.8;p.touchN=String(ball.touches);
   if(wasAtk)q*=clamp(1.15-(v-13)/26+p.st.rcv*.025,.3,1);
@@ -145,7 +145,7 @@ function doPass(p,q,wasAtk){
   const t=p.team,sdt=sd(t),err=(1-q)*2.6;
   // 一傳自動送向舉球手現在的位置
   const st=team(t).find(x=>x.role==='set'&&x!==p&&x.stun<=0),ss=st&&Math.abs(st.x)<3.2?{d:clamp(Math.abs(st.x),.6,2.4),z:clamp(st.z,-M.wid+.6,M.wid-.6)}:SPOT.set.a;
-  let tx=sdt*Math.max(.5,ss.d+(rnd()-.3)*err*.85),tz=ss.z+(rnd()-.5)*err*1.6,apex=2.85+(1-q)*.5;
+  let tx=sdt*Math.max(.5,ss.d+(rnd()-.3)*err*.85),tz=ss.z+(rnd()-.5)*err*1.6,apex=2.85+(1-q)*.5;if(st&&st.human)apex+=1.2; // 玩家舉球：一傳傳高，多一點判斷時間
   if(q<.2&&rnd()<.35){tx=sd(1-t)*(1+rnd()*2);say('一傳直接過網！','#a9b0cc');}
   lobTo(tx,0,clamp(tz,-M.wid+.3,M.wid-.3),apex);ball.passQ=q;SFX.hit();cloud(ball.x,ball.y,ball.z);
   const mb=team(t).find(x=>x.role==='mb'&&!x.human&&x!==p&&x.stun<=0);if(mb&&q>.6&&rnd()<.35)ball.quickMB=mb;

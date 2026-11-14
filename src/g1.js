@@ -44,7 +44,7 @@ const DIFF={easy:{miss:1.5,blk:.45,spd:.9,q:-.1,read:.6,err:1.4},normal:{miss:1,
 const LINES={call:['我的！','我來！','交給我！'],spike:['喝！','看招！'],block:['擋下來！'],dive:['嘿呀！'],win:['好球！','讚！'],lose:['抱歉！','下一球！']};
 
 // ---------------- 2 設定・聲音・按鍵 ----------------
-let S=Object.assign({pace:.85,diff:'normal',win:25,sound:1,shake:1,hint:1,traj:1,cam:0,gfx:1,sens:1,slow:0},load('fb-set',{}));
+let S=Object.assign({pace:.85,diff:'normal',win:25,sound:1,shake:1,hint:1,traj:1,cam:0,gfx:1,sens:1,slow:0,setSlow:1},load('fb-set',{}));
 if(!S.fbUI){S.traj=0;S.hint=0;S.fbUI=1;}if(S.tell===undefined)S.tell=1;
 const D=()=>DIFF[S.diff]||DIFF.normal;
 function saveS(){store('fb-set',S);}
