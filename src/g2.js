@@ -145,7 +145,7 @@ function doPass(p,q,wasAtk){
   const t=p.team,sdt=sd(t),err=(1-q)*2.6;
   // 一傳自動送向舉球手現在的位置
   const st=team(t).find(x=>x.role==='set'&&x!==p&&x.stun<=0),ss=st&&Math.abs(st.x)<3.2?{d:clamp(Math.abs(st.x),.6,2.4),z:clamp(st.z,-M.wid+.6,M.wid-.6)}:SPOT.set.a;
-  let tx=sdt*Math.max(.5,ss.d+(rnd()-.3)*err*.85),tz=ss.z+(rnd()-.5)*err*1.6,apex=2.85+(1-q)*.5;if(st&&st.human)apex+=1.2; // 玩家舉球：一傳傳高，多一點判斷時間
+  let tx=sdt*Math.max(.5,ss.d+(rnd()-.3)*err*.85),tz=ss.z+(rnd()-.5)*err*1.6,apex=2.85+(1-q)*.5;if(st&&st.human)apex+=1.9; // 玩家舉球：一傳傳高，多一點判斷時間
   if(q<.2&&rnd()<.35){tx=sd(1-t)*(1+rnd()*2);say('一傳直接過網！','#a9b0cc');}
   lobTo(tx,0,clamp(tz,-M.wid+.3,M.wid-.3),apex);ball.passQ=q;SFX.hit();cloud(ball.x,ball.y,ball.z);
   const mb=team(t).find(x=>x.role==='mb'&&!x.human&&x!==p&&x.stun<=0);if(mb&&q>.6&&rnd()<.35)ball.quickMB=mb;
@@ -162,7 +162,8 @@ function setTypeStep(p,k){const i=SET_TYPES.indexOf(p.setType||'auto');p.setType
 // 實際會托出的方式（一傳太差時快攻、平快做不出來，改托修正高球）
 function setTypeFor(p,h){let t=p.setType||'auto';const pq=ball.passQ??.7;
   if(t==='auto')t=pq<.35?'safe':h.role==='mb'&&pq>.45?'quick':'high';
-  else if((t==='quick'&&pq<.45)||(t==='fast'&&pq<.3))t='safe';
+  else if(t==='quick'&&h.role!=='mb')t='fast'; // 快攻只有中間手打得到；左右攻選快攻自動改托平快（邊線低快球）
+  if((t==='quick'&&pq<.45)||(t==='fast'&&pq<.3))t='safe';
   return t;}
 function setPhase(p){return state==='play'&&ball&&ball.setter===p&&ball.touches===1&&ball.lastTeam===p.team;}
 // 玩家舉球的目標：鏡頭（準星）方向最接近的攻手；中間快攻在空中時直接托快攻
