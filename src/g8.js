@@ -104,7 +104,7 @@ function skFrame(dt){if(!SKX.rend||$('vSkin').hidden)return;const c=$('skView'),
   p.ready=m==='ready';p.charging=false;p.y=0;p.vy=0;p.swing=0;p.pose='';p.vx=0;p.vz=m==='run'?5.5:0;
   if(m==='spike'){const tt=k-.4;if(tt>0&&tt<1.1){p.y=Math.max(0,4.6*tt-7*tt*tt);p.vy=4.6-14*tt;if(tt<.5)p.charging=true,p.power=tt*2;else{p.pose='spike';p.swing=.3;}}else if(tt<=0&&tt>-.2)p.loadT=.1;}
   if(m==='bump'&&k>.8&&k<1.3){p.pose='bump';p.swing=.3;}
-  p.oy=p.y;p.tread=1;const st=state;state='menu';try{poseRig(p,SKX.rig,dt);}catch(e){}state=st;p.vz=0;if(p.loadT>0)p.loadT=0;
+  p.oy=p.y;const st=state;state='menu';try{poseRig(p,SKX.rig,dt);}catch(e){}state=st;p.vz=0;if(p.loadT>0)p.loadT=0;
   SKX.rend.render(SKX.sc,SKX.cam);}
 $('mSkin').onclick=openSkin;
 loadSkins();
