@@ -34,10 +34,10 @@ function updateCamera(dt){
     // 鏡頭方向立即跟滑鼠，只有位置（跳起來、換動作）用很快的平滑，看起來不會卡也不會晃
     // 得分後鏡頭不轉、不移動，停在得分那一刻的位置看大家慶祝
     const ptCam=state==='point';
-    if(ptCam)camS.ptEnd=time;
-    // 得分結束、回到發球站位時，鏡頭位置和方向都用 1 秒慢慢滑過去，不會一下子跳走
-    if(!ptCam){const tr=time-(camS.ptEnd??-9)<1.2,kp=1-Math.exp(-dt*(tr?3.5:12));_P.set(_T.x-fx*cs.d,Math.max(.35,_T.y-fy*cs.d),_T.z-fz*cs.d);camS.p.lerp(_P,kp);
-      _L.set(camS.p.x+fx*10,camS.p.y+fy*10,camS.p.z+fz*10);if(tr)camS.l.lerp(_L,1-Math.exp(-dt*4));else camS.l.copy(_L);}
+    // 得分結束（畫面全黑時）鏡頭直接換到發球位置，不滑動
+    if(ptCam)camS.wasPt=true;
+    if(!ptCam){_P.set(_T.x-fx*cs.d,Math.max(.35,_T.y-fy*cs.d),_T.z-fz*cs.d);if(camS.wasPt){camS.p.copy(_P);camS.wasPt=false;camS.fadeIn=true;}else camS.p.lerp(_P,1-Math.exp(-dt*12));
+      _L.set(camS.p.x+fx*10,camS.p.y+fy*10,camS.p.z+fz*10);camS.l.copy(_L);}
     // 得分：鏡頭甩過球網，從高空俯看落點，3 秒後甩回發球位置（甩動時加動態模糊）
     if(false){const L=lastLand,side=sd(h.team),a=(stT-.3)*.12;
       // 影片：鏡頭移到網柱旁邊、約 5 公尺高，斜斜往下看網前的球員
@@ -116,6 +116,9 @@ function drawHUD(){
   const dpr=Math.min(devicePixelRatio||1,1.5),cw=innerWidth,ch=innerHeight;
   if(hudC.width!==Math.round(cw*dpr)||hudC.height!==Math.round(ch*dpr)){hudC.width=Math.round(cw*dpr);hudC.height=Math.round(ch*dpr);}
   const g=hctx;g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,cw,ch);
+  // 得分換場：得分約 2.5 秒後畫面淡到全黑（0.35 秒），黑畫面時鏡頭直接換到發球位置，再淡入（0.45 秒）
+  {const fa=state==='point'?clamp((stT-2.55)/.35,0,1):state==='serve'&&camS.fadeIn?1-clamp((stT-.08)/.45,0,1):0;if(state==='serve'&&fa<=0)camS.fadeIn=false;
+    if(fa>0){g.fillStyle=`rgba(4,6,10,${fa})`;g.fillRect(0,0,cw,ch);}}
   if(flash>0){g.fillStyle=`rgba(255,255,255,${flash*1.5})`;g.fillRect(0,0,cw,ch);}
   if(state==='menu'||state==='over'||!ball)return;
   const sc=clamp(cw/1280,.7,1.3);
