@@ -264,3 +264,43 @@ $('accFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';cons
   try{const db=await accIdb();await new Promise((ok,no)=>{const t=db.transaction('acc','readwrite');t.objectStore('acc').put({id:aid,name:f.name,data});t.oncomplete=ok;t.onerror=()=>no(t.error);});}catch(err){skMsg('瀏覽器儲存空間不夠',true);return;}
   const A=accOf(id);A.glb.push({id:aid,name:f.name.replace(/\.glb$/i,'').slice(0,24),bone:'Head',p:[0,.26,0],r:[0,0,0],s:1});accChanged();accPanel();skMsg('配件加上去了，用下面的滑桿調位置與大小');};
 accLoadGlbs();
+
+// ---------------- 選角：每個球員綁一個外觀，賽前畫面看 3D 樣貌、頭像與能力值 ----------------
+const CHAR_SKIN={go:'b-shino',ryu:'b-dshibu',kenta:'b-shibu',taiki:'b-girl',sho:'b-vita',ren:'b-twist',misaki:'b-hair',shan:'b-seed',fu:'b-fumi',momo:'b-vivi',yukina:'b-vic',ming:'b-girl'};
+if((prep.skinInit|0)<4){ROLES.forEach(r=>{const s=CHAR_SKIN[prep.chars[r]];if(s)prep.skins[r]=s;});prep.skinInit=4;savePrep();}
+// 選了某個球員：場上的外觀換成他的樣貌
+function pickChar(r,cid){prep.chars[r]=cid;if(CHAR_SKIN[cid])prep.skins[r]=CHAR_SKIN[cid];savePrep();}
+const PV={rend:null,sc:null,cam:null,rig:null,p:null,role:null,cid:null,orbit:0,drag:null,thumbs:{},tq:[],tT:0,rt:null};
+function pvInit(){if(PV.rend||!renderer)return;const c=$('pView');try{PV.rend=new TH.WebGLRenderer({canvas:c,antialias:true});}catch(e){return;}
+  PV.rend.setPixelRatio(Math.min(devicePixelRatio||1,1.5));PV.sc=new TH.Scene();PV.sc.background=new TH.Color('#12303a');
+  PV.sc.add(new TH.HemisphereLight('#f2f8ff','#3a5a5c',.85));const dl=new TH.DirectionalLight('#fff',.6);dl.position.set(2,5,3);PV.sc.add(dl);
+  const fl=new TH.Mesh(new TH.CircleGeometry(1.3,40),new TH.MeshLambertMaterial({color:'#bf5c2c'}));fl.rotation.x=-Math.PI/2;PV.sc.add(fl);PV.fl=fl;
+  PV.cam=new TH.PerspectiveCamera(36,1,.05,50);PV.rt=new TH.WebGLRenderTarget(160,160);
+  c.addEventListener('pointerdown',e=>{PV.drag=e.clientX;c.setPointerCapture(e.pointerId);});c.addEventListener('pointermove',e=>{if(PV.drag!==null){PV.orbit-=(e.clientX-PV.drag)*.01;PV.drag=e.clientX;}});
+  c.addEventListener('pointerup',()=>PV.drag=null);}
+function pvSkinOf(r,cid){return(cid===prep.chars[r]&&prep.skins[r])||CHAR_SKIN[cid]||'__none';}
+function pvMakeP(r,cid){const p=mkP(ME||0,r,charOf(r,cid),false);p.x=p.z=p.y=p.ox=p.oz=p.oy=0;p.yaw=p.oyaw=0;p.skinId=pvSkinOf(r,cid);p.num=[4,1,7,3][ROLES.indexOf(r)]+(ME?8:0);return p;}
+function pvShow(r,cid){pvInit();PV.role=r;PV.cid=cid;const c=charOf(r,cid);
+  $('pvInfo').innerHTML=`<div class="pvN"><b></b><span></span></div><div class="pvR"></div><div class="pvT"></div><div class="stats">${statBars(c.st)}</div>`;
+  $('pvInfo').querySelector('b').textContent=c.name;$('pvInfo').querySelector('.pvN span').textContent=c.type;
+  $('pvInfo').querySelector('.pvR').textContent=`${ROLE[r].name}${r===prep.role?'・你操控':''}${PV.sc?'':'（這個瀏覽器無法顯示 3D）'}`;$('pvInfo').querySelector('.pvT').textContent=c.note;
+  pvRig();}
+function pvRig(){if(!PV.sc)return;if(PV.rig)PV.sc.remove(PV.rig.g);PV.rig=null;if(!PV.role)return;PV.p=pvMakeP(PV.role,PV.cid);PV.rig=buildRig(PV.p,PV.sc);PV.rig.aura.visible=false;}
+function pvPose(p,R,dt){p.ready=false;p.charging=false;p.y=0;p.vy=0;p.swing=0;p.pose='';p.vx=0;p.vz=0;p.oy=0;const st=state;state='menu';try{poseRig(p,R,dt);}catch(e){}state=st;}
+// 頭像：用同一個畫布在 160×160 的畫面外渲染、讀回像素
+function pvThumb(r,cid){const sid=CHAR_SKIN[cid];if(!PV.sc||!sid||!SKINS[sid]||!SKINS[sid].gltf)return false;
+  const p=pvMakeP(r,cid);p.skinId=sid;const R=buildRig(p,PV.sc);R.aura.visible=false;if(PV.rig)PV.rig.g.visible=false;PV.fl.visible=false;
+  for(let i=0;i<20;i++)pvPose(p,R,1/30);R.g.updateMatrixWorld(true);const hp=new TH.Vector3();(R.glb&&R.glb.B.Head?R.glb.B.Head:R.g).getWorldPosition(hp);
+  const cam=new TH.PerspectiveCamera(30,1,.05,20);cam.position.set(.18,hp.y+.12,1.05);cam.lookAt(0,hp.y+.06,0);
+  PV.rend.setRenderTarget(PV.rt);PV.rend.render(PV.sc,cam);const px=new Uint8Array(160*160*4);PV.rend.readRenderTargetPixels(PV.rt,0,0,160,160,px);PV.rend.setRenderTarget(null);
+  PV.sc.remove(R.g);if(PV.rig)PV.rig.g.visible=true;PV.fl.visible=true;
+  const cv=document.createElement('canvas');cv.width=cv.height=160;const g=cv.getContext('2d'),im=g.createImageData(160,160);
+  for(let y=0;y<160;y++)im.data.set(px.subarray((159-y)*640,(160-y)*640),y*640);g.putImageData(im,0,0);
+  PV.thumbs[cid]=cv.toDataURL('image/jpeg',.88);document.querySelectorAll(`img[data-th="${cid}"]`).forEach(img=>{img.src=PV.thumbs[cid];img.hidden=false;const sw=img.nextElementSibling;if(sw&&sw.classList.contains('sw'))sw.hidden=true;});return true;}
+function pvFrame(dt){if(!PV.rend||$('vPrep').hidden)return;const c=$('pView'),w=c.clientWidth,h=c.clientHeight;if(!w)return;
+  if(PV.rend._w!==w||PV.rend._h!==h){PV.rend._w=w;PV.rend._h=h;PV.rend.setSize(w,h,false);PV.cam.aspect=w/h;PV.cam.updateProjectionMatrix();}
+  // 頭像一次做一張（模型還沒載好的晚點再試）
+  PV.tT-=dt;if(PV.tT<=0){PV.tT=.12;const need=ROLES.flatMap(r=>CHARS[r].map(c=>[r,c.id])).filter(([r,id])=>!PV.thumbs[id]);for(const [r,id] of need){if(pvThumb(r,id))break;}}
+  if(PV.rig&&PV.p&&PV.p.skinId!=='__none'&&SKINS[PV.p.skinId]&&!PV.rig.glb)pvRig();   // 模型剛載好
+  if(!PV.rig)return;if(PV.drag===null)PV.orbit+=dt*.35;
+  const nar=w/h<.8,dd=nar?4.4:3.4;PV.cam.position.set(Math.sin(PV.orbit)*dd,1.3,Math.cos(PV.orbit)*dd);PV.cam.lookAt(0,.95,0);pvPose(PV.p,PV.rig,dt);PV.rend.render(PV.sc,PV.cam);}

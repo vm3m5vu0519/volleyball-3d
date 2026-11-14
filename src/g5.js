@@ -93,7 +93,8 @@ function render(dt){
       tellM.position.set((sx+tx)/2,.025,(sz+tz)/2);tellM.rotation.set(-Math.PI/2,0,0);tellM.rotation.y=Math.atan2(dx,dz)+Math.PI;tellM.scale.set(hh.plan.k==='tip'?.7:1.1,L,1);
       tellM.material.opacity=.1+.25*k;tellD.position.set(tx,.026,tz);tellD.scale.setScalar(hh.plan.k==='tip'?.9:1.3);tellD.material.opacity=.06+.14*k;}}
   let showL=false;
-  if(vis&&state==='play'&&S.hint){const L=predict(0);if(L){const mine=Math.sign(L.x)===sd(ME),out=Math.abs(L.x)>M.half+BR||Math.abs(L.z)>M.wid+BR,you=ball.call[ME]===human&&mine;
+  const spH=human&&setPhase(human);   // 舉球時一定標出球到頭上的位置
+  if(vis&&state==='play'&&(S.hint||spH)){const L=spH?predict(OVERY):predict(0);if(L){const mine=Math.sign(L.x)===sd(ME),out=!spH&&(Math.abs(L.x)>M.half+BR||Math.abs(L.z)>M.wid+BR),you=spH||ball.call[ME]===human&&mine;
     if(mine||S.hint==2){showL=true;const col=out?'#a6adc2':you?'#ffe14d':mine?'#ff6b7f':'#ffffff',r=.85+Math.min(L.t,1.5)*.6,pl=.7+.3*Math.sin(time*14),op=mine?1:.6;
       for(const m of [ring,disc,ring2])m.position.set(L.x,.03,L.z);ring.scale.setScalar(r);disc.scale.setScalar(r);ring2.scale.setScalar(r*1.08);ring.rotation.z=time*2.2;ring2.rotation.z=-time*1.4;
       ring.material.color.set(col);disc.material.color.set(col);ring2.material.color.set(col);ring.material.opacity=op*pl;ring2.material.opacity=.85*op;
@@ -131,6 +132,12 @@ function drawHUD(){
   // 3) 對方攻手頭上的標記：白色圓圈加向下箭頭（看得出球會給誰打，好準備攔網）
   if(state==='play'&&ball.lastTeam===1-ME&&ball.touches===2&&ball.setInfo&&ball.setInfo.hitter){const hh=ball.setInfo.hitter,q=proj(lerp(hh.ox,hh.x,ALPHA),hh.y+2.55,lerp(hh.oz,hh.z,ALPHA),cw,ch);
     if(q.ok)pinMark(g,q.x,q.y,13*sc);}
+  // 3b) 你是舉球手、這一球該你舉：準星對準的攻手頭上黃色標記，下方提示
+  if(human&&setPhase(human)){const h=setTarget(human);if(h){const q=proj(lerp(h.ox,h.x,ALPHA),h.y+2.55,lerp(h.oz,h.z,ALPHA),cw,ch);
+      if(q.ok){pinMark(g,q.x,q.y,15*sc);
+        g.save();g.strokeStyle='rgba(255,222,60,.95)';g.lineWidth=3*sc;g.beginPath();g.arc(q.x,q.y-15*sc*1.9,15*sc*1.35,0,7);g.stroke();g.restore();}
+      const tip=`托給：${h.ch.name}（${ROLE[h.role].name}${h.role==='mb'&&ball.passQ>.45?'・快攻':''}）　${k1('atk')} 舉球　${k1('tip')} 二次吊球　按住 ${k1('rcv')} 墊球舉`;
+      g.font=`700 ${14*sc}px "Noto Sans TC",sans-serif`;const tw=g.measureText(tip).width+30;rr(g,cw/2-tw/2,ch*.78,tw,32*sc,16,'rgba(8,22,30,.78)');T2(g,tip,cw/2,ch*.78+16*sc,14*sc,'#ffe46b');}}
   // 4) 比分：上方中間兩塊斜切的隊伍色牌子，只有數字
   {const w=76*sc,h=28*sc,y=6,cx=cw/2,sl=9*sc,panel=(x0,dir,col,txt)=>{g.beginPath();if(dir<0){g.moveTo(x0-w,y);g.lineTo(x0,y);g.lineTo(x0,y+h);g.lineTo(x0-w+sl,y+h);}else{g.moveTo(x0,y);g.lineTo(x0+w,y);g.lineTo(x0+w-sl,y+h);g.lineTo(x0,y+h);}g.closePath();
       const gr=g.createLinearGradient(x0+dir*w,y,x0,y);gr.addColorStop(0,col+'55');gr.addColorStop(1,col+'ee');g.fillStyle=gr;g.fill();T2(g,txt,x0+dir*w*.5,y+h/2+1,18*sc,'#fff');};
@@ -159,8 +166,10 @@ function mineToHit(){if(!human)return false;
   if(state!=='play')return false;
   if(ball.lastTeam!==ME&&ball.call[ME]===human){const L=predict(BUMPY);return !!L&&L.t<1.1;}
   if(ball.lastTeam===ME&&ball.touches===2&&ball.setInfo&&ball.setInfo.hitter===human)return true;
+  if(setPhase(human))return true;
   return false;}
 function hitWindow(){if(state==='serve')return ball.toss&&Math.abs(ball.y-(human.y+HANDUP+.15))<.6;
+  if(setPhase(human)){const L=predict(OVERY);return !!L&&L.t<.4&&Math.hypot(L.x-human.x,L.z-human.z)<1.3;}
   if(human.y>.15){const d=Math.hypot(ball.x-human.x,ball.y-human.y-HANDUP,ball.z-human.z);return d<1.2;}
   const L=predict(BUMPY);return !!L&&L.t<.35&&Math.hypot(L.x-human.x,L.z-human.z)<1.4;}
 function pinMark(g,x,y,r){g.save();g.shadowColor='rgba(255,255,255,.8)';g.shadowBlur=6;g.strokeStyle='rgba(255,255,255,.95)';g.lineWidth=r*.28;g.beginPath();g.arc(x,y-r*1.9,r,0,7);g.stroke();
@@ -211,21 +220,23 @@ function press(box,v){box.querySelectorAll('[data-v]').forEach(b=>b.setAttribute
 function renderPrep(){
   const side=$('pSide');side.querySelectorAll('.pill').forEach(b=>b.onclick=()=>{prep.side=+b.dataset.v;savePrep();renderPrep();});press(side,String(prep.side));
   const rb=$('pRole');rb.innerHTML=PLAYABLE.map(r=>`<button class="pill" data-v="${r}">${ROLE[r].name}</button>`).join('');
-  rb.querySelectorAll('.pill').forEach(b=>b.onclick=()=>{prep.role=b.dataset.v;savePrep();renderPrep();});press(rb,prep.role);
+  rb.querySelectorAll('.pill').forEach(b=>b.onclick=()=>{prep.role=b.dataset.v;savePrep();PV.role=null;renderPrep();});press(rb,prep.role);
   const box=$('pChars');box.innerHTML='';
   ROLES.forEach(r=>{const line=document.createElement('div');line.className='line';
     line.innerHTML=`<div class="lbl">${ROLE[r].name}${r===prep.role?'<small>你</small>':'<small style="color:var(--dim)">隊友</small>'}</div><div class="cards"></div>`;
     const cards=line.querySelector('.cards');
-    CHARS[r].forEach(c=>{const b=document.createElement('button');b.className='cc';b.dataset.v=c.id;
-      b.innerHTML=`<div class="top"><span class="sw" style="background:${c.hair}"></span><div><div class="nm">${c.name}</div><div class="ty">${c.type}</div></div></div><div class="nt">${c.note}</div><div class="stats">${statBars(c.st)}</div>`;
-      b.onclick=()=>{prep.chars[r]=c.id;savePrep();press(cards,c.id);};cards.appendChild(b);});
+    CHARS[r].forEach(c=>{const b=document.createElement('button');b.className='cc';b.dataset.v=c.id;const th=PV.thumbs[c.id];
+      b.innerHTML=`<div class="top"><img class="th" data-th="${c.id}" alt="" ${th?`src="${th}"`:'hidden'}><span class="sw" style="background:${c.hair}" ${th?'hidden':''}></span><div><div class="nm">${c.name}</div><div class="ty">${c.type}</div></div></div><div class="nt">${c.note}</div><div class="stats">${statBars(c.st)}</div>`;
+      b.onclick=()=>{pickChar(r,c.id);press(cards,c.id);pvShow(r,c.id);};cards.appendChild(b);});
     press(cards,prep.chars[r]);box.appendChild(line);});
+  if(!PV.role||!$('pChars').contains(document.activeElement))pvShow(prep.role,prep.chars[prep.role]);
 }
 $('pGo').onclick=()=>{show(null);newGame();g3.focus();try{const r=g3.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}};
 function renderHelp(){
   const K=a=>`<kbd>${k1(a)}</kbd>`,air='<i>空中</i>',hold='<i>按住</i>';
   const G=[{t:'移動與鏡頭',rows:[['滑鼠','轉鏡頭（點一下畫面鎖定游標）'],[`${K('fwd')}${K('left')}${K('back')}${K('right')}`,'往鏡頭方向跑'],[K('jump'),'跳；往網前跑幾步再跳＝助跑，跳更高、打更重'],[K('cam'),'切換鏡頭：動作視角／固定視角／轉播']]},
    {t:'進攻',sub:'球托給你時',rows:[[`${K('jump')} → ${air}${K('atk')}`,'扣球：按下去就一定打得到，在跳躍最高點出手最強'],['準星','畫面中央的準星指到哪裡，球就往哪裡打'],[`${air}${K('tip')}`,'輕打：把球輕輕推到準星位置'],[K('call'),'叫球：要舉球手托給你']]},
+   {t:'舉球',sub:'你選舉球手時，隊友一傳後輪到你',rows:[['黃圈','地上的黃圈是球落到頭上的位置，跑過去'],['準星','對準要托給的攻手（頭上出現黃色標記）'],[K('atk'),'舉球（差一點會自動跨一步）；托給中間快攻時是快攻'],[K('tip'),'二次吊球：直接把球推過網'],[`${hold}${K('rcv')}`,'墊球舉：比較保險，但沒那麼準']]},
    {t:'接球・防守',rows:[[`${hold}${K('rcv')}`,'接球姿勢：球掉進手臂就自動墊給舉球手'],[`<i>跑動中</i>${K('rcv')}`,'球太遠時飛撲'],[`<i>網前</i>${K('block')}`,'攔網：對方攻手起跳時按，原地起跳、手自動舉高、會往球的位置橫移']]},
    {t:'發球',sub:'輪到你發球時',rows:[[K('atk'),'拋球，球到手上方再按一次'],[`${hold}${K('mod')}＋${K('atk')}`,'跳發：快又重'],['準星','發球落點']]},
    {t:'其他',rows:[[K('pause'),'暫停（Esc 也會放開滑鼠）']]}];
@@ -251,7 +262,7 @@ function loop(ts){const now=ts/1000;if(!last)last=now;const d=Math.min(.1,now-la
   if(!paused&&hitstop>0){hitstop-=d;ALPHA=1;}
   else if(!paused){let sim=d*bulletScale(d)*(inMatch()?(+S.pace||.85):1);if(slowT>0){slowT-=d;sim=d*.3;}acc+=sim;let n=0;while(acc>=STEP&&n<6){snap();update(STEP);acc-=STEP;n++;}if(n===6)acc=0;ALPHA=clamp(acc/STEP,0,1);}
   else{clearHits();ALPHA=1;}
-  const t1=performance.now();render(paused?0:d);mcFrame(d);skFrame(d);const t2=performance.now();drawHUD();const t3=performance.now();
+  const t1=performance.now();render(paused?0:d);mcFrame(d);skFrame(d);pvFrame(d);const t2=performance.now();drawHUD();const t3=performance.now();
   PF.sim+=t1-t0;PF.ren+=t2-t1;PF.hud+=t3-t2;PF.n++;PF.worst=Math.max(PF.worst,t3-t0);requestAnimationFrame(loop);}
 function b64buf(s){const bin=atob(s),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u.buffer;}
 function loadModel(){if(!window.GLB_B64||!TH.GLTFLoader)return;try{new TH.GLTFLoader().parse(b64buf(window.GLB_B64),'',g=>{GLBSRC=g;rebuildRigs();},e=>console.warn('GLB 載入失敗',e));}catch(e){console.warn(e);}}

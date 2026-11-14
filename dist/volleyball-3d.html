@@ -53,6 +53,13 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .cc[aria-pressed="true"]{background:var(--panel2);box-shadow:0 0 0 3px var(--gold)}
 .cc .top{display:flex;gap:10px;align-items:center}
 .cc .sw{width:28px;height:28px;border:1px solid rgba(255,255,255,.2);flex:none}
+.cc .th{width:56px;height:56px;flex:none;border-radius:6px;background:#12303a;object-fit:cover;border:1px solid rgba(255,255,255,.18)}
+.prepGrid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}@media (max-width:900px){.prepGrid{grid-template-columns:1fr}}
+.pvBox{position:sticky;top:10px;display:flex;flex-direction:column;gap:10px;padding:10px;border:1px solid rgba(255,255,255,.14);border-radius:10px;background:#0c1a24}
+#pView{width:100%;height:360px;display:block;border-radius:8px;touch-action:none;cursor:grab}
+@media (max-width:900px){.pvBox{order:-1;top:0;z-index:5;flex-direction:row;align-items:stretch;gap:10px;padding:8px}#pView{height:190px;width:44%;flex:none}#pvInfo{flex:1;min-width:0}#pvInfo .pvN b{font-size:18px}#pvInfo .pvT{margin:2px 0 4px;font-size:12px}#pvInfo .stats{font-size:11px;gap:2px 6px}#pvInfo .stats i{height:7px}}
+#pvInfo .pvN{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}#pvInfo .pvN b{font-size:22px}#pvInfo .pvN span{color:var(--gold);font-size:14px}#pvInfo .pvR{font-size:13px;color:var(--dim)}
+#pvInfo .pvT{font-size:14px;color:#c9bde0;margin:4px 0 8px}#pvInfo .stats{font-size:13px;gap:6px 8px}#pvInfo .stats i{height:10px}
 .cc .nm{font-size:16px}.cc .ty{font-size:12px;color:var(--gold)}
 .cc .nt{font-size:12px;color:#c9bde0;line-height:1.4}
 .stats{display:grid;grid-template-columns:2.4em minmax(0,1fr) 1.6em;gap:2px 6px;align-items:center;font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums}
@@ -153,8 +160,10 @@ kbd{color:var(--ink);background:#000;padding:1px 7px;border:2px solid var(--dim)
   <div class="head"><button class="tb" data-go="vMenu">← 主選單</button><h2>賽前準備</h2></div>
   <div class="sec"><h3>隊伍<small>兩邊打起來完全一樣</small></h3>
     <div class="big2" id="pSide"><button class="pill red" data-v="0">紅隊</button><button class="pill blue" data-v="1">藍隊</button></div></div>
-  <div class="sec"><h3>你的位置<small>整場比賽都操控這名球員，舉球手由 AI 負責</small></h3><div class="big2" id="pRole"></div></div>
-  <div class="sec"><h3>陣容<small>每個位置挑一名球員，標「你」的是你操控的人</small></h3><div id="pChars" style="display:flex;flex-direction:column;gap:12px"></div></div>
+  <div class="sec"><h3>你的位置<small>整場比賽都操控這名球員；選舉球手就由你負責第二球</small></h3><div class="big2" id="pRole"></div></div>
+  <div class="sec"><h3>選擇球員<small>點卡片選人，右邊看樣貌和能力；標「你」的是你操控的人</small></h3>
+    <div class="prepGrid"><div id="pChars" style="display:flex;flex-direction:column;gap:12px;min-width:0"></div>
+      <div class="pvBox"><canvas id="pView"></canvas><div id="pvInfo"></div></div></div></div>
   <div class="go"><button class="mb big" id="pGo">開始比賽 ▶</button></div>
 </div></div>
 
@@ -278,11 +287,11 @@ const M={half:9,wid:4.5,per:4};
 // 球用真實重力、不滯空；人在最高點有一點滯空，扣球比較好抓
 const NETH=2.43,G=9.8,PG=14,BR=.105,HANDUP=2.2,BUMPY=.82,OVERY=2.05,PHANGV=1.6,PHANGK=.35;
 const COL=[{shirt:'#ff5a6a',dark:'#5a1020',band:'#fff6d6',ui:'#ff7a8a',name:'紅隊'},{shirt:'#4a8cff',dark:'#14306e',band:'#ffe066',ui:'#7ab0ff',name:'藍隊'}];
-const ROLES=['oh','mb','op','set'],PLAYABLE=['oh','mb','op'];
+const ROLES=['oh','mb','op','set'],PLAYABLE=['oh','mb','op','set'];
 const ROLE={oh:{name:'左攻',short:'左',desc:'左邊網前的主力攻手，舉球手最常托給你'},
   mb:{name:'中間快攻',short:'中',desc:'網中央的快攻和攔網。舉球前先起跳，舉球手就會托快攻給你'},
   op:{name:'右攻',short:'右',desc:'右邊網前的攻手，也負責攔對方的左攻'},
-  set:{name:'舉球手',short:'舉',desc:'由 AI 負責第二球'}};
+  set:{name:'舉球手',short:'舉',desc:'負責第二球：準星對準要托給的攻手，按擊球鍵舉球；吊球鍵二次吊球'}};
 // 站位（d＝離網距離、z＝左右）：r 接發球、a 等托球（助跑起點）、c 掩護、g 防守
 const SPOT={oh:{r:{d:5.2,z:-3},a:{d:3.8,z:-3.3},c:{d:4.8,z:-2.2},g:{d:6.6,z:-2.8}},
   mb:{r:{d:6.0,z:-.4},a:{d:3.2,z:.2},c:{d:3.2,z:0},g:{d:6.8,z:0}},
@@ -504,7 +513,8 @@ function zoneOf(p){
   if(p.dive>0){const r=p.human?1.9:1.6,d=Math.hypot(ball.x-(p.x+fx*.9),ball.z-(p.z+fz*.9));if(d<r&&ball.y<(p.human?1.15:1.0))return{k:'dig',q:clamp(1-d/r,0,1)*.7+.2};return null;}
   if(p.y>.2){const hx=p.x+fx*.3,hz=p.z+fz*.3,hy=p.y+HANDUP+.05,d=Math.hypot(ball.x-hx,ball.z-hz,(ball.y-hy)*.9),r=.65+p.st.jmp*.02;
     if(d<r){const apex=clamp(1-Math.abs(p.vy)/2.4,0,1);return{k:'air',q:clamp(1-d/r,0,1)*.55+apex*.45};}return null;}
-  if(by>1.55&&by<2.7&&hd<.8){const d=Math.hypot(hd,(by-OVERY)*.8);return{k:'over',q:clamp(1-d/.85,0,1)};}
+  if(p.human&&setPhase(p)){if(by>1.25&&by<2.95&&hd<1.2){const d=Math.hypot(hd,(by-OVERY)*.8);return{k:'over',q:clamp(1-d/1.25,0,1)};}}
+  else if(by>1.55&&by<2.7&&hd<.8){const d=Math.hypot(hd,(by-OVERY)*.8);return{k:'over',q:clamp(1-d/.85,0,1)};}
   const rr=.9+p.st.rcv*.035;
   // 快球一幀會飛 0.5 公尺以上：用這一幀球路上離手臂最近的點判定，球不會「穿過」人
   let bx=ball.x,byy=ball.y,bz=ball.z;
@@ -563,8 +573,24 @@ function chooseSetter(t){const tm=team(t).filter(p=>p!==ball.lastP&&p.stun<=0);c
   const ai=tm.filter(p=>!p.human);return ai.length?ai.reduce((a,b)=>dist(a)<dist(b)?a:b):tm[0];}
 // 舉球手決定托給誰：玩家叫球或正在助跑就給玩家；不然看對方攔網站哪邊，往空的那邊托
 const setMemo=[[],[]];
+// 玩家當舉球手：這一球是不是該你舉（隊友一傳後、你被指定為舉球的人）
+function setPhase(p){return state==='play'&&ball&&ball.setter===p&&ball.touches===1&&ball.lastTeam===p.team;}
+// 玩家舉球的目標：鏡頭（準星）方向最接近的攻手；中間快攻在空中時直接托快攻
+function setTarget(p){const cands=team(p.team).filter(x=>x!==p&&x.stun<=0);if(!cands.length)return null;
+  const d=cam.getWorldDirection(new TH.Vector3());d.y=0;if(d.lengthSq()<1e-6)return cands[0];d.normalize();
+  let best=null,bs=-9;for(const c of cands){const a=spot(c,'a'),tx=c.y>.25?c.x:sd(c.team)*a.d,tz=c.y>.25?c.z:a.z,dx=tx-p.x,dz=tz-p.z,l=Math.hypot(dx,dz)||1,s=(dx*d.x+dz*d.z)/l;if(s>bs){bs=s;best=c;}}
+  return best;}
 function doSet(p,q){
-  const t=p.team,sdt=sd(t),cands=team(t).filter(x=>x!==p&&x.stun<=0&&x.role!=='set');
+  const t=p.team,sdt=sd(t),cands=team(t).filter(x=>x!==p&&x.stun<=0&&(x.role!=='set'||p.human));
+  if(p.human&&cands.length){const h=setTarget(p);if(h){
+    if(h.y>.25&&h.vy>-1&&Math.abs(h.x)<2.6){const tA=timeToApex(h),tt=clamp(tA+.12,.42,.75),hy=heightAfter(h,tt)+HANDUP,fx=Math.sin(h.yaw),fz=Math.cos(h.yaw);
+      const e=(1-q)*.5;sendTo(h.x+h.vx*tt+fx*.3+(rnd()-.5)*e,hy,h.z+h.vz*tt+fz*.3+(rnd()-.5)*e,tt);finishSet(p,h,'quick');return;}
+    const type=ball.passQ<.35?'safe':h.role==='mb'&&ball.passQ>.45?'quick':'high';
+    const lane=type==='quick'?{d:.7,z:clamp(spot(h,'a').z,-1,1.2)}:type==='safe'?{d:1.6,z:clamp(h.z,-3,3)}:{d:1.05,z:h.role==='oh'?-3.4:h.role==='op'?3.4:clamp(spot(h,'a').z,-2,2)};
+    const hitY=HANDUP+jumpProf(h,.6).hApex-.1,err=(1-q)*1.5*(1.3-p.st.set*.05)+(1-ball.passQ)*.25;
+    lobTo(sdt*Math.max(.45,lane.d+(rnd()-.5)*err),hitY,lane.z+(rnd()-.5)*err*1.6,Math.max(hitY+.45,type==='quick'?3.25:type==='safe'?4.5:4.0));
+    setMemo[t].push(h.id);if(setMemo[t].length>2)setMemo[t].shift();finishSet(p,h,type);return;}}
+  cands.splice(0,cands.length,...cands.filter(x=>x.role!=='set'));
   if(!cands.length){doOver(p,q);return;}
   const air=cands.filter(x=>x.y>.25&&x.vy>-1&&Math.abs(x.x)<2.6);
   if(air.length){const h=air.find(x=>x.human)||air[0],tA=timeToApex(h),tt=clamp(tA+.12,.42,.75),hy=heightAfter(h,tt)+HANDUP,fx=Math.sin(h.yaw),fz=Math.cos(h.yaw);
@@ -795,7 +821,9 @@ function humanInput(dt){
   if(p.y>0&&!p.hitDone&&(T('atk')||T('tip'))&&!p.swingReq){p.swingReq=T('tip')?'tip':'atk';p.pressLate=ball.vy<0&&ball.y<p.y+HANDUP-.1;p.charging=true;p.chargeT=0;p.prevD=9;
     const c=MOCAP.spike;if(c)playAct(p,'spike',Math.max(0,clipKey(c)-.4),{hold:clipKey(c)-.12});}
   if(p.charging){p.chargeT+=dt;p.power=Math.min(1,p.chargeT/.3);}
-  if(p.y===0&&(T('atk')||T('tip'))){p.arm=T('tip')?'tip':'atk';p.armT=.25;}
+  if(p.y===0&&(T('atk')||T('tip'))){p.arm=T('tip')?'tip':'atk';p.armT=.3;
+    if(setPhase(p)&&!(p.lungeT>0)){const L=predict(OVERY);if(L&&Math.sign(L.x)===sd(p.team)&&L.t<.55&&L.t>.05){const dd=Math.hypot(L.x-p.x,L.z-p.z);
+      if(dd>.35&&dd<2.6){const tt=Math.max(.1,L.t-.04);p.vx=(L.x-p.x)/tt;p.vz=(L.z-p.z)/tt;const v=Math.hypot(p.vx,p.vz);if(v>9){p.vx*=9/v;p.vz*=9/v;}p.lungeT=tt;}}}}
   if(T('rcv')){
     const L=predict(.5),iv=inputVec();
     if(p.y===0&&iv.mag>.5&&p.dive<=0&&p.rec<=0&&tryDive(p))return;
@@ -1738,6 +1766,46 @@ $('accFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';cons
   const A=accOf(id);A.glb.push({id:aid,name:f.name.replace(/\.glb$/i,'').slice(0,24),bone:'Head',p:[0,.26,0],r:[0,0,0],s:1});accChanged();accPanel();skMsg('配件加上去了，用下面的滑桿調位置與大小');};
 accLoadGlbs();
 
+// ---------------- 選角：每個球員綁一個外觀，賽前畫面看 3D 樣貌、頭像與能力值 ----------------
+const CHAR_SKIN={go:'b-shino',ryu:'b-dshibu',kenta:'b-shibu',taiki:'b-girl',sho:'b-vita',ren:'b-twist',misaki:'b-hair',shan:'b-seed',fu:'b-fumi',momo:'b-vivi',yukina:'b-vic',ming:'b-girl'};
+if((prep.skinInit|0)<4){ROLES.forEach(r=>{const s=CHAR_SKIN[prep.chars[r]];if(s)prep.skins[r]=s;});prep.skinInit=4;savePrep();}
+// 選了某個球員：場上的外觀換成他的樣貌
+function pickChar(r,cid){prep.chars[r]=cid;if(CHAR_SKIN[cid])prep.skins[r]=CHAR_SKIN[cid];savePrep();}
+const PV={rend:null,sc:null,cam:null,rig:null,p:null,role:null,cid:null,orbit:0,drag:null,thumbs:{},tq:[],tT:0,rt:null};
+function pvInit(){if(PV.rend||!renderer)return;const c=$('pView');try{PV.rend=new TH.WebGLRenderer({canvas:c,antialias:true});}catch(e){return;}
+  PV.rend.setPixelRatio(Math.min(devicePixelRatio||1,1.5));PV.sc=new TH.Scene();PV.sc.background=new TH.Color('#12303a');
+  PV.sc.add(new TH.HemisphereLight('#f2f8ff','#3a5a5c',.85));const dl=new TH.DirectionalLight('#fff',.6);dl.position.set(2,5,3);PV.sc.add(dl);
+  const fl=new TH.Mesh(new TH.CircleGeometry(1.3,40),new TH.MeshLambertMaterial({color:'#bf5c2c'}));fl.rotation.x=-Math.PI/2;PV.sc.add(fl);PV.fl=fl;
+  PV.cam=new TH.PerspectiveCamera(36,1,.05,50);PV.rt=new TH.WebGLRenderTarget(160,160);
+  c.addEventListener('pointerdown',e=>{PV.drag=e.clientX;c.setPointerCapture(e.pointerId);});c.addEventListener('pointermove',e=>{if(PV.drag!==null){PV.orbit-=(e.clientX-PV.drag)*.01;PV.drag=e.clientX;}});
+  c.addEventListener('pointerup',()=>PV.drag=null);}
+function pvSkinOf(r,cid){return(cid===prep.chars[r]&&prep.skins[r])||CHAR_SKIN[cid]||'__none';}
+function pvMakeP(r,cid){const p=mkP(ME||0,r,charOf(r,cid),false);p.x=p.z=p.y=p.ox=p.oz=p.oy=0;p.yaw=p.oyaw=0;p.skinId=pvSkinOf(r,cid);p.num=[4,1,7,3][ROLES.indexOf(r)]+(ME?8:0);return p;}
+function pvShow(r,cid){pvInit();PV.role=r;PV.cid=cid;const c=charOf(r,cid);
+  $('pvInfo').innerHTML=`<div class="pvN"><b></b><span></span></div><div class="pvR"></div><div class="pvT"></div><div class="stats">${statBars(c.st)}</div>`;
+  $('pvInfo').querySelector('b').textContent=c.name;$('pvInfo').querySelector('.pvN span').textContent=c.type;
+  $('pvInfo').querySelector('.pvR').textContent=`${ROLE[r].name}${r===prep.role?'・你操控':''}${PV.sc?'':'（這個瀏覽器無法顯示 3D）'}`;$('pvInfo').querySelector('.pvT').textContent=c.note;
+  pvRig();}
+function pvRig(){if(!PV.sc)return;if(PV.rig)PV.sc.remove(PV.rig.g);PV.rig=null;if(!PV.role)return;PV.p=pvMakeP(PV.role,PV.cid);PV.rig=buildRig(PV.p,PV.sc);PV.rig.aura.visible=false;}
+function pvPose(p,R,dt){p.ready=false;p.charging=false;p.y=0;p.vy=0;p.swing=0;p.pose='';p.vx=0;p.vz=0;p.oy=0;const st=state;state='menu';try{poseRig(p,R,dt);}catch(e){}state=st;}
+// 頭像：用同一個畫布在 160×160 的畫面外渲染、讀回像素
+function pvThumb(r,cid){const sid=CHAR_SKIN[cid];if(!PV.sc||!sid||!SKINS[sid]||!SKINS[sid].gltf)return false;
+  const p=pvMakeP(r,cid);p.skinId=sid;const R=buildRig(p,PV.sc);R.aura.visible=false;if(PV.rig)PV.rig.g.visible=false;PV.fl.visible=false;
+  for(let i=0;i<20;i++)pvPose(p,R,1/30);R.g.updateMatrixWorld(true);const hp=new TH.Vector3();(R.glb&&R.glb.B.Head?R.glb.B.Head:R.g).getWorldPosition(hp);
+  const cam=new TH.PerspectiveCamera(30,1,.05,20);cam.position.set(.18,hp.y+.12,1.05);cam.lookAt(0,hp.y+.06,0);
+  PV.rend.setRenderTarget(PV.rt);PV.rend.render(PV.sc,cam);const px=new Uint8Array(160*160*4);PV.rend.readRenderTargetPixels(PV.rt,0,0,160,160,px);PV.rend.setRenderTarget(null);
+  PV.sc.remove(R.g);if(PV.rig)PV.rig.g.visible=true;PV.fl.visible=true;
+  const cv=document.createElement('canvas');cv.width=cv.height=160;const g=cv.getContext('2d'),im=g.createImageData(160,160);
+  for(let y=0;y<160;y++)im.data.set(px.subarray((159-y)*640,(160-y)*640),y*640);g.putImageData(im,0,0);
+  PV.thumbs[cid]=cv.toDataURL('image/jpeg',.88);document.querySelectorAll(`img[data-th="${cid}"]`).forEach(img=>{img.src=PV.thumbs[cid];img.hidden=false;const sw=img.nextElementSibling;if(sw&&sw.classList.contains('sw'))sw.hidden=true;});return true;}
+function pvFrame(dt){if(!PV.rend||$('vPrep').hidden)return;const c=$('pView'),w=c.clientWidth,h=c.clientHeight;if(!w)return;
+  if(PV.rend._w!==w||PV.rend._h!==h){PV.rend._w=w;PV.rend._h=h;PV.rend.setSize(w,h,false);PV.cam.aspect=w/h;PV.cam.updateProjectionMatrix();}
+  // 頭像一次做一張（模型還沒載好的晚點再試）
+  PV.tT-=dt;if(PV.tT<=0){PV.tT=.12;const need=ROLES.flatMap(r=>CHARS[r].map(c=>[r,c.id])).filter(([r,id])=>!PV.thumbs[id]);for(const [r,id] of need){if(pvThumb(r,id))break;}}
+  if(PV.rig&&PV.p&&PV.p.skinId!=='__none'&&SKINS[PV.p.skinId]&&!PV.rig.glb)pvRig();   // 模型剛載好
+  if(!PV.rig)return;if(PV.drag===null)PV.orbit+=dt*.35;
+  const nar=w/h<.8,dd=nar?4.4:3.4;PV.cam.position.set(Math.sin(PV.orbit)*dd,1.3,Math.cos(PV.orbit)*dd);PV.cam.lookAt(0,.95,0);pvPose(PV.p,PV.rig,dt);PV.rend.render(PV.sc,PV.cam);}
+
 // ---------------- VRM 附加功能：搖擺骨（頭髮、尾巴）與節點約束（輔助骨、機械手臂） ----------------
 // 沒有這些，VRM 角色的頭髮會僵住、有些配件會停在 T 字姿勢。演算法照 VRM 規格（VRMC_springBone、VRMC_node_constraint、VRM0 secondaryAnimation）。
 function tagNodes(g){const as=g.parser&&g.parser.associations;if(!as)return;g.scene.traverse(o=>{const a=as.get(o);if(a&&a.type==='nodes'&&a.index!=null)o.userData.ni=a.index;});}
@@ -2088,7 +2156,8 @@ function render(dt){
       tellM.position.set((sx+tx)/2,.025,(sz+tz)/2);tellM.rotation.set(-Math.PI/2,0,0);tellM.rotation.y=Math.atan2(dx,dz)+Math.PI;tellM.scale.set(hh.plan.k==='tip'?.7:1.1,L,1);
       tellM.material.opacity=.1+.25*k;tellD.position.set(tx,.026,tz);tellD.scale.setScalar(hh.plan.k==='tip'?.9:1.3);tellD.material.opacity=.06+.14*k;}}
   let showL=false;
-  if(vis&&state==='play'&&S.hint){const L=predict(0);if(L){const mine=Math.sign(L.x)===sd(ME),out=Math.abs(L.x)>M.half+BR||Math.abs(L.z)>M.wid+BR,you=ball.call[ME]===human&&mine;
+  const spH=human&&setPhase(human);   // 舉球時一定標出球到頭上的位置
+  if(vis&&state==='play'&&(S.hint||spH)){const L=spH?predict(OVERY):predict(0);if(L){const mine=Math.sign(L.x)===sd(ME),out=!spH&&(Math.abs(L.x)>M.half+BR||Math.abs(L.z)>M.wid+BR),you=spH||ball.call[ME]===human&&mine;
     if(mine||S.hint==2){showL=true;const col=out?'#a6adc2':you?'#ffe14d':mine?'#ff6b7f':'#ffffff',r=.85+Math.min(L.t,1.5)*.6,pl=.7+.3*Math.sin(time*14),op=mine?1:.6;
       for(const m of [ring,disc,ring2])m.position.set(L.x,.03,L.z);ring.scale.setScalar(r);disc.scale.setScalar(r);ring2.scale.setScalar(r*1.08);ring.rotation.z=time*2.2;ring2.rotation.z=-time*1.4;
       ring.material.color.set(col);disc.material.color.set(col);ring2.material.color.set(col);ring.material.opacity=op*pl;ring2.material.opacity=.85*op;
@@ -2126,6 +2195,12 @@ function drawHUD(){
   // 3) 對方攻手頭上的標記：白色圓圈加向下箭頭（看得出球會給誰打，好準備攔網）
   if(state==='play'&&ball.lastTeam===1-ME&&ball.touches===2&&ball.setInfo&&ball.setInfo.hitter){const hh=ball.setInfo.hitter,q=proj(lerp(hh.ox,hh.x,ALPHA),hh.y+2.55,lerp(hh.oz,hh.z,ALPHA),cw,ch);
     if(q.ok)pinMark(g,q.x,q.y,13*sc);}
+  // 3b) 你是舉球手、這一球該你舉：準星對準的攻手頭上黃色標記，下方提示
+  if(human&&setPhase(human)){const h=setTarget(human);if(h){const q=proj(lerp(h.ox,h.x,ALPHA),h.y+2.55,lerp(h.oz,h.z,ALPHA),cw,ch);
+      if(q.ok){pinMark(g,q.x,q.y,15*sc);
+        g.save();g.strokeStyle='rgba(255,222,60,.95)';g.lineWidth=3*sc;g.beginPath();g.arc(q.x,q.y-15*sc*1.9,15*sc*1.35,0,7);g.stroke();g.restore();}
+      const tip=`托給：${h.ch.name}（${ROLE[h.role].name}${h.role==='mb'&&ball.passQ>.45?'・快攻':''}）　${k1('atk')} 舉球　${k1('tip')} 二次吊球　按住 ${k1('rcv')} 墊球舉`;
+      g.font=`700 ${14*sc}px "Noto Sans TC",sans-serif`;const tw=g.measureText(tip).width+30;rr(g,cw/2-tw/2,ch*.78,tw,32*sc,16,'rgba(8,22,30,.78)');T2(g,tip,cw/2,ch*.78+16*sc,14*sc,'#ffe46b');}}
   // 4) 比分：上方中間兩塊斜切的隊伍色牌子，只有數字
   {const w=76*sc,h=28*sc,y=6,cx=cw/2,sl=9*sc,panel=(x0,dir,col,txt)=>{g.beginPath();if(dir<0){g.moveTo(x0-w,y);g.lineTo(x0,y);g.lineTo(x0,y+h);g.lineTo(x0-w+sl,y+h);}else{g.moveTo(x0,y);g.lineTo(x0+w,y);g.lineTo(x0+w-sl,y+h);g.lineTo(x0,y+h);}g.closePath();
       const gr=g.createLinearGradient(x0+dir*w,y,x0,y);gr.addColorStop(0,col+'55');gr.addColorStop(1,col+'ee');g.fillStyle=gr;g.fill();T2(g,txt,x0+dir*w*.5,y+h/2+1,18*sc,'#fff');};
@@ -2154,8 +2229,10 @@ function mineToHit(){if(!human)return false;
   if(state!=='play')return false;
   if(ball.lastTeam!==ME&&ball.call[ME]===human){const L=predict(BUMPY);return !!L&&L.t<1.1;}
   if(ball.lastTeam===ME&&ball.touches===2&&ball.setInfo&&ball.setInfo.hitter===human)return true;
+  if(setPhase(human))return true;
   return false;}
 function hitWindow(){if(state==='serve')return ball.toss&&Math.abs(ball.y-(human.y+HANDUP+.15))<.6;
+  if(setPhase(human)){const L=predict(OVERY);return !!L&&L.t<.4&&Math.hypot(L.x-human.x,L.z-human.z)<1.3;}
   if(human.y>.15){const d=Math.hypot(ball.x-human.x,ball.y-human.y-HANDUP,ball.z-human.z);return d<1.2;}
   const L=predict(BUMPY);return !!L&&L.t<.35&&Math.hypot(L.x-human.x,L.z-human.z)<1.4;}
 function pinMark(g,x,y,r){g.save();g.shadowColor='rgba(255,255,255,.8)';g.shadowBlur=6;g.strokeStyle='rgba(255,255,255,.95)';g.lineWidth=r*.28;g.beginPath();g.arc(x,y-r*1.9,r,0,7);g.stroke();
@@ -2206,21 +2283,23 @@ function press(box,v){box.querySelectorAll('[data-v]').forEach(b=>b.setAttribute
 function renderPrep(){
   const side=$('pSide');side.querySelectorAll('.pill').forEach(b=>b.onclick=()=>{prep.side=+b.dataset.v;savePrep();renderPrep();});press(side,String(prep.side));
   const rb=$('pRole');rb.innerHTML=PLAYABLE.map(r=>`<button class="pill" data-v="${r}">${ROLE[r].name}</button>`).join('');
-  rb.querySelectorAll('.pill').forEach(b=>b.onclick=()=>{prep.role=b.dataset.v;savePrep();renderPrep();});press(rb,prep.role);
+  rb.querySelectorAll('.pill').forEach(b=>b.onclick=()=>{prep.role=b.dataset.v;savePrep();PV.role=null;renderPrep();});press(rb,prep.role);
   const box=$('pChars');box.innerHTML='';
   ROLES.forEach(r=>{const line=document.createElement('div');line.className='line';
     line.innerHTML=`<div class="lbl">${ROLE[r].name}${r===prep.role?'<small>你</small>':'<small style="color:var(--dim)">隊友</small>'}</div><div class="cards"></div>`;
     const cards=line.querySelector('.cards');
-    CHARS[r].forEach(c=>{const b=document.createElement('button');b.className='cc';b.dataset.v=c.id;
-      b.innerHTML=`<div class="top"><span class="sw" style="background:${c.hair}"></span><div><div class="nm">${c.name}</div><div class="ty">${c.type}</div></div></div><div class="nt">${c.note}</div><div class="stats">${statBars(c.st)}</div>`;
-      b.onclick=()=>{prep.chars[r]=c.id;savePrep();press(cards,c.id);};cards.appendChild(b);});
+    CHARS[r].forEach(c=>{const b=document.createElement('button');b.className='cc';b.dataset.v=c.id;const th=PV.thumbs[c.id];
+      b.innerHTML=`<div class="top"><img class="th" data-th="${c.id}" alt="" ${th?`src="${th}"`:'hidden'}><span class="sw" style="background:${c.hair}" ${th?'hidden':''}></span><div><div class="nm">${c.name}</div><div class="ty">${c.type}</div></div></div><div class="nt">${c.note}</div><div class="stats">${statBars(c.st)}</div>`;
+      b.onclick=()=>{pickChar(r,c.id);press(cards,c.id);pvShow(r,c.id);};cards.appendChild(b);});
     press(cards,prep.chars[r]);box.appendChild(line);});
+  if(!PV.role||!$('pChars').contains(document.activeElement))pvShow(prep.role,prep.chars[prep.role]);
 }
 $('pGo').onclick=()=>{show(null);newGame();g3.focus();try{const r=g3.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}};
 function renderHelp(){
   const K=a=>`<kbd>${k1(a)}</kbd>`,air='<i>空中</i>',hold='<i>按住</i>';
   const G=[{t:'移動與鏡頭',rows:[['滑鼠','轉鏡頭（點一下畫面鎖定游標）'],[`${K('fwd')}${K('left')}${K('back')}${K('right')}`,'往鏡頭方向跑'],[K('jump'),'跳；往網前跑幾步再跳＝助跑，跳更高、打更重'],[K('cam'),'切換鏡頭：動作視角／固定視角／轉播']]},
    {t:'進攻',sub:'球托給你時',rows:[[`${K('jump')} → ${air}${K('atk')}`,'扣球：按下去就一定打得到，在跳躍最高點出手最強'],['準星','畫面中央的準星指到哪裡，球就往哪裡打'],[`${air}${K('tip')}`,'輕打：把球輕輕推到準星位置'],[K('call'),'叫球：要舉球手托給你']]},
+   {t:'舉球',sub:'你選舉球手時，隊友一傳後輪到你',rows:[['黃圈','地上的黃圈是球落到頭上的位置，跑過去'],['準星','對準要托給的攻手（頭上出現黃色標記）'],[K('atk'),'舉球（差一點會自動跨一步）；托給中間快攻時是快攻'],[K('tip'),'二次吊球：直接把球推過網'],[`${hold}${K('rcv')}`,'墊球舉：比較保險，但沒那麼準']]},
    {t:'接球・防守',rows:[[`${hold}${K('rcv')}`,'接球姿勢：球掉進手臂就自動墊給舉球手'],[`<i>跑動中</i>${K('rcv')}`,'球太遠時飛撲'],[`<i>網前</i>${K('block')}`,'攔網：對方攻手起跳時按，原地起跳、手自動舉高、會往球的位置橫移']]},
    {t:'發球',sub:'輪到你發球時',rows:[[K('atk'),'拋球，球到手上方再按一次'],[`${hold}${K('mod')}＋${K('atk')}`,'跳發：快又重'],['準星','發球落點']]},
    {t:'其他',rows:[[K('pause'),'暫停（Esc 也會放開滑鼠）']]}];
@@ -2246,7 +2325,7 @@ function loop(ts){const now=ts/1000;if(!last)last=now;const d=Math.min(.1,now-la
   if(!paused&&hitstop>0){hitstop-=d;ALPHA=1;}
   else if(!paused){let sim=d*bulletScale(d)*(inMatch()?(+S.pace||.85):1);if(slowT>0){slowT-=d;sim=d*.3;}acc+=sim;let n=0;while(acc>=STEP&&n<6){snap();update(STEP);acc-=STEP;n++;}if(n===6)acc=0;ALPHA=clamp(acc/STEP,0,1);}
   else{clearHits();ALPHA=1;}
-  const t1=performance.now();render(paused?0:d);mcFrame(d);skFrame(d);const t2=performance.now();drawHUD();const t3=performance.now();
+  const t1=performance.now();render(paused?0:d);mcFrame(d);skFrame(d);pvFrame(d);const t2=performance.now();drawHUD();const t3=performance.now();
   PF.sim+=t1-t0;PF.ren+=t2-t1;PF.hud+=t3-t2;PF.n++;PF.worst=Math.max(PF.worst,t3-t0);requestAnimationFrame(loop);}
 function b64buf(s){const bin=atob(s),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u.buffer;}
 function loadModel(){if(!window.GLB_B64||!TH.GLTFLoader)return;try{new TH.GLTFLoader().parse(b64buf(window.GLB_B64),'',g=>{GLBSRC=g;rebuildRigs();},e=>console.warn('GLB 載入失敗',e));}catch(e){console.warn(e);}}

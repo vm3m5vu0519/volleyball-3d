@@ -95,7 +95,8 @@ function zoneOf(p){
   if(p.dive>0){const r=p.human?1.9:1.6,d=Math.hypot(ball.x-(p.x+fx*.9),ball.z-(p.z+fz*.9));if(d<r&&ball.y<(p.human?1.15:1.0))return{k:'dig',q:clamp(1-d/r,0,1)*.7+.2};return null;}
   if(p.y>.2){const hx=p.x+fx*.3,hz=p.z+fz*.3,hy=p.y+HANDUP+.05,d=Math.hypot(ball.x-hx,ball.z-hz,(ball.y-hy)*.9),r=.65+p.st.jmp*.02;
     if(d<r){const apex=clamp(1-Math.abs(p.vy)/2.4,0,1);return{k:'air',q:clamp(1-d/r,0,1)*.55+apex*.45};}return null;}
-  if(by>1.55&&by<2.7&&hd<.8){const d=Math.hypot(hd,(by-OVERY)*.8);return{k:'over',q:clamp(1-d/.85,0,1)};}
+  if(p.human&&setPhase(p)){if(by>1.25&&by<2.95&&hd<1.2){const d=Math.hypot(hd,(by-OVERY)*.8);return{k:'over',q:clamp(1-d/1.25,0,1)};}}
+  else if(by>1.55&&by<2.7&&hd<.8){const d=Math.hypot(hd,(by-OVERY)*.8);return{k:'over',q:clamp(1-d/.85,0,1)};}
   const rr=.9+p.st.rcv*.035;
   // 快球一幀會飛 0.5 公尺以上：用這一幀球路上離手臂最近的點判定，球不會「穿過」人
   let bx=ball.x,byy=ball.y,bz=ball.z;
@@ -154,8 +155,24 @@ function chooseSetter(t){const tm=team(t).filter(p=>p!==ball.lastP&&p.stun<=0);c
   const ai=tm.filter(p=>!p.human);return ai.length?ai.reduce((a,b)=>dist(a)<dist(b)?a:b):tm[0];}
 // 舉球手決定托給誰：玩家叫球或正在助跑就給玩家；不然看對方攔網站哪邊，往空的那邊托
 const setMemo=[[],[]];
+// 玩家當舉球手：這一球是不是該你舉（隊友一傳後、你被指定為舉球的人）
+function setPhase(p){return state==='play'&&ball&&ball.setter===p&&ball.touches===1&&ball.lastTeam===p.team;}
+// 玩家舉球的目標：鏡頭（準星）方向最接近的攻手；中間快攻在空中時直接托快攻
+function setTarget(p){const cands=team(p.team).filter(x=>x!==p&&x.stun<=0);if(!cands.length)return null;
+  const d=cam.getWorldDirection(new TH.Vector3());d.y=0;if(d.lengthSq()<1e-6)return cands[0];d.normalize();
+  let best=null,bs=-9;for(const c of cands){const a=spot(c,'a'),tx=c.y>.25?c.x:sd(c.team)*a.d,tz=c.y>.25?c.z:a.z,dx=tx-p.x,dz=tz-p.z,l=Math.hypot(dx,dz)||1,s=(dx*d.x+dz*d.z)/l;if(s>bs){bs=s;best=c;}}
+  return best;}
 function doSet(p,q){
-  const t=p.team,sdt=sd(t),cands=team(t).filter(x=>x!==p&&x.stun<=0&&x.role!=='set');
+  const t=p.team,sdt=sd(t),cands=team(t).filter(x=>x!==p&&x.stun<=0&&(x.role!=='set'||p.human));
+  if(p.human&&cands.length){const h=setTarget(p);if(h){
+    if(h.y>.25&&h.vy>-1&&Math.abs(h.x)<2.6){const tA=timeToApex(h),tt=clamp(tA+.12,.42,.75),hy=heightAfter(h,tt)+HANDUP,fx=Math.sin(h.yaw),fz=Math.cos(h.yaw);
+      const e=(1-q)*.5;sendTo(h.x+h.vx*tt+fx*.3+(rnd()-.5)*e,hy,h.z+h.vz*tt+fz*.3+(rnd()-.5)*e,tt);finishSet(p,h,'quick');return;}
+    const type=ball.passQ<.35?'safe':h.role==='mb'&&ball.passQ>.45?'quick':'high';
+    const lane=type==='quick'?{d:.7,z:clamp(spot(h,'a').z,-1,1.2)}:type==='safe'?{d:1.6,z:clamp(h.z,-3,3)}:{d:1.05,z:h.role==='oh'?-3.4:h.role==='op'?3.4:clamp(spot(h,'a').z,-2,2)};
+    const hitY=HANDUP+jumpProf(h,.6).hApex-.1,err=(1-q)*1.5*(1.3-p.st.set*.05)+(1-ball.passQ)*.25;
+    lobTo(sdt*Math.max(.45,lane.d+(rnd()-.5)*err),hitY,lane.z+(rnd()-.5)*err*1.6,Math.max(hitY+.45,type==='quick'?3.25:type==='safe'?4.5:4.0));
+    setMemo[t].push(h.id);if(setMemo[t].length>2)setMemo[t].shift();finishSet(p,h,type);return;}}
+  cands.splice(0,cands.length,...cands.filter(x=>x.role!=='set'));
   if(!cands.length){doOver(p,q);return;}
   const air=cands.filter(x=>x.y>.25&&x.vy>-1&&Math.abs(x.x)<2.6);
   if(air.length){const h=air.find(x=>x.human)||air[0],tA=timeToApex(h),tt=clamp(tA+.12,.42,.75),hy=heightAfter(h,tt)+HANDUP,fx=Math.sin(h.yaw),fz=Math.cos(h.yaw);

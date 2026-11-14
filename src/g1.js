@@ -16,11 +16,11 @@ const M={half:9,wid:4.5,per:4};
 // 球用真實重力、不滯空；人在最高點有一點滯空，扣球比較好抓
 const NETH=2.43,G=9.8,PG=14,BR=.105,HANDUP=2.2,BUMPY=.82,OVERY=2.05,PHANGV=1.6,PHANGK=.35;
 const COL=[{shirt:'#ff5a6a',dark:'#5a1020',band:'#fff6d6',ui:'#ff7a8a',name:'紅隊'},{shirt:'#4a8cff',dark:'#14306e',band:'#ffe066',ui:'#7ab0ff',name:'藍隊'}];
-const ROLES=['oh','mb','op','set'],PLAYABLE=['oh','mb','op'];
+const ROLES=['oh','mb','op','set'],PLAYABLE=['oh','mb','op','set'];
 const ROLE={oh:{name:'左攻',short:'左',desc:'左邊網前的主力攻手，舉球手最常托給你'},
   mb:{name:'中間快攻',short:'中',desc:'網中央的快攻和攔網。舉球前先起跳，舉球手就會托快攻給你'},
   op:{name:'右攻',short:'右',desc:'右邊網前的攻手，也負責攔對方的左攻'},
-  set:{name:'舉球手',short:'舉',desc:'由 AI 負責第二球'}};
+  set:{name:'舉球手',short:'舉',desc:'負責第二球：準星對準要托給的攻手，按擊球鍵舉球；吊球鍵二次吊球'}};
 // 站位（d＝離網距離、z＝左右）：r 接發球、a 等托球（助跑起點）、c 掩護、g 防守
 const SPOT={oh:{r:{d:5.2,z:-3},a:{d:3.8,z:-3.3},c:{d:4.8,z:-2.2},g:{d:6.6,z:-2.8}},
   mb:{r:{d:6.0,z:-.4},a:{d:3.2,z:.2},c:{d:3.2,z:0},g:{d:6.8,z:0}},
