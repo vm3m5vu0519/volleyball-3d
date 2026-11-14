@@ -239,7 +239,8 @@ function attachGLB(R,p,hair){
     if(tb){const ch=tb.children.find(c=>c.isBone);if(ch){const op=tb.getWorldPosition(new TH.Vector3()),d=ch.getWorldPosition(new TH.Vector3()).sub(op);d.addScaledVector(nw,-d.dot(nw)).normalize();
       const ang=Math.atan2(new TH.Vector3().crossVectors(d,fw).dot(nw),d.dot(fw));adj.push({b:tb,ax:nw.clone().transformDirection(new TH.Matrix4().copy(tb.matrixWorld).invert()),ang:ang*.75});}}
     nl.addScaledVector(fl,-nl.dot(fl)).normalize();hand[sd_]={fl,nl,adj};});
-  R.glb={m,B,J,legMid,fing,hand};if(sk)R.glb.vx=vrmSetup(R,m,src);R.simple.forEach(o=>o.visible=false);return true;}
+  R.glb={m,B,J,legMid,fing,hand};
+  if(sk){try{accAttach(R,p,sk,m,COL[p.team].shirt);}catch(e){console.warn('配件',e);}}if(sk)R.glb.vx=vrmSetup(R,m,src);R.simple.forEach(o=>o.visible=false);return true;}
 const RT={q1:new TH.Quaternion(),q2:new TH.Quaternion(),q3:new TH.Quaternion(),f0:new TH.Quaternion(),f1:new TH.Quaternion(),rq:new TH.Quaternion(),
   a0:new TH.Vector3(),l0:new TH.Vector3(),d:new TH.Vector3(),x:new TH.Vector3(),y:new TH.Vector3(),z:new TH.Vector3(),m:new TH.Matrix4(),w:new TH.Vector3(),mid:new TH.Vector3()};
 const PK=['hips','neck','spine','Ls','Rs','Le','Re','Lw','Rw','Lt','Rt','Lh','Rh','Lk','Rk','La','Ra','Lo','Ro','hipX','chestX','hLA','hRA','hLL','hRL'];

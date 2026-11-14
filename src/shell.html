@@ -109,6 +109,12 @@ kbd{color:var(--ink);background:#000;padding:1px 7px;border:2px solid var(--dim)
 .skName{flex:1;min-width:0;text-align:left;display:flex;flex-direction:column;gap:2px;padding:8px 12px;border:1px solid rgba(255,255,255,.14);border-radius:8px;background:var(--panel2)}
 .skName b{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.skName small{font-size:12px;color:var(--dim)}.skName:disabled{opacity:.7;cursor:default}
 .skAssign{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}@media (max-width:520px){.skAssign{grid-template-columns:1fr}}
+.accGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:6px 0 10px}@media (max-width:520px){.accGrid{grid-template-columns:1fr}}
+.accRow{display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid rgba(255,255,255,.14);border-radius:8px;background:var(--panel2);font-size:15px;cursor:pointer}
+.accRow.on{box-shadow:0 0 0 2px var(--gold)}.accRow span{flex:1}.accRow input[type=color]{width:34px;height:26px;border:0;background:none;padding:0;cursor:pointer}
+.accImp{border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:8px 10px;margin-top:8px;display:flex;flex-direction:column;gap:4px}
+.accImpH{display:flex;gap:8px;align-items:center}.accImpH b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.accSl{display:grid;grid-template-columns:44px 1fr;gap:8px;align-items:center;font-size:13px;color:var(--dim)}
 .skAs{display:flex;flex-direction:column;gap:6px;font-size:15px}.skAs small{display:block;font-size:12px;color:var(--dim)}
 .skAs select{font:inherit;font-size:14px;color:var(--ink);background:var(--panel2);border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:6px 8px;min-width:0}
 .mcGrid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px;align-items:start}
@@ -167,6 +173,7 @@ kbd{color:var(--ink);background:#000;padding:1px 7px;border:2px solid var(--dim)
         <p class="sub" id="skMsg" aria-live="polite"></p></div>
       <div class="sec"><h3>2. 我的角色<small>點名字可以預覽</small></h3><div id="skList" class="skList"></div></div>
       <div class="sec"><h3>3. 套用到球員<small>只換我方隊伍</small></h3><div id="skAssign" class="skAssign"></div></div>
+      <div class="sec"><h3>4. 服飾與配件<small>勾選、換顏色，或匯入自己的 GLB 配件</small></h3><div id="skAcc"></div><input type="file" id="accFile" accept=".glb" hidden></div>
       <div class="sec"><h3>模型從哪裡來？</h3>
         <p class="sub"><b>VRoid Studio</b>（免費）：捏好角色後「匯出 VRM」，直接上傳。VRoid Hub 上標示可下載的角色也能用（請遵守作者的使用條款）。<br>
         <b>Mixamo</b>（免費）：上傳你的模型讓它自動綁骨架，下載 FBX 後用 Blender 匯出成 GLB。<br>
