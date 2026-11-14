@@ -603,7 +603,7 @@ function doSet(p,q){
     // 各攻擊方式：高球＝高、攻手助跑完整；平快＝低平快、攔網來不及，準度要求高；快攻＝托在舉球手身邊、攻手第一時間打
     const side=h.role==='oh'?-3.4:h.role==='op'?3.4:clamp(spot(h,'a').z,-2,2);
     const lane=type==='quick'?{d:.7,z:h.role==='mb'?clamp(spot(h,'a').z,-1,1.2):clamp(p.z+Math.sign(side-p.z||1)*1.3,-M.wid+.6,M.wid-.6)}:
-      type==='safe'?{d:1.6,z:clamp(h.z,-3,3)}:type==='fast'?{d:.85,z:side*.95}:{d:1.05,z:side};
+      type==='safe'?{d:1.6,z:clamp(h.z,-3,3)}:type==='fast'?{d:1.0,z:side*.92}:{d:1.05,z:side};
     const hitY=HANDUP+jumpProf(h,.6).hApex-.1,ek={high:1,safe:.9,fast:1.35,quick:1.5}[type],err=((1-q)*1.5*(1.3-p.st.set*.05)+(1-ball.passQ)*.25)*ek;
     lobTo(sdt*Math.max(.45,lane.d+(rnd()-.5)*err),hitY,lane.z+(rnd()-.5)*err*1.6,Math.max(hitY+.45,{quick:3.2,fast:3.45,safe:4.5,high:4.0}[type]));
     setMemo[t].push(h.id);if(setMemo[t].length>2)setMemo[t].shift();finishSet(p,h,type);return;}}
@@ -724,7 +724,8 @@ function brain(t){
     if(tc===1){const st=chooseSetter(t);ball.setter=st;const Ls=predict(OVERY);
       ai.forEach(p=>{if(p===st){if(Ls)go(p,Math.max(.4,Math.abs(Ls.x)+.12),Ls.z);}
         else if(p===ball.quickMB){go(p,.8,.25);const J=jumpProf(p,.4);if(Ls&&p.y===0&&Ls.t<J.tApex-.04&&Math.hypot(p.x-sdt*.8,p.z-.25)<1){p.vx=p.vz=0;doJump(p,false,.4);planAtk(p);}}
-        else{const s=spot(p,'a');go(p,s.d,s.z);}});}
+        // 玩家舉球選了平快：左右攻提早往前站（平快飛行時間短，從後場助跑會來不及）
+        else{const s=spot(p,'a'),fastW=st===human&&human.human&&(p.role==='oh'||p.role==='op')&&(human.setType==='fast'||human.setType==='quick');go(p,fastW?Math.min(s.d,2.5):s.d,s.z);}});}
     else if(tc===2){const h=ball.setInfo&&ball.setInfo.hitter;
       ai.forEach(p=>{if(p!==h){const s=spot(p,'c');go(p,s.d,s.z);}});
       // 攻手助跑：先退到起跳點後面，時間到了往網前衝、在對的時機起跳
@@ -733,7 +734,7 @@ function brain(t){
         if(Lh&&Math.sign(Lh.x)===sdt){const sx=Math.abs(Lh.x)+.3,lead=Lh.t-J.tApex;
           if(lead>.55)go(h,sx+1.8,Lh.z);else{go(h,sx,Lh.z);h.approach=true;h.run=Math.max(h.run,.7);}
           const dist=Math.hypot(h.x-sdt*sx,h.z-Lh.z);
-          if(dist<.7&&lead<=.04&&lead>-.2){doJump(h,true,.7);planAtk(h);}}}}
+          if(dist<(ball.setInfo&&ball.setInfo.type==='fast'?1.1:.7)&&lead<=.04&&lead>-.2){doJump(h,true,.7);planAtk(h);}}}}
     else ai.forEach(p=>{const s=spot(p,'r');go(p,s.d,s.z);});
   }}
 // AI 攻手起跳時就決定要打哪裡（身體會轉向那邊，玩家可以預判）

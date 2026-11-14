@@ -182,7 +182,7 @@ function doSet(p,q){
     // 各攻擊方式：高球＝高、攻手助跑完整；平快＝低平快、攔網來不及，準度要求高；快攻＝托在舉球手身邊、攻手第一時間打
     const side=h.role==='oh'?-3.4:h.role==='op'?3.4:clamp(spot(h,'a').z,-2,2);
     const lane=type==='quick'?{d:.7,z:h.role==='mb'?clamp(spot(h,'a').z,-1,1.2):clamp(p.z+Math.sign(side-p.z||1)*1.3,-M.wid+.6,M.wid-.6)}:
-      type==='safe'?{d:1.6,z:clamp(h.z,-3,3)}:type==='fast'?{d:.85,z:side*.95}:{d:1.05,z:side};
+      type==='safe'?{d:1.6,z:clamp(h.z,-3,3)}:type==='fast'?{d:1.0,z:side*.92}:{d:1.05,z:side};
     const hitY=HANDUP+jumpProf(h,.6).hApex-.1,ek={high:1,safe:.9,fast:1.35,quick:1.5}[type],err=((1-q)*1.5*(1.3-p.st.set*.05)+(1-ball.passQ)*.25)*ek;
     lobTo(sdt*Math.max(.45,lane.d+(rnd()-.5)*err),hitY,lane.z+(rnd()-.5)*err*1.6,Math.max(hitY+.45,{quick:3.2,fast:3.45,safe:4.5,high:4.0}[type]));
     setMemo[t].push(h.id);if(setMemo[t].length>2)setMemo[t].shift();finishSet(p,h,type);return;}}

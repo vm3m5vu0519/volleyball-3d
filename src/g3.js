@@ -39,7 +39,8 @@ function brain(t){
     if(tc===1){const st=chooseSetter(t);ball.setter=st;const Ls=predict(OVERY);
       ai.forEach(p=>{if(p===st){if(Ls)go(p,Math.max(.4,Math.abs(Ls.x)+.12),Ls.z);}
         else if(p===ball.quickMB){go(p,.8,.25);const J=jumpProf(p,.4);if(Ls&&p.y===0&&Ls.t<J.tApex-.04&&Math.hypot(p.x-sdt*.8,p.z-.25)<1){p.vx=p.vz=0;doJump(p,false,.4);planAtk(p);}}
-        else{const s=spot(p,'a');go(p,s.d,s.z);}});}
+        // 玩家舉球選了平快：左右攻提早往前站（平快飛行時間短，從後場助跑會來不及）
+        else{const s=spot(p,'a'),fastW=st===human&&human.human&&(p.role==='oh'||p.role==='op')&&(human.setType==='fast'||human.setType==='quick');go(p,fastW?Math.min(s.d,2.5):s.d,s.z);}});}
     else if(tc===2){const h=ball.setInfo&&ball.setInfo.hitter;
       ai.forEach(p=>{if(p!==h){const s=spot(p,'c');go(p,s.d,s.z);}});
       // 攻手助跑：先退到起跳點後面，時間到了往網前衝、在對的時機起跳
@@ -48,7 +49,7 @@ function brain(t){
         if(Lh&&Math.sign(Lh.x)===sdt){const sx=Math.abs(Lh.x)+.3,lead=Lh.t-J.tApex;
           if(lead>.55)go(h,sx+1.8,Lh.z);else{go(h,sx,Lh.z);h.approach=true;h.run=Math.max(h.run,.7);}
           const dist=Math.hypot(h.x-sdt*sx,h.z-Lh.z);
-          if(dist<.7&&lead<=.04&&lead>-.2){doJump(h,true,.7);planAtk(h);}}}}
+          if(dist<(ball.setInfo&&ball.setInfo.type==='fast'?1.1:.7)&&lead<=.04&&lead>-.2){doJump(h,true,.7);planAtk(h);}}}}
     else ai.forEach(p=>{const s=spot(p,'r');go(p,s.d,s.z);});
   }}
 // AI 攻手起跳時就決定要打哪裡（身體會轉向那邊，玩家可以預判）
