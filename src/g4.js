@@ -296,17 +296,13 @@ function gaitS(a,ph){const n=a.length,x=((ph%1)+1)%1*n,i=Math.floor(x),t=x-i,p0=
   return .5*((2*p1)+(-p0+p2)*t+(2*p0-5*p1+4*p2-p3)*t*t+(-p0+3*p1-3*p2+p3)*t*t*t);}
 const _fq=new TH.Quaternion();
 // 人體關節範圍（弧度）：手肘只能往前彎、膝蓋只能往後彎、肩膀往後最多約 55°、大腿往後最多約 40°
-const JLIM={lzL:[-.6,.12],lzR:[-.12,.6],eL:[-2.5,0],eR:[-2.5,0],kL:[0,2.5],kR:[0,2.5],aLx:[-3.15,.95],aRx:[-3.15,.95],tL:[-2.3,.7],tR:[-2.3,.7],aLz:[-1.3,.75],aRz:[-.75,1.3],sx:[-.45,1.1]};
+const JLIM={eL:[-2.5,0],eR:[-2.5,0],kL:[0,2.5],kR:[0,2.5],aLx:[-3.15,.95],aRx:[-3.15,.95],tL:[-2.3,.7],tR:[-2.3,.7],aLz:[-1.3,.75],aRz:[-.75,1.3],sx:[-.45,1.1]};
 function poseRig(p,R,dt){
   const a=ALPHA,[aL,aR]=R.arms,[gL,gR]=R.legs;
   R.g.position.set(lerp(p.ox,p.x,a),lerp(p.oy,p.y,a),lerp(p.oz,p.z,a));R.g.rotation.y=angLerp(p.oyaw??p.yaw,p.yaw,a);
   const air=p.y>0,sp=Math.hypot(p.vx,p.vz),run=sp>.12&&!air&&p.dive<=0&&p.stun<=0&&p.rec<=0;const strideL=clamp(1.15+.38*sp,1.3,3.8),phrT=2*Math.PI*Math.max(sp,.8)/strideL;R.phr=lerp(R.phr??phrT,phrT,1-Math.exp(-dt*6));R.ph=(R.ph||0)+dt*R.phr;
   R.rwv=lerp(R.rwv??0,run?clamp((sp-.12)/.9,0,1):0,1-Math.exp(-dt*9));const runW=R.rwv,rw=runW*runW*(3-2*runW);   // 起步、停下時從站姿平順混到跑步姿勢
-  const T={pt:0,hy:HIPY,sx:.22,sy:0,tL:-.38,tR:-.38,kL:.75,kR:.75,aLx:-.55,aLz:-.14,aRx:-.55,aRz:.14,eL:-1.15,eR:-1.15,lzL:-.05,lzR:.05};
-  // 比賽中（含等對方發球）站在地上時：排球員的低重心準備姿勢——雙腳比肩寬、大腿往前約 50°、膝蓋彎約 66°、上身前傾、雙手在膝蓋前方
-  // 球在對方場上時膝蓋輕輕上下彈（隨時要起動）。跑起來時由下面的跑步區塊平順混過去
-  if((state==='play'||(state==='serve'&&server!==p))&&p.y<=.01&&!p.ready){const bob=state==='play'&&ball&&Math.sign(ball.x)!==sd(p.team)?Math.sin(time*7+p.x)*.07:0;
-    T.pt=.28;T.sx=.24;T.tL=T.tR=-1.15;T.kL=T.kR=1.15+bob;T.lzL=-.2;T.lzR=.2;T.aLx=T.aRx=-.72;T.eL=T.eR=-1.2;T.aLz=-.06;T.aRz=.06;}
+  const T={pt:0,hy:HIPY,sx:.22,sy:0,tL:-.38,tR:-.38,kL:.75,kR:.75,aLx:-.55,aLz:-.14,aRx:-.55,aRz:.14,eL:-1.15,eR:-1.15};
   if(state==='menu'){T.sx=.05;T.tL=T.tR=-.05;T.kL=T.kR=.1;T.aLx=T.aRx=.05;T.eL=T.eR=-.25;}
   // 得分慶祝（不跳）：贏的一方握拳、雙手舉高、拍手、雙拳收在胸前；輸的一方雙手插腰或手撐膝蓋。每個人錯開一點時間開始
   if(state==='point'&&!air){const i=players.indexOf(p),t=Math.max(0,stT-.12-(i%4)*.09),win=p.team===window.ptWin,pump=.5+.5*Math.sin(t*6.2-1.57),v=i%4;
@@ -323,7 +319,7 @@ function poseRig(p,R,dt){
   // 跑步：直接用真人步伐曲線（慢跑、跑步兩組依速度混合，比資料更快時稍微外插）。上臂大多在身體後方擺動、手肘彎 100–125°、支撐腳膝蓋保持微彎
   if(run||rw>.02){const T0={...T},u=clamp((sp-3.2)/1.0,0,1),ph=R.ph/(2*Math.PI)+.25,g=k=>lerp(gaitS(GAIT.jog[k],ph),gaitS(GAIT.run[k],ph),u);
     const lean=g('lean')*.55;T.pt=lean*.45;T.sx=lean*.55;const tor=T.pt+T.sx;
-    T.tL=-g('thL')-T.pt;T.tR=-g('thR')-T.pt;T.kL=g('kL');T.kR=g('kR');T.lzL=-.04;T.lzR=.04;
+    T.tL=-g('thL')-T.pt;T.tR=-g('thR')-T.pt;T.kL=g('kL');T.kR=g('kR');
     T.aLx=-g('uaL')-tor;T.aRx=-g('uaR')-tor;T.eL=-g('eL');T.eR=-g('eR');T.aLz=-.1;T.aRz=.1;
     const sw=Math.sin(R.ph);T.sy=.1*sw;R.bnc=.03*Math.min(1,sp/4)*sw*sw;
     for(const k in T)if(T0[k]!==undefined)T[k]=lerp(T0[k],T[k],rw);R.bnc*=rw;}else R.bnc=0;
@@ -332,7 +328,7 @@ function poseRig(p,R,dt){
   const hitter=air&&!blk&&ball&&((state==='play'&&(p.human||(ball.setInfo&&ball.setInfo.hitter===p)))||(state==='serve'&&server===p));
   // 接球姿勢：雙腳開、蹲低、手臂伸直在身前
   // 接球姿勢（前臂墊球）：骨盆前傾、背打直往前約 30 度、膝蓋在腳尖上方；雙臂伸直往前下方約 40 度，兩手靠攏成平台
-  if(p.ready&&!air&&!pose){T.lzL=-.26;T.lzR=.26;T.pt=.35;T.tL=T.tR=-1.05-T.pt;T.kL=T.kR=1.45;T.sx=.18;T.aLx=T.aRx=-1.2;T.aLz=.24;T.aRz=-.24;T.eL=T.eR=-.04;}
+  if(p.ready&&!air&&!pose){T.pt=.35;T.tL=T.tR=-1.05-T.pt;T.kL=T.kR=1.45;T.sx=.18;T.aLx=T.aRx=-1.2;T.aLz=.24;T.aRz=-.24;T.eL=T.eR=-.04;}
   // 起跳前蹲：膝蓋深彎、雙臂往後擺
   if(p.loadT>0&&!air){const k=1-p.loadT/.12;T.tL=T.tR=-1.05;T.kL=T.kR=1.7;T.sx=.55;T.aLx=T.aRx=.9+.3*k;T.eL=T.eR=-.15;}
   // 落地緩衝
@@ -388,9 +384,9 @@ function poseRig(p,R,dt){
   for(const k in JLIM)if(C[k]!==undefined){const [a,b]=JLIM[k],v=C[k];if(v>b){const o=v-b;C[k]=b+o/(1+o/.06);}else if(v<a){const o=a-v;C[k]=a-o/(1+o/.06);}}
   Object.assign(R.cp,C);
   const onFeet=!air&&pose!=='dive'&&pose!=='getup'&&pose!=='stun';
-  R.hips.position.y=onFeet?Math.max(legH(C.pt+C.tL,C.kL)*Math.cos(C.lzL||0),legH(C.pt+C.tR,C.kR)*Math.cos(C.lzR||0))+FOOT+.03+(R.bnc||0):(air?HIPY:C.hy);
+  R.hips.position.y=onFeet?Math.max(legH(C.pt+C.tL,C.kL),legH(C.pt+C.tR,C.kR))+FOOT+.03+(R.bnc||0):(air?HIPY:C.hy);
   R.hips.rotation.x=C.pt;R.spine.rotation.set(C.sx,C.sy,0);
-  gL.th.rotation.x=C.tL;gR.th.rotation.x=C.tR;gL.kn.rotation.x=C.kL;gR.kn.rotation.x=C.kR;gL.th.rotation.z=C.lzL||0;gR.th.rotation.z=C.lzR||0;gL.ft.rotation.z=-(C.lzL||0);gR.ft.rotation.z=-(C.lzR||0);
+  gL.th.rotation.x=C.tL;gR.th.rotation.x=C.tR;gL.kn.rotation.x=C.kL;gR.kn.rotation.x=C.kR;
   gL.ft.rotation.x=onFeet?-(C.pt+C.tL+C.kL):.35;gR.ft.rotation.x=onFeet?-(C.pt+C.tR+C.kR):.35;
   aL.sh.rotation.set(C.aLx,0,C.aLz);aR.sh.rotation.set(C.aRx,0,C.aRz);aL.el.rotation.x=C.eL;aR.el.rotation.x=C.eR;
   footLock(p,R,dt,onFeet);
