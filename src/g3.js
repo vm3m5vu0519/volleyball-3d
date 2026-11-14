@@ -46,7 +46,7 @@ function brain(t){
       if(h&&!h.human&&h.stun<=0&&h.y===0){
         const J=jumpProf(h,.7),Lh=predict(HANDUP+J.hApex-.05);
         if(Lh&&Math.sign(Lh.x)===sdt){const sx=Math.abs(Lh.x)+.3,lead=Lh.t-J.tApex;
-          if(lead>.55)go(h,sx+1.8,Lh.z);else{go(h,sx,Lh.z);h.approach=true;h.run=Math.max(h.run,.7);}
+          if(lead>.55)go(h,sx+1.8,Lh.z);else{go(h,sx,Lh.z);h.approach=true;h.run=Math.max(h.run,.7);}h.leadT=lead;h.leadAt=time;
           const dist=Math.hypot(h.x-sdt*sx,h.z-Lh.z);
           if(dist<.7&&lead<=.04&&lead>-.2){doJump(h,true,.7);planAtk(h);}}}}
     else ai.forEach(p=>{const s=spot(p,'r');go(p,s.d,s.z);});
@@ -120,7 +120,7 @@ function updatePlayer(p,dt){
   const toNet=p.team?-Math.PI/2:Math.PI/2,sp=Math.hypot(p.vx,p.vz);let want=toNet;
   if(p.dive>0)want=Math.atan2(p.vx,p.vz);
   else if(state==='play'&&Math.sign(ball.x)===s&&Math.hypot(ball.x-p.x,ball.z-p.z)<3.5&&p.y===0)want=Math.atan2(ball.x-p.x,ball.z-p.z);
-  else if(sp>2.5&&p.y===0&&(p.vx*tnet(p.team))>-sp*.3)want=Math.atan2(p.vx,p.vz);
+  else if(sp>2.5&&p.y===0)want=Math.atan2(p.vx,p.vz);
   if(!p.human&&p.y>0&&p.plan&&p.plan.aim){p.airT=(p.airT||0)+dt;want=Math.atan2(sd(1-p.team)*p.plan.aim.d-p.x,p.plan.aim.z-p.z);}
   if(p.human&&p.dive<=0){if(p.y>0)want=camYaw;else if(p.ready&&state==='play')want=Math.atan2(ball.x-p.x,ball.z-p.z);else if(sp>.5)want=Math.atan2(p.vx,p.vz);else want=p.yaw;}
   else if(Math.abs(angDiff(toNet,want))>1.7)want=toNet+Math.sign(angDiff(toNet,want))*1.7;
@@ -175,13 +175,13 @@ function update(dt){
   stT+=dt;
   if(state==='serve'){const s=server;
     if(!ball.toss)placeHeld();
-    if(!s.human&&!ball.toss&&stT>2.6){s.tk=rnd()<.15+s.st.pow*.04?'jump':'stand';startToss(s,s.tk);}
+    if(!s.human&&!ball.toss&&stT>1.3){s.tk=rnd()<.15+s.st.pow*.04?'jump':'stand';startToss(s,s.tk);}
     if(ball.toss){ball.vy-=G*dt;ball.y+=ball.vy*dt;ball.x+=ball.vx*dt;ball.z+=ball.vz*dt;
       if(!s.human){if(s.tk==='jump'&&s.y===0){if(time-s.tossAt>.12&&ball.vy>2.4){s.vx=tnet(s.team)*2.6;s.vz=0;s.lungeT=.05;}if(ball.vy<2.6&&ball.vy>0&&s.loadT<=0){s.loadT=.1;s.loadApp=.6;}}
         if(ball.vy<0&&ball.y<=s.y+HANDUP+.2&&(s.tk==='stand'||s.y>.3))doServe(s,s.tk,clamp(.5+rnd()*.45+D().q,0,1));}
       if(state==='serve'&&ball.y<.7){ball.toss=false;ball.held=s;placeHeld();say('重新拋球','#a9b0cc');}}
     clearHits();return;}
-  if(state==='point'){deadBall(dt);if(stT>3.0){if(gameOver())endMatch();else setupServe(serveTeam);}clearHits();return;}
+  if(state==='point'){deadBall(dt);if(stT>2.4){if(gameOver())endMatch();else setupServe(serveTeam);}clearHits();return;}
   if(ball.cool>0)ball.cool-=dt;
   const px=ball.x,py=ball.y,pz=ball.z;ball.px=px;ball.py=py;ball.pz=pz;
   if(ball.float>0&&ball.y>1){ball.vz+=Math.sin(time*7+ball.fseed)*ball.float*1.8*dt;ball.vy+=Math.cos(time*5+ball.fseed)*ball.float*.8*dt;}
