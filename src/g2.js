@@ -118,7 +118,7 @@ function touch(p,z,intent){
   const wasAtk=fresh&&(ball.atk||ball.serve),heavy=fresh&&ball.heavy,v=Math.hypot(ball.vx,ball.vy,ball.vz);
   if(fresh){ball.touches=0;ball.setInfo=null;ball.setter=null;ball.quickMB=null;}
   ball.touches++;if(ball.touches>3){fault(1-t,'四次擊球');return;}
-  ball.serial=++SERIAL;ball.lastTeam=t;ball.lastP=p;ball.blockTouch=false;ball.cool=.2;ball.letGo=null;
+  ball.serial=++SERIAL;ball.lastTeam=t;ball.lastP=p;ball.blockTouch=false;ball.cool=.2;ball.letGo=null;if(ball.touches===1)ball.passSer=ball.serial;
   ball.serve=false;ball.atk=false;ball.heavy=false;ball.float=0;ball.tip=false;
   p.touchFx=.8;p.touchN=String(ball.touches);
   if(wasAtk)q*=clamp(1.15-(v-13)/26+p.st.rcv*.025,.3,1);
@@ -156,9 +156,18 @@ function chooseSetter(t){const tm=team(t).filter(p=>p!==ball.lastP&&p.stun<=0);c
 // 舉球手決定托給誰：玩家叫球或正在助跑就給玩家；不然看對方攔網站哪邊，往空的那邊托
 const setMemo=[[],[]];
 // 玩家當舉球手：這一球是不是該你舉（隊友一傳後、你被指定為舉球的人）
+// 舉球的攻擊方式：玩家選（自動＝照一傳和對方攔網判斷）
+const SET_TYPES=['auto','high','fast','quick'],SET_TN={auto:'自動',high:'高球',fast:'平快',quick:'快攻',safe:'修正球'};
+function setTypeStep(p,k){const i=SET_TYPES.indexOf(p.setType||'auto');p.setType=SET_TYPES[(i+k+SET_TYPES.length)%SET_TYPES.length];SFX.call&&SFX.call();}
+// 實際會托出的方式（一傳太差時快攻、平快做不出來，改托修正高球）
+function setTypeFor(p,h){let t=p.setType||'auto';const pq=ball.passQ??.7;
+  if(t==='auto')t=pq<.35?'safe':h.role==='mb'&&pq>.45?'quick':'high';
+  else if((t==='quick'&&pq<.45)||(t==='fast'&&pq<.3))t='safe';
+  return t;}
 function setPhase(p){return state==='play'&&ball&&ball.setter===p&&ball.touches===1&&ball.lastTeam===p.team;}
 // 玩家舉球的目標：鏡頭（準星）方向最接近的攻手；中間快攻在空中時直接托快攻
 function setTarget(p){const cands=team(p.team).filter(x=>x!==p&&x.stun<=0);if(!cands.length)return null;
+  if(p.setPick&&p.setPick.s===ball.passSer){const c=cands.find(x=>x.role===p.setPick.r);if(c)return c;}
   const d=cam.getWorldDirection(new TH.Vector3());d.y=0;if(d.lengthSq()<1e-6)return cands[0];d.normalize();
   let best=null,bs=-9;for(const c of cands){const a=spot(c,'a'),tx=c.y>.25?c.x:sd(c.team)*a.d,tz=c.y>.25?c.z:a.z,dx=tx-p.x,dz=tz-p.z,l=Math.hypot(dx,dz)||1,s=(dx*d.x+dz*d.z)/l;if(s>bs){bs=s;best=c;}}
   return best;}
@@ -167,10 +176,14 @@ function doSet(p,q){
   if(p.human&&cands.length){const h=setTarget(p);if(h){
     if(h.y>.25&&h.vy>-1&&Math.abs(h.x)<2.6){const tA=timeToApex(h),tt=clamp(tA+.12,.42,.75),hy=heightAfter(h,tt)+HANDUP,fx=Math.sin(h.yaw),fz=Math.cos(h.yaw);
       const e=(1-q)*.5;sendTo(h.x+h.vx*tt+fx*.3+(rnd()-.5)*e,hy,h.z+h.vz*tt+fz*.3+(rnd()-.5)*e,tt);finishSet(p,h,'quick');return;}
-    const type=ball.passQ<.35?'safe':h.role==='mb'&&ball.passQ>.45?'quick':'high';
-    const lane=type==='quick'?{d:.7,z:clamp(spot(h,'a').z,-1,1.2)}:type==='safe'?{d:1.6,z:clamp(h.z,-3,3)}:{d:1.05,z:h.role==='oh'?-3.4:h.role==='op'?3.4:clamp(spot(h,'a').z,-2,2)};
-    const hitY=HANDUP+jumpProf(h,.6).hApex-.1,err=(1-q)*1.5*(1.3-p.st.set*.05)+(1-ball.passQ)*.25;
-    lobTo(sdt*Math.max(.45,lane.d+(rnd()-.5)*err),hitY,lane.z+(rnd()-.5)*err*1.6,Math.max(hitY+.45,type==='quick'?3.25:type==='safe'?4.5:4.0));
+    const type=setTypeFor(p,h),wantT=p.setType||'auto';
+    if(wantT!=='auto'&&type==='safe'&&wantT!=='safe')say('一傳不好，改托修正高球','#a9b0cc');
+    // 各攻擊方式：高球＝高、攻手助跑完整；平快＝低平快、攔網來不及，準度要求高；快攻＝托在舉球手身邊、攻手第一時間打
+    const side=h.role==='oh'?-3.4:h.role==='op'?3.4:clamp(spot(h,'a').z,-2,2);
+    const lane=type==='quick'?{d:.7,z:h.role==='mb'?clamp(spot(h,'a').z,-1,1.2):clamp(p.z+Math.sign(side-p.z||1)*1.3,-M.wid+.6,M.wid-.6)}:
+      type==='safe'?{d:1.6,z:clamp(h.z,-3,3)}:type==='fast'?{d:.85,z:side*.95}:{d:1.05,z:side};
+    const hitY=HANDUP+jumpProf(h,.6).hApex-.1,ek={high:1,safe:.9,fast:1.35,quick:1.5}[type],err=((1-q)*1.5*(1.3-p.st.set*.05)+(1-ball.passQ)*.25)*ek;
+    lobTo(sdt*Math.max(.45,lane.d+(rnd()-.5)*err),hitY,lane.z+(rnd()-.5)*err*1.6,Math.max(hitY+.45,{quick:3.2,fast:3.45,safe:4.5,high:4.0}[type]));
     setMemo[t].push(h.id);if(setMemo[t].length>2)setMemo[t].shift();finishSet(p,h,type);return;}}
   cands.splice(0,cands.length,...cands.filter(x=>x.role!=='set'));
   if(!cands.length){doOver(p,q);return;}
@@ -195,7 +208,7 @@ function doSet(p,q){
   let err=(1-q)*1.3*(1.3-p.st.set*.05)+(1-ball.passQ)*.3;if(p.role!=='set')err=err*1.5+.25;
   lobTo(sdt*Math.max(.45,lane.d+(rnd()-.5)*err),hitY,lane.z+(rnd()-.5)*err*1.6,Math.max(hitY+.45,type==='quick'?3.25:type==='safe'?4.5:4.0));
   finishSet(p,h,type);}
-function finishSet(p,h,type){ball.setInfo={hitter:h,type};const CALL={high:'高球',quick:'快攻',safe:'修正球'};talk(p,(h.human?'給你・':'')+CALL[type]+'！');SFX.set();}
+function finishSet(p,h,type){ball.setInfo={hitter:h,type};const CALL={high:'高球',quick:'快攻',safe:'修正球',fast:'平快'};talk(p,(h.human?'給你・':'')+CALL[type]+'！');SFX.set();}
 // 落點：玩家用畫面中央的準星（鏡頭看哪裡就打哪裡），AI 找對方空檔
 // 瞄準規則：準星指到哪就打哪，但一定限制在對方場內（離邊線 0.4 公尺）；會出界只會因為擊球時機差（落點散開）
 function humanAim(t){const so=sd(1-t);let x=cursorG.ok?cursorG.x:so*5,z=cursorG.ok?cursorG.z:0;

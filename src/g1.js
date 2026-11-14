@@ -93,10 +93,10 @@ function ambience(){try{const s=AC.createBufferSource();s.buffer=NOISE;s.loop=tr
 function cheer(){if(!S.sound||!AC||!NOISE)return;const t=AC.currentTime,d=out(1,0),s=AC.createBufferSource();s.buffer=NOISE;s.loop=true;const f=AC.createBiquadFilter();f.type='bandpass';f.frequency.value=900;f.Q.value=.4;
   const g=AC.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.16,t+.25);g.gain.exponentialRampToValueAtTime(.001,t+1.8);s.connect(f);f.connect(g);g.connect(d);s.start(t);s.stop(t+1.9);}
 
-const ACTS=['fwd','back','left','right','jump','atk','rcv','tip','block','mod','call','cam','pause'];
-const ACT_LABEL={fwd:'往前（鏡頭方向）',back:'往後',left:'往左',right:'往右',jump:'跳躍',atk:'扣球・發球',rcv:'接球（按住＝接球姿勢）',tip:'輕打・吊球',block:'攔網',mod:'技巧鍵（跳發）',call:'叫球（要舉球手托給你）',cam:'切換鏡頭',pause:'暫停'};
+const ACTS=['fwd','back','left','right','jump','atk','rcv','tip','block','mod','call','cam','pause','stype','s1','s2','s3'];
+const ACT_LABEL={fwd:'往前（鏡頭方向）',back:'往後',left:'往左',right:'往右',jump:'跳躍',atk:'扣球・發球',rcv:'接球（按住＝接球姿勢）',tip:'輕打・吊球',block:'攔網',mod:'技巧鍵（跳發）',call:'叫球（要舉球手托給你）',cam:'切換鏡頭',pause:'暫停',stype:'舉球：切換攻擊方式（滾輪也可以）',s1:'舉球：托給左攻',s2:'舉球：托給中間',s3:'舉球：托給右攻'};
 const DEFAULT_KEYS={fwd:['k:KeyW','k:ArrowUp'],back:['k:KeyS','k:ArrowDown'],left:['k:KeyA','k:ArrowLeft'],right:['k:KeyD','k:ArrowRight'],jump:['k:Space',''],
-  atk:['m:0','k:KeyJ'],rcv:['m:2','k:KeyK'],tip:['k:KeyF',''],block:['k:KeyE',''],mod:['k:ShiftLeft',''],call:['k:KeyQ',''],cam:['k:KeyC',''],pause:['k:Escape','k:KeyP']};
+  atk:['m:0','k:KeyJ'],rcv:['m:2','k:KeyK'],tip:['k:KeyF',''],block:['k:KeyE',''],mod:['k:ShiftLeft',''],call:['k:KeyQ',''],cam:['k:KeyC',''],pause:['k:Escape','k:KeyP'],stype:['k:KeyR',''],s1:['k:Digit1',''],s2:['k:Digit2',''],s3:['k:Digit3','']};
 let KB=JSON.parse(JSON.stringify(DEFAULT_KEYS));
 (()=>{const o=load('fb-keys2',null);if(o)ACTS.forEach(a=>{if(Array.isArray(o[a])&&o[a].length===2)KB[a]=o[a];});})();
 function keyName(c){if(!c)return'—';const t=c[0],v=c.slice(2);
@@ -130,6 +130,8 @@ addEventListener('mousedown',e=>{ensureAudio();
   if(document.pointerLockElement!==g3){try{const r=g3.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(err){}}
   const c='m:'+e.button;if(!held[c])hitK[c]=true;held[c]=true;});
 addEventListener('mouseup',e=>{held['m:'+e.button]=false;});
+// 滾輪：舉球時切換攻擊方式
+addEventListener('wheel',e=>{if(!inMatch()||paused||typeof human==='undefined'||!human||!setPhase(human))return;e.preventDefault();setTypeStep(human,e.deltaY>0?1:-1);},{passive:false});
 document.addEventListener('contextmenu',e=>e.preventDefault());
 addEventListener('blur',()=>{for(const k in held)held[k]=false;});
 const mouse={x:0,y:0,in:false},cursorG={x:0,z:0,ok:false};

@@ -153,6 +153,8 @@ function humanInput(dt){
   if(p.y>0&&!p.hitDone&&(T('atk')||T('tip'))&&!p.swingReq){p.swingReq=T('tip')?'tip':'atk';p.pressLate=ball.vy<0&&ball.y<p.y+HANDUP-.1;p.charging=true;p.chargeT=0;p.prevD=9;
     const c=MOCAP.spike;if(c)playAct(p,'spike',Math.max(0,clipKey(c)-.4),{hold:clipKey(c)-.12});}
   if(p.charging){p.chargeT+=dt;p.power=Math.min(1,p.chargeT/.3);}
+  // 舉球：1／2／3 直接指定托給誰（不按就看準星），R 或滾輪切換攻擊方式
+  if(setPhase(p)){if(T('stype'))setTypeStep(p,1);for(const [k,r] of [['s1','oh'],['s2','mb'],['s3','op']])if(T(k)){p.setPick={s:ball.passSer,r};SFX.call&&SFX.call();}}
   if(p.y===0&&(T('atk')||T('tip'))){p.arm=T('tip')?'tip':'atk';p.armT=.3;
     if(setPhase(p)&&!(p.lungeT>0)){const L=predict(OVERY);if(L&&Math.sign(L.x)===sd(p.team)&&L.t<.55&&L.t>.05){const dd=Math.hypot(L.x-p.x,L.z-p.z);
       if(dd>.35&&dd<2.6){const tt=Math.max(.1,L.t-.04);p.vx=(L.x-p.x)/tt;p.vz=(L.z-p.z)/tt;const v=Math.hypot(p.vx,p.vz);if(v>9){p.vx*=9/v;p.vz*=9/v;}p.lungeT=tt;}}}}
