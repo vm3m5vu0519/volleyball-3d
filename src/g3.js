@@ -119,7 +119,7 @@ function updatePlayer(p,dt){
   if(state==='serve'&&p===server&&!ball.toss)p.x=s<0?Math.min(p.x,-(M.half+.4)):Math.max(p.x,M.half+.4);
   const toNet=p.team?-Math.PI/2:Math.PI/2,sp=Math.hypot(p.vx,p.vz);let want=toNet;
   if(p.dive>0)want=Math.atan2(p.vx,p.vz);
-  else if(state==='play'&&Math.sign(ball.x)===s&&Math.hypot(ball.x-p.x,ball.z-p.z)<3.5&&p.y===0)want=Math.atan2(ball.x-p.x,ball.z-p.z);
+  else if(state==='play'&&Math.sign(ball.x)===s&&Math.hypot(ball.x-p.x,ball.z-p.z)<3.5&&p.y===0&&!(sp>3.5&&Math.abs(angDiff(Math.atan2(p.vx,p.vz),Math.atan2(ball.x-p.x,ball.z-p.z)))>1.9))want=Math.atan2(ball.x-p.x,ball.z-p.z);   // 快速往遠離球的方向跑時，轉身跑（不倒退跑）
   else if(sp>2.5&&p.y===0)want=Math.atan2(p.vx,p.vz);
   if(!p.human&&p.y>0&&p.plan&&p.plan.aim){p.airT=(p.airT||0)+dt;want=Math.atan2(sd(1-p.team)*p.plan.aim.d-p.x,p.plan.aim.z-p.z);}
   if(p.human&&p.dive<=0){if(p.y>0)want=camYaw;else if(p.ready&&state==='play')want=Math.atan2(ball.x-p.x,ball.z-p.z);else if(sp>.5)want=Math.atan2(p.vx,p.vz);else want=p.yaw;}

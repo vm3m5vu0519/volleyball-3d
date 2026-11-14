@@ -230,6 +230,16 @@ function attachGLB(R,p,hair){
 const RT={q1:new TH.Quaternion(),q2:new TH.Quaternion(),q3:new TH.Quaternion(),f0:new TH.Quaternion(),f1:new TH.Quaternion(),rq:new TH.Quaternion(),
   a0:new TH.Vector3(),l0:new TH.Vector3(),d:new TH.Vector3(),x:new TH.Vector3(),y:new TH.Vector3(),z:new TH.Vector3(),m:new TH.Matrix4(),w:new TH.Vector3(),mid:new TH.Vector3()};
 const PK=['hips','neck','spine','Ls','Rs','Le','Re','Lw','Rw','Lt','Rt','Lh','Rh','Lk','Rk','La','Ra','Lo','Ro','hipX','chestX','hLA','hRA','hLL','hRL'];
+// 依模型外觀校正手臂：量模型自己的手和身體，手腕離軀幹中線（骨盆→脖子）小於身體半徑，就以肩膀為軸把整隻手臂轉出來
+let G_noAC=false;const ACL={s:new TH.Vector3(),w:new TH.Vector3(),h:new TH.Vector3(),n:new TH.Vector3(),c:new TH.Vector3(),q:new TH.Quaternion(),q2:new TH.Quaternion(),a:new TH.Vector3(),b:new TH.Vector3()};
+function armClear(R){const G=R.glb,B=G&&G.B;if(!B||!B.Hips||!(B.Neck||B.Head))return;
+  B.Hips.getWorldPosition(ACL.h);(B.Neck||B.Head).getWorldPosition(ACL.n);const ax=ACL.n.sub(ACL.h),L2=Math.max(1e-4,ax.lengthSq()),r=Math.max(.14,(G.tr||.15)*.9);
+  for(const sd_ of ['Left','Right']){const sh=B[sd_+'Arm'],hd=B[sd_+'Hand'];if(!sh||!hd)continue;
+    for(let it=0;it<2;it++){sh.updateMatrixWorld(true);hd.getWorldPosition(ACL.w);const t=clamp(ACL.a.subVectors(ACL.w,ACL.h).dot(ax)/L2,0,1);if(t<.12)break;
+      ACL.c.copy(ACL.h).addScaledVector(ax,t);ACL.a.subVectors(ACL.w,ACL.c);const d=ACL.a.length();if(d>=r||d<1e-4)break;
+      ACL.b.copy(ACL.c).addScaledVector(ACL.a,(r+.005)/d);sh.getWorldPosition(ACL.s);
+      ACL.q.setFromUnitVectors(ACL.w.sub(ACL.s).normalize(),ACL.b.sub(ACL.s).normalize());
+      sh.getWorldQuaternion(ACL.q2);ACL.q2.premultiply(ACL.q);sh.parent.getWorldQuaternion(ACL.q).invert();sh.quaternion.copy(ACL.q.multiply(ACL.q2));}}}
 function frameQ(a,l,out){RT.y.copy(a).normalize();RT.x.copy(l).addScaledVector(RT.y,-l.dot(RT.y)).normalize();RT.z.crossVectors(RT.x,RT.y);RT.m.makeBasis(RT.x,RT.y,RT.z);return out.setFromRotationMatrix(RT.m);}
 function retarget(R){
   const G=R.glb;if(!G)return;R.g.updateMatrixWorld(true);
@@ -242,6 +252,8 @@ function retarget(R){
   P.hipX.set(1,0,0).applyQuaternion(R.hips.getWorldQuaternion(RT.q3));P.chestX.subVectors(P.Ls,P.Rs);
   P.hLA.set(-1,0,0).applyQuaternion(aR.sh.getWorldQuaternion(RT.q3));P.hRA.set(-1,0,0).applyQuaternion(aL.sh.getWorldQuaternion(RT.q3));P.hLL.set(1,0,0).applyQuaternion(gR.th.getWorldQuaternion(RT.q3));P.hRL.set(1,0,0).applyQuaternion(gL.th.getWorldQuaternion(RT.q3));
   if(R.mw>0&&R.pl&&R.pl.act)blendMocap(R,P,R.pl,R.mw);
+  // 依角色外觀校正用的軀幹半徑：這個模型的肩寬（手臂實際推開在 armClear，量模型自己的手和身體）
+  if(!G.tr){const a=new TH.Vector3(),b=new TH.Vector3();G.B.LeftArm.getWorldPosition(a);G.B.RightArm.getWorldPosition(b);G.tr=clamp(a.distanceTo(b)*.5,.1,.2);}
   const D2=(a,b)=>RT.d.subVectors(P[a],P[b]);
   const dirOf=n=>{switch(n){case'Hips':return D2('neck','hips');case'Spine':return D2('neck','spine');
     case'LeftArm':return D2('Le','Ls');case'LeftForeArm':return D2('Lw','Le');case'LeftHand':return D2('Lt','Lw');case'RightArm':return D2('Re','Rs');case'RightForeArm':return D2('Rw','Re');case'RightHand':return D2('Rt','Rw');
@@ -323,13 +335,13 @@ function runLegs(p,R,dt,on,sp,onFeet){const S=R.rl||(R.rl={a:[0,1].map(()=>({st:
   S.stopT=0;
   // 預覽（原地跑步機）：身體不動，地面往後移
   if(p.tread)S.a.forEach(l=>{for(const v of [l.W,l.S,l.G]){v.x-=p.vx*dt;v.z-=p.vz*dt;}});
-  const sh=R.shw||0,T=2*Math.PI/Math.max(R.phr,.5),D=clamp(lerp(.6/Math.max(sp*T,.01),.5,sh),.13,.6),sweep=Math.min(sp*D*T,.6),base=R.ph/(2*Math.PI)+.25-.03;
-  const hipLeg=Math.sqrt(Math.max(.4,(L1+L2-.045)**2-(sweep/2+.03)**2))-.07*sh-(p.landT>0?.12*clamp(p.landT/.2,0,1):0),bob=-.022*Math.min(1,sp/3)*Math.cos(4*Math.PI*(base-D/2));
+  const sh=R.shw||0,T=2*Math.PI/Math.max(R.phr,.5),D=clamp(lerp(.5/Math.max(sp*T,.01),.5,sh),.13,.6),sweep=Math.min(sp*D*T,.5),base=R.ph/(2*Math.PI)+.25-.03;
+  const hipLeg=Math.min(.845,Math.sqrt(Math.max(.4,(L1+L2-.02)**2-(sweep/2+.02)**2)))-(p.landT>0?.12*clamp(p.landT/.2,0,1):0),bob=-.022*Math.min(1,sp/3)*Math.cos(4*Math.PI*(base-D/2));
   {const ty=Math.min(R.hips.position.y+.04,hipLeg+FOOT+.03+bob);R.rhy=lerp(R.rhy??ty,ty,1-Math.exp(-dt*14));R.hips.position.y=R.rhy;}R.g.updateMatrixWorld(true);
   const lift=lerp(clamp(.08+.035*sp,.08,.3),.07,sh);R.hips.getWorldPosition(RL.q);
   R.legs.forEach((g,i)=>{const L=S.a[i],f=((base+i*.5)%1+1)%1;g.th.getWorldPosition(RL.h);
     // 腳的左右位置：從骨盆中心往這隻腳那側推（滑步時多推 10 公分＝與肩同寬，兩腳不會交叉）
-    {const ox=RL.h.x-RL.q.x,oz=RL.h.z-RL.q.z,ol=Math.hypot(ox,oz)||1,ex=.1*sh+.01;RL.h.x+=ox/ol*ex;RL.h.z+=oz/ol*ex;}
+    {const ox=RL.h.x-RL.q.x,oz=RL.h.z-RL.q.z,ol=Math.hypot(ox,oz)||1,ex=.05*sh+.01;RL.h.x+=ox/ol*ex;RL.h.z+=oz/ol*ex;}
     if(f<D){if(L.st!==1){if(L.st===0)L.W.set(L.G.x,FOOT,L.G.z);else{g.ft.getWorldPosition(L.W);L.W.y=FOOT;}L.st=1;}
       // 著地中：腳離骨盆太遠（急轉、急停）就放開，避免腿被拉直拖著走
       if(Math.hypot(L.W.x-RL.h.x,L.W.z-RL.h.z)>.62)L.W.set(RL.h.x+(L.W.x-RL.h.x)*.9,FOOT,RL.h.z+(L.W.z-RL.h.z)*.9);
@@ -365,7 +377,7 @@ function poseRig(p,R,dt){
   {const sL=clamp(.45+.1*sp,.5,.8),phrT=lerp(phrR,2*Math.PI*Math.max(sp,.6)/sL,R.shw);R.phr=lerp(R.phr??phrT,phrT,1-Math.exp(-dt*25));}
   R.ph=(R.ph||0)+dt*R.phr;
   R.rwv=lerp(R.rwv??0,run?clamp((sp-.12)/.9,0,1):0,1-Math.exp(-dt*9));const runW=R.rwv,rw=runW*runW*(3-2*runW);   // 起步、停下時從站姿平順混到跑步姿勢
-  const T={pt:.12,hy:HIPY,lw:.22,sx:.3,sy:0,sz:0,tL:-.54,tR:-.54,kL:.8,kR:.8,aLx:-.55,aLz:-.14,aRx:-.55,aRz:.14,eL:-1.15,eR:-1.15};
+  const T={pt:0,hy:HIPY,lw:.06,sx:.04,sy:0,sz:0,tL:-.05,tR:-.05,kL:.1,kR:.1,aLx:.04,aLz:-.12,aRx:.04,aRz:.12,eL:-.22,eR:-.22};   // 平常：自然站直、雙手垂在身側（只有按接球才蹲低）
   if(state==='menu'){T.pt=0;T.lw=.05;T.sx=.05;T.tL=T.tR=-.05;T.kL=T.kR=.1;T.aLx=T.aRx=.05;T.eL=T.eR=-.25;}
   // 得分慶祝（不跳）：贏的一方握拳、雙手舉高、拍手、雙拳收在胸前；輸的一方雙手插腰或手撐膝蓋。每個人錯開一點時間開始
   if(state==='point'&&!air){const i=players.indexOf(p),t=Math.max(0,stT-.12-(i%4)*.09),win=p.team===window.ptWin,pump=.5+.5*Math.sin(t*6.2-1.57),v=i%4;
@@ -386,7 +398,6 @@ function poseRig(p,R,dt){
     const lean=g('lean')*.55;T.pt=lean*.45;T.sx=lean*.55;const tor=T.pt+T.sx;
     T.tL=-g('thL')-T.pt;T.tR=-g('thR')-T.pt;T.kL=g('kL');T.kR=g('kR');
     T.aLx=-g('uaL')-tor;T.aRx=-g('uaR')-tor;T.eL=-g('eL');T.eR=-g('eR');T.aLz=-.1;T.aRz=.1;T.lw=.03;
-    if(R.shw>.01){const k=R.shw;T.aLx=lerp(T.aLx,-.8,k);T.aRx=lerp(T.aRx,-.8,k);T.eL=lerp(T.eL,-1.05,k);T.eR=lerp(T.eR,-1.05,k);T.aLz=lerp(T.aLz,-.12,k);T.aRz=lerp(T.aRz,.12,k);T.sx=lerp(T.sx,.3,k);T.pt=lerp(T.pt,.12,k);T.sy=lerp(T.sy,0,k);}
     const sw=Math.sin(R.ph);T.sy=.1*sw;R.bnc=.03*Math.min(1,sp/4)*sw*sw;
     for(const k in T)if(T0[k]!==undefined)T[k]=lerp(T0[k],T[k],rw);R.bnc*=rw;}else R.bnc=0;
   const pose=p.stun>0?'stun':p.dive>0?'dive':p.rec>0?'getup':p.swing>0?p.pose:'';
@@ -394,12 +405,14 @@ function poseRig(p,R,dt){
   const hitter=air&&!blk&&ball&&((state==='play'&&(p.human||(ball.setInfo&&ball.setInfo.hitter===p)))||(state==='serve'&&server===p));
   // 接球姿勢：雙腳開、蹲低、手臂伸直在身前
   // 接球姿勢（前臂墊球）：骨盆前傾、背打直往前約 30 度、膝蓋在腳尖上方；雙臂伸直往前下方約 40 度，兩手靠攏成平台
-  if(p.ready&&!air&&!pose){T.lw=.34;T.pt=.35;T.tL=T.tR=-1.05-T.pt;T.kL=T.kR=1.45;T.sx=.18;T.aLx=T.aRx=-1.2;T.aLz=.24;T.aRz=-.24;T.eL=T.eR=-.04;}
+  // 電腦球員「按接球」：被分配接這球、球在 2.6 公尺內往下掉時才擺接球姿勢（玩家則是按住接球鍵）
+  const aiRdy=!p.human&&state==='play'&&ball&&ball.call&&ball.call[p.team]===p&&ball.lastTeam!==p.team&&ball.vy<0&&ball.y<3.2&&Math.hypot(ball.x-p.x,ball.z-p.z)<2.6&&sp<2.5;
+  if((p.ready||aiRdy)&&!air&&!pose){T.lw=.34;T.pt=.35;T.tL=T.tR=-1.05-T.pt;T.kL=T.kR=1.45;T.sx=.18;T.aLx=T.aRx=-1.2;T.aLz=.24;T.aRz=-.24;T.eL=T.eR=-.04;}
   // 預判動作：攻手起跳前 0.35 秒開始雙臂往後擺、重心降低（真人助跑最後兩步），起跳那一格就不會從跑步姿勢瞬間跳到蹲姿
   if(!air&&!pose&&p.approach&&p.leadAt&&time-p.leadAt<.15&&p.leadT<.38){const k=clamp((.38-p.leadT)/.34,0,1),sk=k*k*(3-2*k);
     T.aLx=lerp(T.aLx,.75,sk);T.aRx=lerp(T.aRx,.75,sk);T.eL=lerp(T.eL,-.2,sk);T.eR=lerp(T.eR,-.2,sk);T.sx=lerp(T.sx,.45,sk);T.kL=lerp(T.kL,1.2,sk*.6);T.kR=lerp(T.kR,1.2,sk*.6);}
   // 網前等攔網：對方持球時雙手舉在肩膀前方、膝蓋微彎；快起跳時再蹲低一點
-  {const bw=!window.__noant&&!air&&!pose&&!p.ready&&p.loadT<=0&&state==='play'&&ball&&Math.abs(p.x)<1.5&&Math.sign(ball.x)!==sd(p.team)&&ball.lastTeam!==p.team&&sp<2.6?1:0;
+  {const bw=false&&!air&&!pose&&!p.ready&&p.loadT<=0&&state==='play'&&ball&&Math.abs(p.x)<1.5&&Math.sign(ball.x)!==sd(p.team)&&ball.lastTeam!==p.team&&sp<2.6?1:0;
     R.bkw=lerp(R.bkw||0,bw,1-Math.exp(-dt*8));const w=R.bkw*(1-rw*.6);
     if(w>.01){const j=p.jumpAt?clamp(1-(p.jumpAt-time)/.25,0,1):0;
       T.aLx=lerp(T.aLx,-2.0,w);T.aRx=lerp(T.aRx,-2.0,w);T.aLz=lerp(T.aLz,-.05,w);T.aRz=lerp(T.aRz,.05,w);T.eL=lerp(T.eL,-1.35,w);T.eR=lerp(T.eR,-1.35,w);
@@ -444,8 +457,8 @@ function poseRig(p,R,dt){
   {const sv=R.sv||(R.sv={x:p.vx,z:p.vz,ax:0,az:0}),id=1/Math.max(dt,1e-4),k1=1-Math.exp(-dt*12),nx=lerp(sv.x,p.vx,k1),nz=lerp(sv.z,p.vz,k1);
     const k2=1-Math.exp(-dt*7);sv.ax=lerp(sv.ax,(nx-sv.x)*id,k2);sv.az=lerp(sv.az,(nz-sv.z)*id,k2);sv.x=nx;sv.z=nz;
     if(!window.__nolean&&!air&&!pose&&!p.ready&&p.loadT<=0&&(state==='play'||state==='serve')){const sn=Math.sin(fyw),cs=Math.cos(fyw),aF=sv.ax*sn+sv.az*cs,aX=sv.ax*cs-sv.az*sn,
-      along=sp>.5?(sv.ax*p.vx+sv.az*p.vz)/sp:0,brk=clamp(-along*.012,0,.32);
-      T.sx+=clamp(aF*.012,-.2,.18);T.sz=clamp(-aX*.014,-.26,.26);T.kL+=brk;T.kR+=brk;T.tL-=brk*.5;T.tR-=brk*.5;}}
+      along=sp>.5?(sv.ax*p.vx+sv.az*p.vz)/sp:0,brk=clamp(-along*.006,0,.15);
+      T.sx+=clamp(aF*.007,-.1,.12);T.sz=clamp(-aX*.008,-.15,.15);T.kL+=brk;T.kR+=brk;T.tL-=brk*.5;T.tR-=brk*.5;}}
   // 慣性過渡（Inertialization，《戰爭機器》的作法）：輸出＝新目標＋一段會自己消失的「差值」。
   // 目標突然換姿勢時，跳掉的那段不直接套上，而是記成差值，並把當下的關節速度一起帶過去，再用臨界阻尼彈簧收斂到 0。
   // 好處：新動作立刻以完整幅度播放（跑步擺臂不會被削弱），切換時又保留原本的速度，不會頓一下或跳格。
@@ -464,6 +477,7 @@ function poseRig(p,R,dt){
   // 最後一道：每個關節每秒最多轉幾弧度（扣球、發球揮臂 20，其他 11），大轉換會分好幾格走完，不會一格跳過去
   {const CP=R.cp||(R.cp={...C}),mr=40*dt;for(const k in C){const pv=CP[k];if(pv!==undefined){const d=C[k]-pv;if(d>mr)C[k]=pv+mr;else if(d<-mr)C[k]=pv-mr;}}}
   for(const k in JLIM)if(C[k]!==undefined){const [a,b]=JLIM[k],v=C[k];if(v>b){const o=v-b;C[k]=b+o/(1+o/.06);}else if(v<a){const o=a-v;C[k]=a-o/(1+o/.06);}}
+  if(C.kL<0)C.kL=0;if(C.kR<0)C.kR=0;   // 膝蓋不反折
   Object.assign(R.cp,C);
   const onFeet=!air&&pose!=='dive'&&pose!=='getup'&&pose!=='stun';
   const cw=Math.cos(C.lw||0),lh=(t,k)=>L1*Math.cos(t)*cw+L2*Math.cos(t+k);   // 大腿外張、小腿垂直時的腿高
@@ -484,8 +498,15 @@ function poseRig(p,R,dt){
   R.aura.visible=!!au;if(au){R.aura.material.color.set(au);R.aura.material.opacity=.14+.07*Math.sin(time*12);}
   // 真人動作：接球姿勢、等球時循環；其他動作由遊戲事件觸發
   if(!p.act&&MOCAP.ready&&!air&&p.dive<=0&&p.stun<=0&&(p.ready||(state==='play'&&!p.human&&ball&&ball.call&&ball.call[p.team]===p&&ball.lastTeam!==p.team))){const c=MOCAP.ready;playAct(p,'ready',clipKey(c),{hold:clipKey(c),until:()=>!(p.ready||(state==='play'&&ball&&ball.call&&ball.call[p.team]===p&&ball.lastTeam!==p.team))||p.y>0});}
+  // 站立、跑步用「動作擷取」裡的片段（內建 CMU 真人資料，可用影片擷取換成自己的）：站著播全身、跑步播上半身並跟步伐同步
+  {const calledAI=state==='play'&&!p.human&&ball&&ball.call&&ball.call[p.team]===p&&ball.lastTeam!==p.team&&MOCAP.ready;
+    const free=onFeet&&(!pose||(pose==='serve'&&p.swing<.3&&run))&&!p.ready&&!aiRdy&&p.loadT<=0&&p.landT<=0&&state!=='point'&&!(state==='serve'&&server===p)&&!calledAI&&!(p.act&&p.act.slot!=='stand'&&p.act.slot!=='run');
+    p._runOK=!!(free&&run&&sp>.6&&MOCAP.run);p._standOK=!!(free&&!run&&MOCAP.stand);
+    if(p._runOK&&(!p.act||p.act.slot!=='run'))playAct(p,'run',0,{loop:true,until:()=>!p._runOK});
+    else if(p._standOK&&!p.act)playAct(p,'stand',Math.random()*clipDur(MOCAP.stand),{loop:true,until:()=>!p._standOK});}
   R.mw=tickAct(p,dt);
-  if(R.glb){retarget(R);
+  if(p.act&&p.act.slot==='run'&&MOCAP.run)p.act.t=(((R.ph/(2*Math.PI)+.25)%1+1)%1)*clipDur(MOCAP.run);
+  if(R.glb){retarget(R);if(!G_noAC)armClear(R);
     // 手指：跑步握鬆拳、接球（前臂墊球）手掌攤平併攏、扣球攔網張開、平常微彎
     const ct=run?1.05:(p.ready||pose==='bump'||pose==='dig')?.08:(pose==='spike'||pose==='serve'||pose==='block'||air)?.12:(state==='serve'&&server===p&&!ball.toss)?.55:.42;
     R.fc=lerp(R.fc??ct,ct,1-Math.exp(-dt*14));const F=R.glb.fing;if(F)for(const f of F){_fq.setFromAxisAngle(f.ax,R.fc*f.k);f.b.quaternion.copy(f.q0).multiply(_fq);}
