@@ -16,14 +16,14 @@ function brain(t){
       const front=mine.filter(p=>p.role!=='set'||Math.abs(p.x)<2).sort((a,b)=>Math.abs(a.z-hz)-Math.abs(b.z-hz)).slice(0,2);
       front.forEach((b,i)=>{if(b.human)return;go(b,.5,clamp(hz+(i?.45:-.45)*(b.z<hz?1:-1),-M.wid+.4,M.wid-.4));
         if(hh&&hh.y>.05&&hh.vy>0&&b.blockTried!==ball.serial&&b.y===0&&Math.abs(b.x)<1.4){b.blockTried=ball.serial;
-          if(rnd()<D().blk*(.7+b.st.blk*.03))b.jumpAt=time+clamp(.13+(10-b.st.blk)*.02+rnd()*.14/D().read,.08,.42);}});
+          if(rnd()<D(b).blk*(.7+b.st.blk*.03))b.jumpAt=time+clamp(.13+(10-b.st.blk)*.02+rnd()*.14/D(b).read,.08,.42);}});
       // 後排防守站深一點、靠邊線（扣球大多落在後場兩角）；先補滿兩個深區，人多才站短區
       const zones=[{d:7,z:clamp(-hz*.35-2.6,-3.8,-1.4)},{d:7,z:clamp(-hz*.35+2.6,1.4,3.8)},{d:3.6,z:clamp(-hz*.6,-3,3)}];
       ai.filter(p=>!front.includes(p)).forEach(p=>{let bi=0,bd=99;zones.forEach((zn,i)=>{if(zn.used||i===2&&!(zones[0].used&&zones[1].used))return;const dd=Math.hypot(p.x-sdt*zn.d,p.z-zn.z);if(dd<bd){bd=dd;bi=i;}});zones[bi].used=1;go(p,zones[bi].d,zones[bi].z);});}
     else ai.forEach(p=>{const s=spot(p,'r');go(p,s.d,s.z);});
     // 會出界的球：判斷要不要放掉（偶爾判斷錯）
     const L=predict(BUMPY),L0=predict(0);
-    if(L0&&ball.lastTeam!==null&&(Math.abs(L0.x)>M.half+.12||Math.abs(L0.z)>M.wid+.12)){ball.letGo=ball.letGo||{};if(ball.letGo[t]===undefined)ball.letGo[t]=rnd()<clamp(.55+.25*D().read,.3,.95);}
+    if(L0&&ball.lastTeam!==null&&(Math.abs(L0.x)>M.half+.12||Math.abs(L0.z)>M.wid+.12)){ball.letGo=ball.letGo||{};if(ball.letGo[t]===undefined)ball.letGo[t]=rnd()<clamp(.55+.25*D(mine[0]).read,.3,.95);}
     const letGo=ball.letGo&&ball.letGo[t];
     if(!letGo&&L&&Math.sign(L.x)===sdt&&ball.lastTeam!==null&&Math.abs(L.x)<M.half+3.5&&Math.abs(L.z)<M.wid+3){
       const cand=mine.filter(p=>p.stun<=0&&p.rec<=0&&p.y<.3);
@@ -129,6 +129,7 @@ function updatePlayer(p,dt){
 function humanInput(dt){
   const p=human;if(!p)return;
   if(T('call')&&state==='play'){p.calledAt=time;talk(p,'給我！');SFX.call();}
+  if(T('skill')){if(!skActivate(p)&&!p.skOn)say('技能量表還沒滿（'+Math.floor(p.sk||0)+'%）','#a9b0cc');}
   if(state==='serve'&&server===p){
     if(!ball.toss&&T('atk')&&time-(p.tossAt||-9)>.35){startToss(p,A('mod')?'jump':'stand');if(ball.tossKind==='jump')say('跳發！','#fff');}
     else if(ball.toss&&T('atk')&&time-p.tossAt>.15){const kind=ball.tossKind==='jump'&&p.y>.2?'jump':'stand',c=srvContact(p,'stand'),f=tnet(p.team),hx=p.x+f*.3,hy=p.y+HANDUP+.12,d=Math.hypot(ball.y-hy,(ball.x-hx)*.7,(ball.z-c.z)*.5);
@@ -167,15 +168,16 @@ function humanInput(dt){
     if(p.y===0&&Lb&&Math.sign(Lb.x)===sd(p.team)&&Lb.t<.55){const ax=Lb.x-Math.sin(p.yaw)*.3,az=Lb.z-Math.cos(p.yaw)*.3,dd=Math.hypot(ax-p.x,az-p.z);
       if(dd>.5&&dd<2.4){const tt=Math.max(.12,Math.min(.3,Lb.t-.04));p.vx=(ax-p.x)/tt;p.vz=(az-p.z)/tt;const v=Math.hypot(p.vx,p.vz);if(v>9){p.vx*=9/v;p.vz*=9/v;}p.lungeT=tt;}}
     p.arm='rcv';p.armT=.42;}}
-function update(dt){
+function update(dt){try{update0(dt);}finally{netClearTrig();}}
+function update0(dt){
   time+=dt;PC={};
   if(flash>0)flash-=dt;if(shake>0)shake=Math.max(0,shake-dt*1.5);
   msgs.forEach(m=>m.t-=dt);msgs=msgs.filter(m=>m.t>0);
   parts.forEach(q=>{q.x+=q.vx*dt;q.y+=q.vy*dt;q.z+=q.vz*dt;if(q.big){q.vx*=.94;q.vz*=.94;q.vy=q.vy*.94-.6*dt;}else q.vy-=9*dt;q.t-=dt;});parts=parts.filter(q=>q.t>0&&q.y>-.2);
   if(state==='menu'||state==='over')return;
   if(T('cam')){S.cam=((S.cam|0)+1)%3;saveS();syncSeg();say('鏡頭：'+CAMN[S.cam],'#c9bde0');}
-  humanInput(dt);brain(0);brain(1);
-  players.forEach(p=>updatePlayer(p,dt));
+  humanInput(dt);netEach(()=>humanInput(dt));skTick(dt);skAI();brain(0);brain(1);
+  players.forEach(p=>p.rc?withCtx(p,()=>updatePlayer(p,dt)):updatePlayer(p,dt));
   for(let i=0;i<players.length;i++)for(let j=i+1;j<players.length;j++){const a=players[i],b=players[j];if(a.team!==b.team)continue;
     const dx=b.x-a.x,dz=b.z-a.z,d=Math.hypot(dx,dz);if(d>0&&d<.55){const k=(.55-d)/2/d;a.x-=dx*k;a.z-=dz*k;b.x+=dx*k;b.z+=dz*k;}}
   stT+=dt;
@@ -184,7 +186,7 @@ function update(dt){
     if(!s.human&&!ball.toss&&stT>2.6){s.tk=rnd()<.15+s.st.pow*.04?'jump':'stand';startToss(s,s.tk);}
     if(ball.toss){ball.vy-=G*dt;ball.y+=ball.vy*dt;ball.x+=ball.vx*dt;ball.z+=ball.vz*dt;
       if(!s.human){if(s.tk==='jump'&&s.y===0){if(time-s.tossAt>.12&&ball.vy>2.4){s.vx=tnet(s.team)*2.6;s.vz=0;s.lungeT=.05;}if(ball.vy<2.6&&ball.vy>0&&s.loadT<=0){s.loadT=.1;s.loadApp=.6;}}
-        if(ball.vy<0&&ball.y<=s.y+HANDUP+.2&&(s.tk==='stand'||s.y>.3))doServe(s,s.tk,clamp(.5+rnd()*.45+D().q,0,1));}
+        if(ball.vy<0&&ball.y<=s.y+HANDUP+.2&&(s.tk==='stand'||s.y>.3))doServe(s,s.tk,clamp(.5+rnd()*.45+D(s).q,0,1));}
       if(state==='serve'&&ball.y<.7){ball.toss=false;ball.held=s;placeHeld();say('重新拋球','#a9b0cc');}}
     clearHits();return;}
   if(state==='point'){deadBall(dt);if(stT>3.0){if(gameOver())endMatch();else setupServe(serveTeam);}clearHits();return;}
@@ -195,7 +197,7 @@ function update(dt){
   ball.trail.push({x:ball.x,y:ball.y,z:ball.z});if(ball.trail.length>30)ball.trail.shift();
   if(px*ball.x<=0&&px!==ball.x)crossNet(px,py,pz);
   if(state!=='play'){clearHits();return;}
-  if(human)humanAir(human);
+  if(human)humanAir(human);netEach(()=>humanAir(human));
   if(state!=='play'){clearHits();return;}
   const order=players.slice().sort((a,b)=>(ball.call[b.team]===b)-(ball.call[a.team]===a));
   for(const p of order){
@@ -239,9 +241,9 @@ function crossNet(px,py,pz){
   if(ball.lastTeam===atkT&&yc>NETH-.15&&(ball.atk||ball.tip)){
     for(const b of team(defT)){
       if(b.y<.25||Math.abs(b.x)>1.1||b.stun>0)continue;
-      const w=(b.human?.38:.5)+b.st.blk*.03; // 玩家攔網範圍縮小（原本站中間幾乎什麼都攔得到）
+      const wall=b.skOn==='wall',w=(b.human?.38:.5)+b.st.blk*.03+(wall?.22:0); // 玩家攔網範圍縮小（原本站中間幾乎什麼都攔得到）
       if(Math.abs(zc-b.z)>w||yc>b.y+HANDUP+.3)continue;
-      const apex=1-Math.min(1,Math.abs(b.vy)/3),pw=(ball.power||2)+rnd()*4,bk=b.human?b.st.blk*.75+apex*2.6+rnd()*4+.3:b.st.blk*1.1+apex*3+rnd()*4,diff=bk-pw;
+      const apex=1-Math.min(1,Math.abs(b.vy)/3),pw=(ball.power||2)+rnd()*4,bk=(b.human?b.st.blk*.75+apex*2.6+rnd()*4+.3:b.st.blk*1.1+apex*3+rnd()*4)+(wall?3:0),diff=bk-pw;if(wall)skTake(b,['wall']);
       b.swing=.4;b.pose='block';b.touchFx=.8;b.touchN='攔';ball.cool=.12;ball.serial=++SERIAL;ball.letGo=null;PC={};freeze(b.human?.1:.06);
       const own=(vx,vy)=>{ball.drive=false;ball.vx=vx;ball.vy=vy;ball.lastTeam=defT;ball.lastP=b;ball.touches=0;ball.blockTouch=true;ball.atk=false;ball.heavy=false;};
       if((diff<=-3&&rnd()<.25)||(ball.toolAim&&diff<1.5&&rnd()<.55)){ball.x=sd(defT)*.15;lobTo(sd(defT)*(M.half+.5+rnd()),0,Math.sign(zc||1)*(M.wid+.6+rnd()*1.5),ball.y+.8);
@@ -254,6 +256,7 @@ function crossNet(px,py,pz){
       return;}}
   if(yc<NETH+BR){if(typeof netHit==='function')netHit(zc,yc,clamp(ball.vx,-14,14)*.9);ball.x=px;ball.vx*=-.25;ball.vy=Math.min(ball.vy,0)*.4;ball.vz*=.5;ball.atk=false;ball.heavy=false;PC={};burst(0,Math.max(.3,yc),zc,'#ffffff',6,2);SFX.net();
     if(ball.lastTeam!==null&&ball.touches>=3&&Math.sign(px)===sd(ball.lastTeam))fault(1-ball.lastTeam,'掛網！');else say('掛網！','#a9b0cc');}}
-function endMatch(){state='over';if(document.pointerLockElement)document.exitPointerLock();const win=score[ME]>score[1-ME];
+function endMatch(){state='over';if(NET.on){netOver();return;}if(document.pointerLockElement)document.exitPointerLock();const win=score[ME]>score[1-ME];if(win)stageWin();
+  const nx=$('bNext');if(nx){nx.hidden=!(MATCH.mode==='stage'&&win&&MATCH.stage+1<STAGES.length);}
   $('resT').textContent=win?'勝利！':'落敗…';$('resS').textContent=`${score[0]} - ${score[1]}`;
-  $('resN').textContent=win?'漂亮的比賽！':'再來一場！';show('vOver');}
+  $('resN').textContent=MATCH.mode==='stage'?(win?(MATCH.stage+1>=STAGES.length?'全部關卡破關！你是冠軍！':`第 ${MATCH.stage+1} 關過關！下一關：${STAGES[MATCH.stage+1].name}`):`第 ${MATCH.stage+1} 關「${STAGES[MATCH.stage].name}」落敗，再挑戰一次！`):(win?'漂亮的比賽！':'再來一場！');show('vOver');}

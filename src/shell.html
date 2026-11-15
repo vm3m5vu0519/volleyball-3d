@@ -42,6 +42,16 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .sec h3{margin:0;font-weight:900;font-size:18px;color:var(--gold);letter-spacing:.06em}
 .sec h3 small{color:var(--dim);font-size:13px;margin-left:8px;letter-spacing:0}
 .big2{display:flex;gap:10px;flex-wrap:wrap}
+.nForm{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}.nForm label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--dim);min-width:0}
+.nForm input{font:inherit;font-size:16px;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.18);background:var(--panel2);color:var(--ink);min-width:0;width:18em;max-width:100%}
+.nSlots{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin:6px 0 10px}.nTeam{display:flex;flex-direction:column;gap:8px}.nTeam h4{margin:0;font-size:15px}
+.nSlot{display:grid;grid-template-columns:5.5em 1fr auto;gap:8px;align-items:center;text-align:left;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.14);background:var(--panel2);color:var(--ink);font:inherit;cursor:pointer}
+.nSlot .nr{color:var(--dim);font-size:13px}.nSlot .nn{font-weight:800}.nSlot .nc{font-size:12px;color:var(--dim)}.nSlot.me{outline:2px solid var(--gold)}.nSlot.taken{opacity:.75;cursor:default}
+.row2{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:8px 0}.row2>span{color:var(--dim);font-size:13px;min-width:5em}
+.stgList{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.stg{display:flex;flex-direction:column;gap:3px;text-align:left;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.14);background:var(--panel2);color:var(--ink);cursor:pointer;font:inherit}
+.stg b{font-size:12px;color:var(--dim);font-weight:700;letter-spacing:.06em}.stg .sn{font-size:17px;font-weight:800}.stg .so{font-size:12px;color:var(--gold)}.stg .sd{font-size:12px;color:var(--dim);line-height:1.45}
+.stg.on{outline:2px solid var(--gold);background:rgba(255,200,60,.12)}.stg.done .sn::after{content:" ✓";color:#3ee0a0}.stg.lock{opacity:.45;cursor:not-allowed}
 .pill{font-size:17px;padding:9px 18px;border:1px solid rgba(255,255,255,.14);background:var(--panel2);color:var(--dim);box-shadow:none}
 .pill[aria-pressed="true"]{background:var(--gold);color:#000}
 .pill.red[aria-pressed="true"]{background:#ff5a6a;color:#000}.pill.blue[aria-pressed="true"]{background:#4a8cff;color:#000}
@@ -146,6 +156,7 @@ kbd{color:var(--ink);background:#000;padding:1px 7px;border:2px solid var(--dim)
     <div class="logo"><span class="kick">VOLLEY ARENA・4 VS 4</span><h1>熱血排球</h1><span class="tag">3D・4 對 4 排球</span></div>
     <nav class="menuNav">
       <button class="mb big" id="mStart">開始比賽</button>
+      <button class="mb" id="mNet">多人連線</button>
       <button class="mb" id="mSettings">遊戲設定・按鍵</button>
       <button class="mb" id="mHelp">操作說明</button>
       <button class="mb" id="mSkin">角色外觀（套皮）</button>
@@ -160,11 +171,45 @@ kbd{color:var(--ink);background:#000;padding:1px 7px;border:2px solid var(--dim)
   <div class="head"><button class="tb" data-go="vMenu">← 主選單</button><h2>賽前準備</h2></div>
   <div class="sec"><h3>隊伍<small>兩邊打起來完全一樣</small></h3>
     <div class="big2" id="pSide"><button class="pill red" data-v="0">紅隊</button><button class="pill blue" data-v="1">藍隊</button></div></div>
+  <div class="sec"><h3>比賽模式<small>自由比賽可以自己設定對手強度；關卡挑戰一關一關變強</small></h3>
+    <div class="big2" id="pMode"><button class="pill" data-v="free">自由比賽</button><button class="pill" data-v="stage">關卡挑戰</button></div>
+    <div id="pFree" style="margin-top:12px"><div style="color:var(--dim);font-size:13px;margin-bottom:6px">對手強度（只影響對手，隊友固定普通）</div>
+      <div class="big2" id="pDiff"><button class="pill" data-v="easy">簡單</button><button class="pill" data-v="normal">普通</button><button class="pill" data-v="hard">困難</button><button class="pill" data-v="hell">地獄</button></div></div>
+    <div id="pStage" hidden style="margin-top:12px"><div class="stgList" id="pStages"></div></div></div>
   <div class="sec"><h3>你的位置<small>整場比賽都操控這名球員；選舉球手就由你負責第二球</small></h3><div class="big2" id="pRole"></div></div>
   <div class="sec"><h3>選擇球員<small>點卡片選人，右邊看樣貌和能力；標「你」的是你操控的人</small></h3>
     <div class="prepGrid"><div id="pChars" style="display:flex;flex-direction:column;gap:12px;min-width:0"></div>
       <div class="pvBox"><canvas id="pView"></canvas><div id="pvInfo"></div></div></div></div>
   <div class="go"><button class="mb big" id="pGo">開始比賽 ▶</button></div>
+</div></div>
+
+<div class="page" id="vNet" hidden><div class="wrap">
+  <div class="head"><button class="tb" data-go="vMenu">← 主選單</button><h2>多人連線</h2></div>
+  <div class="sec" id="nConn">
+    <p class="sub" id="nWarn" style="color:#ffb07a;margin:0 0 10px">多人連線要從 server.js 開的網頁進來（離線包裡的「多人連線伺服器.bat」或 <code>node server.js</code>），這個頁面不是從伺服器開的，請手動填伺服器網址。</p>
+    <div class="nForm">
+      <label>你的名字<input id="nName" maxlength="16" placeholder="玩家"></label>
+      <label>伺服器網址<input id="nUrl" placeholder="wss://xxxx.trycloudflare.com/ws"></label>
+    </div>
+    <div class="nForm" style="margin-top:12px">
+      <button class="mb big" id="nCreate">建立房間（我當房主）</button>
+      <label style="flex-direction:row;align-items:center;gap:8px">房間代碼<input id="nCode" maxlength="4" placeholder="ABCD" style="width:6em;text-transform:uppercase"></label><button class="mb" id="nJoin">加入房間</button>
+    </div>
+    <p class="sub" style="font-size:13px;margin-top:12px">房主的電腦負責跑整場比賽，其他人送按鍵、收畫面，所以房主最好是電腦效能最好、網路最穩的人。最多 8 人（紅藍各 4 個位置），沒人坐的位置由 AI 打。</p>
+  </div>
+  <div class="sec" id="nRoom" hidden>
+    <h3>房間代碼 <span id="nCodeShow" style="color:var(--gold);font-size:28px;letter-spacing:.12em"></span><small>朋友打開 <span id="nLink"></span> → 多人連線 → 輸入代碼</small></h3>
+    <button class="tb" id="nCopy" style="margin-bottom:10px">複製網址和代碼</button>
+    <div class="nSlots" id="nSlots"></div>
+    <p class="sub" id="nPeers" style="font-size:13px"></p>
+    <div id="nHostOpt">
+      <div class="row2"><span>勝利分數</span><div class="big2" id="nWin"><button class="pill" data-v="15">15</button><button class="pill" data-v="21">21</button><button class="pill" data-v="25">25</button></div></div>
+      <div class="row2"><span>AI 強度</span><div class="big2" id="nDiff"><button class="pill" data-v="easy">簡單</button><button class="pill" data-v="normal">普通</button><button class="pill" data-v="hard">困難</button><button class="pill" data-v="hell">地獄</button></div></div>
+    </div>
+    <p class="sub" id="nWait">等房主開始比賽…（點上面的格子換位置；角色用你在「開始比賽」頁選的那位）</p>
+    <div class="go" style="gap:10px;display:flex;flex-wrap:wrap"><button class="mb big" id="nGo">開始比賽 ▶</button><button class="mb" id="nLeave">離開房間</button></div>
+  </div>
+  <p class="sub" id="nStat" style="min-height:1.5em"></p>
 </div></div>
 
 <div class="page" id="vHelp" hidden><div class="wrap">
@@ -234,12 +279,12 @@ kbd{color:var(--ink);background:#000;padding:1px 7px;border:2px solid var(--dim)
 <div class="page" id="vOver" hidden><div class="wrap center"><div class="box small res">
   <h2 id="resT">優勝！</h2><div class="sc" id="resS">11 - 7</div>
   <p class="sub" id="resN" style="text-align:center"></p>
-  <button class="mb big" id="bAgain">再來一場</button><button class="mb" id="bMenu">回主選單</button>
+  <button class="mb big" id="bNext" hidden>下一關 ▶</button><button class="mb big" id="bAgain">再來一場</button><button class="mb" id="bMenu">回主選單</button>
 </div></div></div>
 
 <div class="page" id="vSet" hidden style="z-index:20"><div class="wrap"><div class="box">
   <h2>遊戲設定</h2>
-  <div class="row"><span>難度</span><div class="seg" data-k="diff"><button class="opt" data-v="easy">簡單</button><button class="opt" data-v="normal">普通</button><button class="opt" data-v="hard">困難</button></div></div>
+  <div class="row"><span>對手強度</span><div class="seg" data-k="diff"><button class="opt" data-v="easy">簡單</button><button class="opt" data-v="normal">普通</button><button class="opt" data-v="hard">困難</button><button class="opt" data-v="hell">地獄</button></div></div>
   <div class="row"><span>遊戲節奏</span><div class="seg" data-k="pace"><button class="opt" data-v="0.75">慢</button><button class="opt" data-v="0.85">標準</button><button class="opt" data-v="1">原作速度</button></div></div>
   <div class="row"><span>勝利分數</span><div class="seg" data-k="win"><button class="opt" data-v="15">15</button><button class="opt" data-v="21">21</button><button class="opt" data-v="25">25</button></div></div>
   <div class="row"><span>鏡頭</span><div class="seg" data-k="cam"><button class="opt" data-v="0">動作視角</button><button class="opt" data-v="1">固定視角</button><button class="opt" data-v="2">轉播</button></div></div>

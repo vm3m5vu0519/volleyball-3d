@@ -1,0 +1,24 @@
+熱血排球 多人連線說明
+====================
+
+一、房主（開房間的人）
+1. 安裝 Node.js 18 以上：https://nodejs.org/
+2. 安裝 cloudflared（給外面的朋友連才需要）：
+   Windows：winget install --id Cloudflare.cloudflared
+   macOS：brew install cloudflared
+3. 雙擊「多人連線伺服器.bat」（macOS / Linux 執行「多人連線伺服器.sh」）
+   - 會自動打開 http://localhost:8787/
+   - 另一個視窗會出現 https://xxxx.trycloudflare.com 網址，把它傳給朋友
+4. 遊戲主選單 →「多人連線」→ 填名字 →「建立房間」，把畫面上的四碼房間代碼告訴朋友
+5. 每個人點一個位置（紅藍各 4 個，沒人坐的由 AI 打），房主選勝利分數和 AI 強度，按「開始比賽」
+
+二、朋友
+1. 用瀏覽器打開房主給的 https://xxxx.trycloudflare.com 網址
+2. 主選單 →「多人連線」→ 填名字、輸入房間代碼 →「加入房間」→ 點一個位置，等房主開始
+
+三、說明
+- 房主的電腦負責跑整場比賽，其他人只送按鍵、收畫面，所以房主要選電腦效能最好、網路最穩的人。
+- 每位玩家大約使用 6–10 KB/s 的頻寬。
+- 同一個區網（同一個 Wi-Fi）也可以不用 cloudflared，直接用 http://房主電腦的IP:8787/ 連。
+- trycloudflare 是測試用的免費通道，每次開的網址都不一樣，也沒有穩定度保證。
+- 比賽中有人斷線，他的球員會自動改由 AI 操控。
