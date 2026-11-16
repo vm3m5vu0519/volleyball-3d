@@ -135,3 +135,11 @@ function drawReq(g,cw,ch,sc,x1,y0){if(!human||human.role==='set'||!(state==='pla
   const tx=called?`已叫球：${REQ_N[rt]}`:`要球：${REQ_N[rt]}　${k1('call')} 叫球・${k1('stype')}／滾輪 換球種`;
   g.font=`700 ${12*sc}px "Noto Sans TC",sans-serif`;const tw=g.measureText(tx).width+18*sc;rr(g,x1-tw+6*sc,y0-56*sc,tw,22*sc,11,called?'rgba(20,70,90,.85)':'rgba(8,22,30,.45)');
   T2(g,tx,x1-3*sc,y0-45*sc,12*sc,called?'#c9f0ff':'#cfe2ea','right');}
+// ---------- 技能發動中：身上的特效（光點往上飄＋腳下光環＋身體周圍一圈光） ----------
+const SKA={t:0};
+function skillAura(dt){if(S.gfx<1||typeof fxSpawn!=='function')return;SKA.t-=dt;if(SKA.t>0)return;SKA.t=.05;
+  for(const p of players){if(!p.skOn)continue;const S2=skOf(p);if(!S2)continue;const px=lerp(p.ox,p.x,ALPHA),pz=lerp(p.oz,p.z,ALPHA),py=lerp(p.oy,p.y,ALPHA);
+    for(let i=0;i<3;i++){const a=rnd()*Math.PI*2,r=.28+rnd()*.18;fxSpawn({tex:'glow',col:S2.col,x:px+Math.cos(a)*r,y:py+.15+rnd()*1.5,z:pz+Math.sin(a)*r,vy:1+rnd()*.8,drag:1,s0:.26+rnd()*.1,s1:.03,life:.7+rnd()*.3,a:.95,depth:true});}
+    if(rnd()<.5)fxSpawn({tex:'glow',col:'#ffffff',x:px,y:py+1,z:pz,s0:1.3,s1:1.1,life:.12,a:.18,depth:true}); // 身體周圍淡淡一層光
+    p._skR=(p._skR||0)-1;if(p._skR<=0){p._skR=6;fxSpawn({tex:'ring',flat:true,col:S2.col,x:px,y:.03,z:pz,s0:.5,s1:1.3,life:.5,a:.7});}}}
+{const _f=fx2Frame;fx2Frame=function(dt){_f.apply(this,arguments);try{skillAura(dt);}catch(e){}};}

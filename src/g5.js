@@ -26,7 +26,7 @@ const cs={d:4.4,l:.2,pt:0,f:62},_T=new TH.Vector3(),pointLook=new TH.Vector3();l
 function updateCamera(dt){
   camLook(dt);const mode=S.cam|0;let fov=60;const bx=ball?lerp(ball.ox,ball.x,ALPHA):0;
   if(state==='menu'||state==='over'||!human){orbit+=dt*.07;_P.set(Math.cos(orbit)*15,5.2,Math.sin(orbit)*11);_L.set(0,1.3,0);camS.p.lerp(_P,1-Math.exp(-dt*3));camS.l.lerp(_L,1-Math.exp(-dt*3));fov=50;camShot='';}
-  else if(mode===2){_P.set(bx*.4,8.5,M.wid+16);_L.set(bx*.35,1.2,0);camS.p.lerp(_P,1-Math.exp(-dt*5));camS.l.lerp(_L,1-Math.exp(-dt*5));fov=48;camShot='broadcast';}
+  else if(mode===2){_P.set(bx*.4,7.6,M.wid+5.4);_L.set(bx*.35,.4,0);camS.p.lerp(_P,1-Math.exp(-dt*5));camS.l.lerp(_L,1-Math.exp(-dt*5));fov=66;camShot='broadcast';} // 轉播鏡頭在場館牆內（牆在 z=M.wid+6）
   else{const h=human,sh=mode===1?(h.y>.2?'air':'ground'):shotFor();if(sh!==camShot){camShot=sh;camShotT=0;}camShotT+=dt;
     const P=SHOTP[sh]||SHOTP.ground,k=1-Math.exp(-dt*(h.y>0||h.loadT>0?4:2.5));cs.d+=(P[0]-cs.d)*k;cs.l+=(P[1]-cs.l)*k;cs.pt+=(P[2]-cs.pt)*k;cs.f+=(P[3]-cs.f)*k;fov=cs.f;
     const hx=lerp(h.ox,h.x,ALPHA),hz=lerp(h.oz,h.z,ALPHA),hy=lerp(h.oy,h.y,ALPHA),pt=clamp(camPitch+cs.pt,-.2,1.25);

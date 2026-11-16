@@ -3,7 +3,7 @@
 const TH=THREE,hudC=$('hud'),hctx=hudC.getContext('2d');
 let renderer=null;try{renderer=new TH.WebGLRenderer({canvas:g3,antialias:true,powerPreference:'high-performance'});}catch(e){}
 const scene=new TH.Scene(),cam=new TH.PerspectiveCamera(60,1,.1,400);
-scene.fog=new TH.Fog('#e6e2da',40,120);
+scene.fog=new TH.Fog('#10141a',40,120);
 function ctex(w,h,fn,rep){const c=document.createElement('canvas');c.width=w;c.height=h;fn(c.getContext('2d'),w,h);const t=new TH.CanvasTexture(c);t.anisotropy=8;if(rep){t.wrapS=t.wrapT=TH.RepeatWrapping;t.repeat.set(rep[0],rep[1]);}return t;}
 const gm=new TH.DataTexture(new Uint8Array([120,120,120,255,200,200,200,255,255,255,255,255]),3,1,TH.RGBAFormat);gm.minFilter=gm.magFilter=TH.NearestFilter;gm.needsUpdate=true;
 const gmS=new TH.DataTexture(new Uint8Array([200,200,200,255,255,255,255,255]),2,1,TH.RGBAFormat);gmS.minFilter=gmS.magFilter=TH.NearestFilter;gmS.needsUpdate=true;
@@ -16,56 +16,72 @@ sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-15,righ
 // 室內體育館：楓木地板（整片木頭，場內顏色略深）、白線、深藍色防撞牆、淺色牆面與高窗、天花板桁架和燈板
 (function(){
   const W=M.wid,HF=M.half,GW=W+6,GL=HF+7,GH=11;   // 牆：|z|=GW、|x|=GL，天花板高 GH
-  // 木地板貼圖：一條條楓木板，帶木紋、色差、接縫；場內另一張略深的
-  const wood=(tone,seed)=>{let r=seed;const R=()=>(r=(r*16807)%2147483647)/2147483647;return ctex(1024,1024,(c,w,h)=>{
-    const NP=64,pw=1024/NP;for(let i=0;i<NP;i++){let y=0;while(y<h){const L=200+R()*520,v=R();const base=tone.map((x,k)=>Math.round(x*(.9+v*.16)));
-      c.fillStyle=`rgb(${base})`;c.fillRect(i*pw,y,pw,L);
-      for(let g=0;g<4;g++){c.strokeStyle=`rgba(${tone[0]*.55|0},${tone[1]*.45|0},${tone[2]*.35|0},${.05+R()*.08})`;c.lineWidth=.6+R()*1.4;c.beginPath();const gx=i*pw+R()*pw;c.moveTo(gx,y);c.bezierCurveTo(gx+(R()-.5)*8,y+L*.3,gx+(R()-.5)*8,y+L*.6,gx+(R()-.5)*6,y+L);c.stroke();}
-      c.fillStyle='rgba(60,35,15,.28)';c.fillRect(i*pw,y,pw,1.2);y+=L;}
-      c.fillStyle='rgba(60,35,15,.22)';c.fillRect(i*pw,0,1,h);}});};
-  const woodA=wood([216,186,148],7),woodC=wood([228,196,152],11);woodA.wrapS=woodA.wrapT=woodC.wrapS=woodC.wrapT=TH.RepeatWrapping;
-  woodA.repeat.set(GL*2/4,GW*2/4);woodC.repeat.set(HF*2/4,W*2/4);woodA.anisotropy=woodC.anisotropy=16;
-  const fm=(t)=>new TH.MeshPhongMaterial({color:'#ffffff',map:t,shininess:70,specular:new TH.Color('#4a3a2a')});
-  const floor=new TH.Mesh(new TH.PlaneGeometry(GL*2,GW*2),fm(woodA));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
-  const court=new TH.Mesh(new TH.PlaneGeometry(HF*2,W*2),fm(woodC));court.rotation.x=-Math.PI/2;court.position.y=.004;court.receiveShadow=true;scene.add(court);
+  // 比賽用運動地板（PU 地墊）：場內橘、自由區藍、外圍深灰；細微顆粒＋一點光澤
+  const sport=(rgb,seed,grain)=>{let r=seed;const R=()=>(r=(r*16807)%2147483647)/2147483647;return ctex(512,512,(c,w,h)=>{c.fillStyle=`rgb(${rgb})`;c.fillRect(0,0,w,h);
+    for(let i=0;i<9000;i++){const v=R();c.fillStyle=v<.5?`rgba(0,0,0,${grain*R()})`:`rgba(255,255,255,${grain*.7*R()})`;c.fillRect(R()*w,R()*h,1.4,1.4);}});};
+  const tOut=sport([34,40,47],5,.06),tFree=sport([30,86,132],7,.07),tCourt=sport([214,112,58],11,.07);
+  [tOut,tFree,tCourt].forEach(t=>{t.wrapS=t.wrapT=TH.RepeatWrapping;t.anisotropy=16;});tOut.repeat.set(GL/2,GW/2);tFree.repeat.set((HF+3.5)/2,(W+3)/2);tCourt.repeat.set(HF/2,W/2);
+  const fm=(t,sh)=>new TH.MeshPhongMaterial({color:'#ffffff',map:t,shininess:sh,specular:new TH.Color('#3a3a3a')});
+  const floor=new TH.Mesh(new TH.PlaneGeometry(GL*2,GW*2),fm(tOut,30));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
+  const free=new TH.Mesh(new TH.PlaneGeometry((HF+3.5)*2,(W+3)*2),fm(tFree,55));free.rotation.x=-Math.PI/2;free.position.y=.002;free.receiveShadow=true;scene.add(free);
+  const court=new TH.Mesh(new TH.PlaneGeometry(HF*2,W*2),fm(tCourt,55));court.rotation.x=-Math.PI/2;court.position.y=.004;court.receiveShadow=true;scene.add(court);
   const groups={};const box=(col,x,y,z,sx,sy,sz,ry=0)=>{const g=new TH.BoxGeometry(sx,sy,sz);g.rotateY(ry);g.translate(x,y,z);(groups[col]=groups[col]||[]).push(g);};
   [[0,W,HF*2+.05,.05],[0,-W,HF*2+.05,.05],[HF,0,.05,W*2],[-HF,0,.05,W*2],[0,0,.05,W*2],[3,0,.05,W*2],[-3,0,.05,W*2]].forEach(([x,z,a,b])=>box('#ffffff',x,.012,z,a,.01,b));
   [-3,3].forEach(x=>[-1,1].forEach(s=>{for(let k=0;k<4;k++)box('#ffffff',x,.012,s*(W+.5+k*.7),.05,.01,.35);}));
   // 牆：下段 2.2 公尺深藍防撞墊，上段淺灰牆，頂部一排高窗
-  [-1,1].forEach(s=>{box('#1d3357',0,1.1,s*(GW-.08),GL*2,2.2,.16);box('#e9ecef',0,(GH+2.2)/2,s*GW,GL*2,GH-2.2,.2);box('#1d3357',s*(GL-.08),1.1,0,.16,2.2,GW*2);box('#e9ecef',s*GL,(GH+2.2)/2,0,.2,GH-2.2,GW*2);
-    box('#c9d6e2',0,2.25,s*(GW-.2),GL*2,.1,.1);box('#c9d6e2',s*(GL-.2),2.25,0,.1,.1,GW*2);});
+  // 牆：深色吸音牆（讓燈光集中在球場上），下段深藍軟墊
+  [-1,1].forEach(s=>{box('#151b24',0,1.1,s*(GW-.08),GL*2,2.2,.16);box('#1c222b',0,(GH+2.2)/2,s*GW,GL*2,GH-2.2,.2);box('#151b24',s*(GL-.08),1.1,0,.16,2.2,GW*2);box('#1c222b',s*GL,(GH+2.2)/2,0,.2,GH-2.2,GW*2);
+    box('#2a3340',0,2.25,s*(GW-.2),GL*2,.06,.06);box('#2a3340',s*(GL-.2),2.25,0,.06,.06,GW*2);});
   // 天花板桁架
-  for(let x=-GL+2;x<=GL-2;x+=4)box('#4a5260',x,GH-.4,0,.18,.5,GW*2);
-  [-1,0,1].forEach(k=>box('#4a5260',0,GH-.75,k*GW*.55,GL*2,.12,.12));
+  for(let x=-GL+2;x<=GL-2;x+=4)box('#262c35',x,GH-.4,0,.18,.5,GW*2);
+  [-1,0,1].forEach(k=>box('#262c35',0,GH-.75,k*GW*.55,GL*2,.12,.12));
   // 網柱（圓柱、外包防撞墊）與裁判台
-  [-1,1].forEach(s=>{box('#cfd5dc',0,1.3,s*(W+1),.09,2.6,.09);box('#1d3357',0,.95,s*(W+1),.26,1.9,.26);});
   box('#cfd5dc',0,.7,-(W+1.55),.6,.05,.6);box('#cfd5dc',0,.35,-(W+1.55),.06,.7,.06);
   for(const col in groups){const mt=new TH.MeshLambertMaterial({color:col});const m=new TH.Mesh(mergeGeos(groups[col]),mt);m.receiveShadow=true;m.castShadow=col==='#1d3357'&&false;scene.add(m);}
   // 天花板、高窗、燈板（發光）
-  const ceil=new TH.Mesh(new TH.PlaneGeometry(GL*2,GW*2),new TH.MeshLambertMaterial({color:'#d9dde2'}));ceil.rotation.x=Math.PI/2;ceil.position.y=GH;scene.add(ceil);
-  const winM=new TH.MeshBasicMaterial({color:'#cfe6ff'});
-  [-1,1].forEach(s=>{for(let x=-GL+2.5;x<GL-2;x+=3.2){const w=new TH.Mesh(new TH.PlaneGeometry(2.4,1.3),winM);w.position.set(x,GH-1.6,s*(GW-.11));w.rotation.y=s>0?Math.PI:0;scene.add(w);}});
+  const ceil=new TH.Mesh(new TH.PlaneGeometry(GL*2,GW*2),new TH.MeshLambertMaterial({color:'#12161c'}));ceil.rotation.x=Math.PI/2;ceil.position.y=GH;scene.add(ceil);
+  // 牆上直向的細燈條（取代高窗）
+  const stripM=new TH.MeshBasicMaterial({color:'#7fb6ff'});
+  [-1,1].forEach(s=>{for(let x=-GL+2;x<GL-1.5;x+=2.6){const w=new TH.Mesh(new TH.PlaneGeometry(.06,GH-3.4),stripM);w.position.set(x,(GH+2.6)/2,s*(GW-.11));w.rotation.y=s>0?Math.PI:0;scene.add(w);}});
   const lampM=new TH.MeshBasicMaterial({color:'#fffdf4'});
   for(let x=-GL+3;x<=GL-3;x+=4)for(const z of[-GW*.55,0,GW*.55]){const l=new TH.Mesh(new TH.PlaneGeometry(1.6,.5),lampM);l.rotation.x=Math.PI/2;l.position.set(x,GH-.86,z);scene.add(l);}
   // 牆上布條
   const ban=ctex(2048,160,(g,w,h)=>{g.fillStyle='#1d3357';g.fillRect(0,0,w,h);g.font='bold 96px "Noto Sans TC",sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillStyle='#ff7a2a';g.fillText('熱 血 排 球',w*.3,h/2);g.fillStyle='#e9f1f7';g.font='bold 70px "Noto Sans TC",sans-serif';g.fillText('VOLLEYBALL CLUB',w*.72,h/2);});
   const bm=new TH.Mesh(new TH.PlaneGeometry(14,1.1),new TH.MeshBasicMaterial({map:ban}));bm.position.set(0,6.2,-(GW-.11));scene.add(bm);
   // 球網：黑色 10 公分方格、上緣 7 公分白色帶、下緣 5 公分白帶、兩側白色標誌帶（全部畫在同一張高解析貼圖上，網子晃動時一起動）
-  const NW=W*2+1.6,PX=4096,PY=Math.round(4096/NW);
-  const nt=ctex(PX,PY,(c,w,h)=>{const ppm=w/NW;c.clearRect(0,0,w,h);c.strokeStyle='rgba(18,18,22,1)';c.lineWidth=Math.max(2,ppm*.006);
-    for(let x=0;x<=w;x+=ppm*.1){c.beginPath();c.moveTo(x,0);c.lineTo(x,h);c.stroke();}for(let y=0;y<=h;y+=ppm*.1){c.beginPath();c.moveTo(0,y);c.lineTo(w,y);c.stroke();}
-    c.fillStyle='#f4f4f2';c.fillRect(0,0,w,ppm*.07);c.fillRect(0,h-ppm*.05,w,ppm*.05);
-    c.fillStyle='#d8d8d6';c.fillRect(0,ppm*.065,w,ppm*.006);
-    [-W,W].forEach(z=>{const x=(z+NW/2)*ppm;c.fillStyle='#f4f4f2';c.fillRect(x-ppm*.025,0,ppm*.05,h);});});
-  nt.anisotropy=16;
-  const net=new TH.Mesh(new TH.PlaneGeometry(NW,1),new TH.MeshLambertMaterial({map:nt,transparent:true,alphaTest:.35,side:TH.DoubleSide}));net.userData.isNet=1;net.rotation.y=Math.PI/2;net.position.set(0,NETH-.5,0);scene.add(net);
+  const NW=W*2+1.6;
+  // 網目用 2 的次方尺寸，才有 mipmap：遠看不會閃爍、不會有鋸齒
+  const nt=ctex(4096,512,(c,w,h)=>{const px=w/NW,py=h;c.clearRect(0,0,w,h);
+    c.strokeStyle='rgba(22,24,28,.95)';c.lineWidth=2.2;
+    for(let x=0;x<=w;x+=px*.1){c.beginPath();c.moveTo(x,0);c.lineTo(x,h);c.stroke();}for(let y=0;y<=h;y+=py*.1){c.beginPath();c.moveTo(0,y);c.lineTo(w,y);c.stroke();}
+    // 網目交叉點的結（深一點）
+    c.fillStyle='rgba(10,10,12,1)';for(let x=0;x<=w;x+=px*.1)for(let y=0;y<=h;y+=py*.1)c.fillRect(x-2,y-2,4,4);
+    // 上緣 7 cm、下緣 5 cm 白帶（有一點陰影線），兩側 5 cm 白色標誌帶
+    c.fillStyle='#f6f6f2';c.fillRect(0,0,w,py*.07);c.fillRect(0,h-py*.05,w,py*.05);
+    c.fillStyle='rgba(0,0,0,.18)';c.fillRect(0,py*.066,w,py*.006);c.fillRect(0,h-py*.05,w,py*.004);
+    [-W,W].forEach(z=>{const x=(z+NW/2)*px;c.fillStyle='#f6f6f2';c.fillRect(x-px*.025,0,px*.05,h);});});
+  nt.anisotropy=16;nt.generateMipmaps=true;nt.minFilter=TH.LinearMipmapLinearFilter;
+  const net=new TH.Mesh(new TH.PlaneGeometry(NW,1),new TH.MeshLambertMaterial({map:nt,transparent:true,alphaTest:.08,depthWrite:false,side:TH.DoubleSide}));net.userData.isNet=1;net.rotation.y=Math.PI/2;net.position.set(0,NETH-.5,0);net.renderOrder=1;scene.add(net);
+  // 上緣白帶做成有厚度的帶子（網子晃動時帶子不動，就像拉緊的鋼索）
+  const tape=new TH.Mesh(new TH.BoxGeometry(.02,.07,W*2+.1),lam('#f4f4f0'));tape.position.set(0,NETH-.035,0);scene.add(tape);
+  // 網柱：圓柱＋外包軟墊（隊色深藍＋白線），底座
+  [-1,1].forEach(s=>{const z=s*(W+1);const post=new TH.Mesh(new TH.CylinderGeometry(.05,.05,2.6,16),lam('#c9ced4'));post.position.set(0,1.3,z);scene.add(post);
+    const pad=new TH.Mesh(new TH.CylinderGeometry(.16,.16,1.9,20),lam('#1d3357'));pad.position.set(0,.95,z);scene.add(pad);
+    const ring=new TH.Mesh(new TH.CylinderGeometry(.165,.165,.06,20),lam('#ff8a3d'));ring.position.set(0,1.6,z);scene.add(ring);
+    const base=new TH.Mesh(new TH.CylinderGeometry(.26,.3,.06,20),lam('#2a3038'));base.position.set(0,.03,z);scene.add(base);});
   // 鋼索、標誌桿（紅白相間，高出網子 80 公分）
   const cab=new TH.MeshLambertMaterial({color:'#9aa0a6'});
   [NETH,NETH-1].forEach(y=>{const c=new TH.Mesh(new TH.CylinderGeometry(.006,.006,W*2+2,6),cab);c.rotation.x=Math.PI/2;c.position.set(0,y,0);scene.add(c);});
   const antT=ctex(16,256,(c,w,h)=>{for(let i=0;i<18;i++){c.fillStyle=i%2?'#f2f2f2':'#e0242c';c.fillRect(0,i*h/18,w,h/18+1);}});
   [-1,1].forEach(s=>{const a=new TH.Mesh(new TH.CylinderGeometry(.005,.005,1.8,8),new TH.MeshLambertMaterial({map:antT}));a.position.set(0,NETH-.1,s*(W+.02));scene.add(a);});
-  // 場邊少量觀眾的伸縮看台（一側 4 階）
-  for(let k=0;k<4;k++){const g=new TH.Mesh(new TH.BoxGeometry(18,.45*(k+1),.8),new TH.MeshLambertMaterial({color:k%2?'#b9c0c8':'#c8ced5'}));g.position.set(0,.45*(k+1)/2,GW-.9-(3-k)*.8+ -0);g.position.z=GW-.4-(4-k)*.8;g.receiveShadow=true;scene.add(g);}
+  // LED 廣告看板：圍在自由區外面（一般比賽場地的樣子），會發光
+  const led=ctex(2048,128,(g,w,h)=>{const gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,'#0b1a2e');gr.addColorStop(1,'#071222');g.fillStyle=gr;g.fillRect(0,0,w,h);
+    const items=[['熱血排球','#ff8a3d'],['VOLLEYBALL CLUB','#e9f1f7'],['HOT SPIKE','#5ad1ff'],['熱血排球','#ffd23f']];let x=40;
+    for(let k=0;k<2;k++)for(const [t,col] of items){g.font='900 64px "Noto Sans TC",sans-serif';g.fillStyle=col;g.textBaseline='middle';g.fillText(t,x,h/2+2);x+=g.measureText(t).width+90;g.fillStyle='rgba(255,255,255,.25)';g.fillRect(x-48,h*.3,4,h*.4);}
+    for(let y=0;y<h;y+=4){g.fillStyle='rgba(0,0,0,.18)';g.fillRect(0,y,w,1);}});led.wrapS=TH.RepeatWrapping;
+  const ledM=new TH.MeshBasicMaterial({map:led});const AZ=W+4.6,AX=HF+5.5;window.ADB={z:AZ,x:AX,h:.9};
+  const adb=(len,x,z,ry,rep)=>{const t=led.clone();t.needsUpdate=true;t.repeat.set(rep,1);const m=new TH.Mesh(new TH.BoxGeometry(len,.9,.12),[lam('#0d1118'),lam('#0d1118'),lam('#0d1118'),lam('#0d1118'),new TH.MeshBasicMaterial({map:t}),new TH.MeshBasicMaterial({map:t})]);m.position.set(x,.45,z);m.rotation.y=ry;scene.add(m);};
+  [-1,1].forEach(s=>{adb(AX*2,0,s*AZ,0,2.4);adb(AZ*2-1.4,s*AX,0,Math.PI/2,1.2);});
   window.GYM={W:GW,L:GL,H:GH};
 })();
 function mergeGeos(list){let n=0;list.forEach(g=>{n+=(g.index?g.index.count:g.attributes.position.count);});const pos=new Float32Array(n*3),nor=new Float32Array(n*3);let o=0;
