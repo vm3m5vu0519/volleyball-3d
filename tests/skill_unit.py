@@ -1,7 +1,7 @@
 import asyncio,json
 from playwright.async_api import async_playwright
-JS=r"""(SK)=>{newGame();window.__manual=1;state='play';const say0=say;say=()=>{};freeze=()=>{};slowmo=()=>{};
- const a=team(0).find(p=>p.role==='oh');a.human=false;const B=team(1).filter(p=>p.role==='mb'||p.role==='op');const R={};let inC=0,outC=0;
+JS=r"""(SK)=>{newGame();players.forEach(p=>{if(p.ace){p.ace=false;p.st=Object.assign({},p.ch.st);}});window.__manual=1;state='play';const say0=say;say=()=>{};freeze=()=>{};slowmo=()=>{};
+ const a=team(0).find(p=>p.role==='oh');a.human=false;const B=team(1).filter(p=>p.role==='mb'||p.role==='op');B.forEach(b=>{b.st=Object.assign({},b.st,{blk:8});b.jumpH=1;});a.st=Object.assign({},a.st,{pow:8});a.jumpH=1;const R={};let inC=0,outC=0;
  for(let i=0;i<300;i++){BSTAT={};a.x=-1.6;a.z=-2.5;a.y=a.jumpH*.95;a.vy=0;a.app=.7;a.skOn=SK||null;a.plan={k:'power',B:{up:true}};
   ball.x=a.x+.3;ball.y=a.y+HANDUP+.1;ball.z=a.z;ball.vx=ball.vy=ball.vz=0;ball.lastTeam=0;ball.lastP=null;ball.touches=2;ball.atk=false;
   doSpike(a,.7);PC={};

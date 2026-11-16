@@ -18,7 +18,7 @@ function mkP(t,role,ch,isH){const st=ch.st;
   swingReq:null,hitDone:false,prevD:9,calledAt:-9,approach:false,act:null,sk:0,skOn:null,skT:0};}
 const spd=p=>(5.2+p.st.spd*.34)*(p.human?1.05:D(p).spd*p.skill)*(p.approach?1.25:1);
 // 攔網跳：低、快、幾乎不滯空（真實攔網起跳到落地約 0.6–0.7 秒）；扣球跳才有明顯滯空
-const pGravK=(vy,hang,jk)=>jk==='blk'?(Math.abs(vy)<PHANGV?.8:1.05):hang>0?.1:Math.abs(vy)<PHANGV?PHANGK:1;
+const pGravK=(vy,hang,jk)=>jk==='blk'?(vy<0?1.35:Math.abs(vy)<PHANGV?.9:1.05):hang>0?.1:Math.abs(vy)<PHANGV?PHANGK:1;
 const _jp={};
 function jumpProf(p,app=0,jk=''){const v=jk==='blk'?Math.sqrt(2*PG*p.jumpH*.78):Math.sqrt(2*PG*p.jumpH)*(1+.12*app),k=jk+v.toFixed(3);if(_jp[k])return _jp[k];let vy=v,y=0,t=0,top=0,tt=0;const dt=1/120;
   while(t<3){vy-=PG*pGravK(vy,0,jk)*dt;y+=vy*dt;t+=dt;if(y>top){top=y;tt=t;}if(y<=0)break;}return _jp[k]={v,tApex:tt,hApex:top,air:t};}
