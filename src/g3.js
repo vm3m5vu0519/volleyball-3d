@@ -52,11 +52,16 @@ function brain(t){
       ai.forEach(p=>{if(p===st){if(Ls)go(p,Math.max(.4,Math.abs(Ls.x)+.12),Ls.z);}
         else if(p===ball.quickMB){go(p,.8,.25);const J=jumpProf(p,.4);if(Ls&&p.y===0&&Ls.t<J.tApex-.04&&Math.hypot(p.x-sdt*.8,p.z-.25)<1){p.vx=p.vz=0;doJump(p,false,.4);planAtk(p);}}
         // 玩家舉球選了平快：左右攻提早往前站（平快飛行時間短，從後場助跑會來不及）
-        else{const s=spot(p,'a'),fastW=st===human&&human.human&&(p.role==='oh'||p.role==='op')&&(human.setType==='fast'||human.setType==='quick');go(p,fastW?Math.min(s.d,2.5):s.d,s.z);}});}
+        else{const s=spot(p,'a'),fastW=(p.role==='oh'||p.role==='op')&&(st===human&&human.human&&(human.setType==='fast'||human.setType==='quick')||ball.fastPlan);go(p,fastW?Math.min(s.d,2.5):s.d,s.z);}});}
     else if(tc===2){const h=ball.setInfo&&ball.setInfo.hitter;
       ai.forEach(p=>{if(p!==h){const s=spot(p,'c');go(p,s.d,s.z);}});
       // 攻手助跑：先退到起跳點後面，時間到了往網前衝、在對的時機起跳
-      if(h&&!h.human&&h.stun<=0&&h.y===0){
+      // 舉壞了（修正球太遠、球太低跳起來打不到、不是舉球員舉的歪球）：常常不硬扣，改成穩穩推過網（free ball）
+      if(h&&!h.human&&h.stun<=0&&h.y===0&&h.freeChk!==ball.serial){h.freeChk=ball.serial;const Lh0=predict(HANDUP+jumpProf(h,.7).hApex-.05),Lo=predict(OVERY),si=ball.setInfo,setter=ball.lastP;
+        const far=!Lh0||Math.abs(Lh0.x)>3.4,pf=far?.55:setter&&setter.role!=='set'?.3:si&&si.type==='safe'?.2:Lh0&&Math.abs(Lh0.x)>2.4?.1:0;
+        h.freeB=Lo&&rnd()<pf?ball.serial:-1;}
+      if(h&&h.freeB===ball.serial&&h.y===0&&!h.human){const Lo=predict(OVERY);if(Lo)go(h,Math.abs(Lo.x),Lo.z);}
+      else if(h&&!h.human&&h.stun<=0&&h.y===0){
         const J=jumpProf(h,.7),Lh=predict(HANDUP+J.hApex-.05);
         if(Lh&&Math.sign(Lh.x)===sdt){const sx=Math.abs(Lh.x)+.3,lead=Lh.t-J.tApex;
           if(lead>.55)go(h,sx+1.8,Lh.z);else{go(h,sx,Lh.z);h.approach=true;h.run=Math.max(h.run,.7);}
@@ -197,10 +202,10 @@ function update0(dt){
   stT+=dt;
   if(state==='serve'){const s=server;
     if(!ball.toss)placeHeld();
-    if(!s.human&&!ball.toss&&stT>2.6){s.tk=rnd()<.15+s.st.pow*.04?'jump':'stand';startToss(s,s.tk);}
+    if(!s.human&&!ball.toss&&stT>2.6){s.tk=rnd()<.15+s.st.pow*.04?'jump':rnd()<.4?'jfloat':'stand';startToss(s,s.tk);}
     if(ball.toss){ball.vy-=G*dt;ball.y+=ball.vy*dt;ball.x+=ball.vx*dt;ball.z+=ball.vz*dt;
       if(!s.human){if(s.tk==='jump'&&s.y===0){if(time-s.tossAt>.12&&ball.vy>2.4){s.vx=tnet(s.team)*2.6;s.vz=0;s.lungeT=.05;}if(ball.vy<2.6&&ball.vy>0&&s.loadT<=0){s.loadT=.1;s.loadApp=.6;}}
-        if(ball.vy<0&&ball.y<=s.y+HANDUP+.2&&(s.tk==='stand'||s.y>.3))doServe(s,s.tk,clamp(.5+rnd()*.45+D(s).q,0,1));}
+        if(ball.vy<0&&ball.y<=s.y+HANDUP+.2&&(s.tk!=='jump'||s.y>.3))doServe(s,s.tk,clamp(.5+rnd()*.45+D(s).q,0,1));}
       if(state==='serve'&&ball.y<.7){ball.toss=false;ball.held=s;placeHeld();say('重新拋球','#a9b0cc');}}
     clearHits();return;}
   if(state==='point'){deadBall(dt);if(stT>3.0){if(gameOver())endMatch();else setupServe(serveTeam);}clearHits();return;}
@@ -227,7 +232,8 @@ function update0(dt){
       // 舉球手把球托給你、你卻沒跳：球掉到身邊時自動接（只會變成過網球）
       continue;}
     if(ball.lastTeam!==p.team&&p.rolls[ball.serial]===undefined)p.rolls[ball.serial]=rnd()<missChance(p);
-    if(p.rolls[ball.serial])continue;
+    // 判定這球會失誤：不是呆站讓球落地，而是去接、但接壞（球亂飛）
+    if(p.rolls[ball.serial]){if(p.rolls[ball.serial]===true&&z.k!=='air'&&ball.y<1.3&&ball.vy<0){p.rolls[ball.serial]='done';touch(p,{k:z.k,q:z.q,shank:true},'rcv');break;}continue;}
     if(ball.lastTeam!==p.team&&ball.letGo&&ball.letGo[p.team])continue;
     if(ball.lastTeam!==p.team&&ball.call[p.team]&&ball.call[p.team]!==p&&ball.call[p.team].stun<=0&&ball.y>.6)continue;
     if(z.k==='air'&&ball.lastTeam===p.team&&ball.touches===1&&ball.setter===p&&!p.jset)continue;
