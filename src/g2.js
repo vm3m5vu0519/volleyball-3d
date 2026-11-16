@@ -27,7 +27,7 @@ function heightAfter(p,tt){let vy=p.vy,y=p.y,t=0;const dt=1/120;while(t<tt){vy-=
 function newBall(){return{x:0,y:1,z:0,vx:0,vy:0,vz:0,ox:0,oy:1,oz:0,held:null,toss:false,lastTeam:null,lastP:null,touches:0,cool:0,atk:false,heavy:false,float:0,fseed:rnd()*9,
   call:[null,null],setInfo:null,setter:null,passQ:1,serve:false,power:0,tip:false,trail:[],serial:++SERIAL,blockTouch:false,drive:false,quickMB:null,letGo:null};}
 // 球：真實重力、沒有滯空，看起來跟真的排球一樣快
-function stepB(b,dt){b.vy-=G*dt;b.x+=b.vx*dt;b.y+=b.vy*dt;b.z+=b.vz*dt;}
+function stepB(b,dt){if(b.spS||b.spT)applySpin(b,dt);b.vy-=G*dt;b.x+=b.vx*dt;b.y+=b.vy*dt;b.z+=b.vz*dt;}
 function flight(y0,vy,ty){const b={x:0,z:0,vx:0,vz:0,y:y0,vy};let t=0,top=y0;const dt=1/120;while(t<10){stepB(b,dt);t+=dt;if(b.y>top)top=b.y;if(b.vy<0&&b.y<=ty)break;}return{t,top};}
 function lobTo(tx,ty,tz,apex){const y0=ball.y;apex=Math.max(apex,y0+.2,ty+.2);const vy=Math.sqrt(2*G*(apex-y0)),t=flight(y0,vy,ty).t;
   ball.vy=vy;ball.vx=(tx-ball.x)/t;ball.vz=(tz-ball.z)/t;ball.drive=false;PC={};}
@@ -38,7 +38,7 @@ function driveTo(tx,tz,speed){const dx=tx-ball.x,dz=tz-ball.z,dist=Math.hypot(dx
 function sendTo(tx,ty,tz,t){ball.vx=(tx-ball.x)/t;ball.vz=(tz-ball.z)/t;ball.vy=(ty-ball.y+.5*G*t*t)/t;ball.drive=true;PC={};}
 let PC={};
 function predict(yT){if(!ball)return null;const k=yT.toFixed(2);if(k in PC)return PC[k];
-  const b={x:ball.x,y:ball.y,z:ball.z,vx:ball.vx,vy:ball.vy,vz:ball.vz},dt=1/60;let t=0,r=null;
+  const b={x:ball.x,y:ball.y,z:ball.z,vx:ball.vx,vy:ball.vy,vz:ball.vz,spS:ball.spS||0,spT:ball.spT||0,spX:ball.spX||0},dt=1/60;let t=0,r=null;
   for(let i=0;i<600;i++){const py=b.y;stepB(b,dt);t+=dt;if(b.vy<0&&b.y<=yT){const f=(py-yT)/((py-b.y)||1);r={x:b.x-b.vx*dt*(1-f),z:b.z-b.vz*dt*(1-f),t:t-dt*(1-f)};break;}}
   return PC[k]=r;}
 function burst(x,y,z,c,n=10,s=3){for(let i=0;i<n;i++)parts.push({x,y,z,vx:(rnd()-.5)*s,vy:rnd()*s,vz:(rnd()-.5)*s,t:.5+rnd()*.4,c});}
@@ -56,15 +56,15 @@ function freeze(t){hitstop=Math.max(hitstop,t);}
 // 站位：每個人照自己位置站（左攻左、右攻右、中間中、舉球員網前）。以前玩家會跟中間手換到中間接球，玩家選右攻也站中間，已取消
 const spot=(p,k)=>SPOT[p.role][k];
 function newGame(){
-  players=[];PID=0;ME=prep.side;matchSetup();
+  players=[];PID=0;ME=prep.side;matchSetup();perfReset();
   for(const t of [0,1])for(const r of ROLES){
     if(t===ME){const p=mkP(t,r,charOf(r,prep.chars[r]),r===prep.role);if(p.human)human=p;players.push(p);}
     else players.push(mkP(t,r,pick(CHARS[r].filter(c=>c.id!==prep.chars[r])),false));}
-  players.forEach((p,i)=>p.num=[4,1,7,3][i%4]+(p.team?8:0));applyBonus();
+  players.forEach((p,i)=>p.num=[4,1,7,3][i%4]+(p.team?8:0));applyBonus();applyGrowth();pickAces();
   score=[0,0];served=[false,false];serverIdx=[0,0];msgs=[];parts=[];
   serveTeam=rnd()<.5?0:1;served[serveTeam]=true;rebuildRigs();
-  camYaw=camYawT=ME?-Math.PI/2:Math.PI/2;camPitch=camPitchT=.3;setupServe(serveTeam);say(`${COL[serveTeam].name}先發球`,COL[serveTeam].ui,true);SFX.whistle();}
-function setupServe(t){
+  camYaw=camYawT=ME?-Math.PI/2:Math.PI/2;camPitch=camPitchT=.3;setupServe(serveTeam);say(`${COL[serveTeam].name}先發球`,COL[serveTeam].ui,true);aceSay();SFX.whistle();}
+function setupServe(t){if(MATCH.mode==='train'){if(trainSetup(t))return;t=serveTeam;}
   state='serve';stT=0;
   const first=!players.some(p=>p.placed);players.forEach(p=>{const s=spot(p,'r');if(first||p.human){p.x=sd(p.team)*s.d;p.z=s.z;}p.placed=1;p.y=p.vy=p.vx=p.vz=0;p.dive=p.rec=p.stun=p.swing=p.loadT=p.landT=0;p.diveQ=null;p.jk='';p.arm=null;p.jumpAt=0;p.pose='';p.run=0;p.app=0;
     p.yaw=p.team?-Math.PI/2:Math.PI/2;p.tx=sd(p.team)*s.d;p.tz=s.z;p.blockTried=-1;p.act=null;p.swingReq=null;p.charging=false;p.approach=false;});
@@ -82,6 +82,7 @@ function startToss(p,kind){ball.held=p;placeHeld();ball.held=null;ball.toss=true
   ball.vy=vy;ball.vx=(c.x-ball.x)/t;ball.vz=(c.z-ball.z)/t;ball.tossT=t;p.tossAt=time;}
 function point(w,why){
   if(state!=='play')return;state='point';stT=0;score[w]++;skPoint(w);
+  if(ball.lastTeam===w&&!ball.blockTouch){if(ball.atk&&ball.attacker){perf(ball.attacker,'kill');trainEv('kill',ball.attacker);}else if(ball.serve&&ball.lastP)perf(ball.lastP,'ace');}
   say(why||`${COL[w].name}得分！`,COL[w].ui,true);SFX.point();flash=.12;
   if(w!==serveTeam){if(served[w])serverIdx[w]++;served[w]=true;}serveTeam=w;
   window.ptWin=w;
@@ -93,7 +94,8 @@ const gameOver=()=>(score[0]>=winPts()||score[1]>=winPts())&&Math.abs(score[0]-s
 function zoneOf(p){
   if(p.stun>0||p.rec>0)return null;
   const fx=Math.sin(p.yaw),fz=Math.cos(p.yaw),by=ball.y-p.y,hd=Math.hypot(ball.x-p.x,ball.z-p.z);
-  if(p.dive>0){const r=p.human?1.9:1.6,d=Math.hypot(ball.x-(p.x+fx*.9),ball.z-(p.z+fz*.9));if(d<r&&ball.y<(p.human?1.15:1.0))return{k:'dig',q:clamp(1-d/r,0,1)*.7+.2};return null;}
+  // 撲球：判定範圍和品質都下修；來球越快越難撲好（g2 touch 另外依球速再扣）
+  if(p.dive>0){const r=1.05+p.st.rcv*.025,d=Math.hypot(ball.x-(p.x+fx*.9),ball.z-(p.z+fz*.9));if(d<r&&ball.y<.95){const v=Math.hypot(ball.vx,ball.vy,ball.vz);return{k:'dig',q:clamp(1-d/r,0,1)*.6*clamp(1.25-v/30,.45,1)+.04};}return null;}
   if(p.y>.2){const hx=p.x+fx*.3,hz=p.z+fz*.3,hy=p.y+HANDUP+.05,d=Math.hypot(ball.x-hx,ball.z-hz,(ball.y-hy)*.9),r=.65+p.st.jmp*.02;
     if(d<r){const apex=clamp(1-Math.abs(p.vy)/2.4,0,1);return{k:'air',q:clamp(1-d/r,0,1)*.55+apex*.45};}return null;}
   if(p.human&&setPhase(p)){if(by>1.25&&by<2.95&&hd<1.2){const d=Math.hypot(hd,(by-OVERY)*.8);return{k:'over',q:clamp(1-d/1.25,0,1)};}}
@@ -119,7 +121,7 @@ function touch(p,z,intent){
   const wasAtk=fresh&&(ball.atk||ball.serve),heavy=fresh&&ball.heavy,v=Math.hypot(ball.vx,ball.vy,ball.vz);
   if(fresh){ball.touches=0;ball.setInfo=null;ball.setter=null;ball.quickMB=null;}
   ball.touches++;if(ball.touches>3){fault(1-t,'四次擊球');return;}
-  ball.serial=++SERIAL;ball.lastTeam=t;ball.lastP=p;ball.blockTouch=false;ball.cool=.2;ball.letGo=null;if(ball.touches===1){ball.passSer=ball.serial;for(const hs of team(t))if(hs.human&&hs.setPick&&hs.setPick.s===-1)hs.setPick.s=ball.serial;}
+  ball.serial=++SERIAL;ball.spS=0;ball.spT=0;ball.trailC=null;ball.mark=null;ball.lastTeam=t;ball.lastP=p;ball.blockTouch=false;ball.cool=.2;ball.letGo=null;if(ball.touches===1){ball.passSer=ball.serial;for(const hs of team(t))if(hs.human&&hs.setPick&&hs.setPick.s===-1)hs.setPick.s=ball.serial;}
   ball.serve=false;ball.atk=false;ball.heavy=false;ball.float=0;ball.tip=false;
   p.touchFx=.8;p.touchN=String(ball.touches);
   if(wasAtk)q*=clamp(1.15-(v-13)/26+p.st.rcv*.025,.3,1);
@@ -130,14 +132,16 @@ function touch(p,z,intent){
     ball.vy=4.5+rnd()*1.5;ball.vx=-tnet(t)*(.8+rnd()*1.5);ball.vz=(rnd()-.5)*2.5;ball.drive=false;PC={};
     pop(p,'被打飛！','#ff8a2a');burst(ball.x,ball.y,ball.z,'#ff8a2a',16,4);doShake(.3);SFX.block();return;}
   let act;
-  if(intent==='tip'&&(z.k==='air'||ball.touches===3||fresh===false&&ball.touches>=2))act='tip';
+  // 跳舉：舉球手在空中碰第二球＝舉球（按輕打鍵＝吊二次球）
+  if(z.k==='air'&&!fresh&&ball.touches===2&&p===ball.setter&&intent!=='tip'&&(intent==='jset'||p.human&&p.role==='set'))act='set';
+  else if(intent==='tip'&&(z.k==='air'||ball.touches===3||fresh===false&&ball.touches>=2))act='tip';
   else if(z.k==='air'&&(intent==='atk'||intent==='tip'||(!p.human&&ball.touches>=2&&p!==ball.setter)))act=intent==='tip'?'tip':'spike';
   else act=ball.touches===1?'pass':ball.touches===2?'set':'over';
   p.pose=act==='spike'||act==='tip'&&z.k==='air'?'spike':z.k==='over'||act==='set'&&z.k!=='bump'?'over':z.k==='dig'?'dig':'bump';
   if(p.pose==='bump')actKey(p,'bump',.06);else if(p.pose==='over')actKey(p,'set',.08);
   else if(p.pose==='spike'&&!(p.act&&p.act.slot==='spike'))actKey(p,'spike',.08);
   if(act==='pass')doPass(p,q,wasAtk);else if(act==='set')doSet(p,q);else if(act==='spike')doSpike(p,q);else if(act==='tip')doTip(p,q);else doOver(p,q);
-  skTouch(p,act,q);
+  skTouch(p,act,q);if(ball.touches===1&&fresh){if(wasAtk)perf(p,'dig');else if(q>.7)perf(p,'goodPass');if(ball.serve||wasAtk)trainEv('pass',p,q);}if(act==='set')perf(p,'set');
   if(state==='play'&&(p.human||act==='spike')){const lab=q>.82?['PERFECT','#ffd23f']:q>.5?['GOOD','#3ee0a0']:['BAD','#a9b0cc'];pop(p,lab[0],lab[1]);}
   // 頓點：接到、扣到的瞬間整場停一下，你自己的動作停得比較明顯
   freeze(act==='spike'?(p.human?(q>.82?.13:.09):.05):p.human?.07:wasAtk?.035:0);if(p.human)doShake(act==='spike'?.25:.08);
@@ -197,7 +201,7 @@ function doSet(p,q){
     sendTo(h.x+h.vx*tt+fx*.3,hy,h.z+h.vz*tt+fz*.3,tt);finishSet(p,h,'quick');return;}
   let h=null,type='high';
   if(!p.human)for(const hu of cands){if(!hu.human)continue;const called=time-hu.calledAt<1.6,running=hu.run>.35&&hu.y===0;
-    if(called||running||rnd()<.3){h=hu;break;}}
+    if(called||running||rnd()<.3||MATCH.drill==='spike'&&MATCH.mode==='train'){h=hu;break;}}
   if(!h){const opp=team(1-t),front=z=>opp.filter(o=>Math.abs(o.x)<2.2&&Math.abs(o.z-z)<1.6).length;
     const w=cands.map(c=>({c,w:(c.role==='oh'?1.5:c.role==='op'?1.1:ball.passQ>.6?1:.2)/(1+front(spot(c,'a').z)*.8)}));
     // 避免一直托給同一個人（v7：記住前兩次）
@@ -213,7 +217,7 @@ function doSet(p,q){
   let err=(1-q)*1.3*(1.3-p.st.set*.05)+(1-ball.passQ)*.3;if(p.role!=='set')err=err*1.5+.25;if(SKs)err=0;
   lobTo(sdt*Math.max(.45,lane.d+(rnd()-.5)*err),hitY,lane.z+(rnd()-.5)*err*1.6,Math.max(hitY+.45,type==='quick'?3.25:type==='safe'?4.5:4.0));
   finishSet(p,h,type);}
-function finishSet(p,h,type){ball.setInfo={hitter:h,type};if(p._skToss){ball.setInfo.boost=.15;p._skToss=0;}const CALL={high:'高球',quick:'快攻',safe:'修正球',fast:'平快'};talk(p,(h.human?'給你・':'')+CALL[type]+'！');SFX.set();}
+function finishSet(p,h,type){ball.setInfo={hitter:h,type};if(p._skToss){ball.setInfo.boost=.15;p._skToss=0;ball.trailC='#ffd23f';burst(ball.x,ball.y,ball.z,'#ffd23f',22,4);say('神準舉球！','#ffd23f',true);}const CALL={high:'高球',quick:'快攻',safe:'修正球',fast:'平快'};talk(p,(h.human?'給你・':'')+CALL[type]+'！');SFX.set();}
 // 落點：玩家用畫面中央的準星（鏡頭看哪裡就打哪裡），AI 找對方空檔
 // 瞄準規則：準星指到哪就打哪，但一定限制在對方場內（離邊線 0.4 公尺）；會出界只會因為擊球時機差（落點散開）
 function humanAim(t){const so=sd(1-t);let x=cursorG.ok?cursorG.x:so*5,z=cursorG.ok?cursorG.z:0;
@@ -239,11 +243,14 @@ function doSpike(p,q){
   const SK=skTake(p,['power','precise']);if(SK)q=Math.max(q,SK==='power'?.85:.8);
   if(!p.human&&!SK){plan=p.plan||aiPlan(p);p.plan=null;if(plan.k==='tip'){p.tipAim=plan.aim;doTip(p,q);return;}}else if(!p.human){plan=p.plan&&p.plan.k!=='tip'?p.plan:{k:'power',B:blockRead(t)};p.plan=null;}
   const a=p.human?humanAim(t):plan.aim||planAim(p,plan.k,plan.B);let d=a.d,zz=a.z;
+  if(!p.human&&SK!=='precise'&&plan&&plan.k!=='deep'){const rb=aiReadBlock(p,d,zz,t);d=rb.d;zz=rb.z;if(rb.k)RSTAT[rb.k]=(RSTAT[rb.k]||0)+1;}
   const err=SK==='precise'?0:(1-q)*(p.human?.5:1.6*D(p).err);d+=(rnd()-.5)*err;zz+=(rnd()-.5)*err*1.3;
   if(!p.human&&!SK&&rnd()<.22*(1-q)*(1-q)*D(p).err)d+=2.4;
   const speed=(14+p.st.pow*1.1)*(.72+.42*q)*(.88+.22*(p.app||0))*(p.human?1:.9)*(SK==='power'?1.1:1);
   driveTo(so*d,zz,speed);p.hangT=.18;
-  ball.atk=true;ball.attacker=p;ball.toolAim=!!(plan&&plan.k==='tool');ball.power=p.st.pow*(.6+.6*q)*(.85+.25*(p.app||0))+(SK==='power'?3:SK?1.5:0);ball.heavy=q>.85&&p.st.pow>=8;
+  ball.atk=true;ball.attacker=p;ball.toolAim=!!(plan&&plan.k==='tool');ball.power=attackPower(p,q,SK);ball.skPower=SK==='power';ball.trailC=SK==='power'?'#ff9a3c':SK==='precise'?'#5ad1ff':null;
+  {const sp=spinFrom(p,t);ball.spS=sp.s;ball.spT=sp.t;ball.spX=Math.sign(ball.x)||sd(t);if(p.human&&Math.abs(sp.s)>.35)pop(p,sp.s>0?'右旋':'左旋','#c9bde0');}
+  skillFx(p,SK);ball.heavy=q>.85&&p.st.pow>=8;
   if(q>.82){slowmo(.1);doShake(.35);SFX.sup();burst(ball.x,ball.y,ball.z,'#ffd23f',22,5);}else{doShake(.12);SFX.spike();burst(ball.x,ball.y,ball.z,'#ffffff',10,3);}
   talk(p,LINES.spike);}
 // 輕打：把球輕輕推過攔網，落在準星位置（AI：攔網後方的空檔）

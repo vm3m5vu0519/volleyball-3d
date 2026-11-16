@@ -41,7 +41,7 @@ function netMsg(m){
       netLobby();return;}
     if(m.t==='seat'){netSeat(m.from,NET.peers[m.from]||'玩家',m.i,m.ch);return;}
     if(m.t==='in'){const p=players.find(x=>x.owner===m.from&&x.rc);if(!p)return;const rc=p.rc;rc.held=new Set(m.h||[]);(m.tr||[]).forEach(a=>rc.trig.add(a));
-      rc.cy=+m.cy||0;rc.cp=+m.cp||0;rc.cf=m.cf||[1,0];rc.cg=m.cg||[0,0,false];return;}
+      rc.cy=+m.cy||0;rc.cp=+m.cp||0;rc.cf=m.cf||[1,0];rc.cg=m.cg||[0,0,false];rc.sp=m.sp||[0,0];return;}
     if(m.t==='pong'){return;}
     return;}
   // 其他玩家
@@ -60,15 +60,15 @@ function netStartLocal(serveT){
   MATCH.diff=[NET.diff,NET.diff];MATCH.bonus=[0,0];
   for(const t of [0,1])for(const r of ROLES){const s=NET.slots[slotIdx(t,r)],p=mkP(t,r,charOf(r,s.ch),!!s.owner);p.owner=s.owner;p.pname=s.owner?s.name:'';
     if(s.owner===NET.id)human=p;else if(NET.host&&s.owner)p.rc={held:new Set(),trig:new Set(),cy:t?-Math.PI/2:Math.PI/2,cp:.3,cf:[sd(1-t)*1,0],cg:[sd(1-t)*5,0,false]};players.push(p);}
-  players.forEach((p,i)=>p.num=[4,1,7,3][i%4]+(p.team?8:0));
+  players.forEach((p,i)=>p.num=[4,1,7,3][i%4]+(p.team?8:0));if(NET.host)pickAces();
   score=[0,0];served=[false,false];serverIdx=[0,0];msgs=[];parts=[];serveTeam=serveT;served[serveTeam]=true;rebuildRigs();
   camYaw=camYawT=ME?-Math.PI/2:Math.PI/2;camPitch=camPitchT=.3;setupServe(serveTeam);say(`${COL[serveTeam].name}先發球`,COL[serveTeam].ui,true);SFX.whistle();
   g3.focus();try{const r=g3.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
 // ---------- 房主：遠端玩家的輸入 ----------
 // 跑遊戲邏輯時，暫時把「玩家」「按鍵」「鏡頭」「準星」換成那位遠端玩家的，原本的單人程式碼就能直接用
-function withCtx(p,fn){const rc=p.rc,sv=[human,A,T,camYaw,camPitch,camFwd,cursorG.x,cursorG.z,cursorG.ok];
-  human=p;A=a=>rc.held.has(a);T=a=>rc.trig.has(a);camYaw=rc.cy;camPitch=rc.cp;camFwd={x:rc.cf[0],z:rc.cf[1]};cursorG.x=rc.cg[0];cursorG.z=rc.cg[1];cursorG.ok=!!rc.cg[2];
-  try{return fn();}finally{human=sv[0];A=sv[1];T=sv[2];camYaw=sv[3];camPitch=sv[4];camFwd=sv[5];cursorG.x=sv[6];cursorG.z=sv[7];cursorG.ok=sv[8];}}
+function withCtx(p,fn){const rc=p.rc,sv=[human,A,T,camYaw,camPitch,camFwd,cursorG.x,cursorG.z,cursorG.ok,spinNow];
+  spinNow=()=>rc.sp||[0,0];human=p;A=a=>rc.held.has(a);T=a=>rc.trig.has(a);camYaw=rc.cy;camPitch=rc.cp;camFwd={x:rc.cf[0],z:rc.cf[1]};cursorG.x=rc.cg[0];cursorG.z=rc.cg[1];cursorG.ok=!!rc.cg[2];
+  try{return fn();}finally{human=sv[0];A=sv[1];T=sv[2];camYaw=sv[3];camPitch=sv[4];camFwd=sv[5];cursorG.x=sv[6];cursorG.z=sv[7];cursorG.ok=sv[8];spinNow=sv[9];}}
 function netEach(fn){if(!NET.host)return;for(const p of players)if(p.rc)withCtx(p,fn);}
 function netClearTrig(){if(NET.host)for(const p of players)if(p.rc)p.rc.trig.clear();}
 // ---------- 狀態序列化 ----------
@@ -117,7 +117,7 @@ function netClientFrame(d){
   const H=[],skip=new Set(['cam','pause']);for(const a of ACTS){if(skip.has(a))continue;if(A(a))H.push(a);if(T(a))NET.trig.add(a);}
   if(T('cam')){S.cam=((S.cam|0)+1)%3;saveS();syncSeg();say('鏡頭：'+CAMN[S.cam],'#c9bde0');}
   clearHits();NET.inT+=d;
-  if(NET.inT>=1/30||NET.trig.size){NET.inT=0;netSend({t:'in',h:H,tr:[...NET.trig],cy:+camYaw.toFixed(3),cp:+camPitch.toFixed(3),cf:[+camFwd.x.toFixed(3),+camFwd.z.toFixed(3)],cg:[+cursorG.x.toFixed(2),+cursorG.z.toFixed(2),cursorG.ok]});NET.trig.clear();}
+  if(NET.inT>=1/30||NET.trig.size){NET.inT=0;netSend({t:'in',h:H,tr:[...NET.trig],cy:+camYaw.toFixed(3),cp:+camPitch.toFixed(3),cf:[+camFwd.x.toFixed(3),+camFwd.z.toFixed(3)],cg:[+cursorG.x.toFixed(2),+cursorG.z.toFixed(2),cursorG.ok],sp:mouseRecent()});NET.trig.clear();}
   // 收到的狀態用固定節奏套用（保留一點緩衝，網路忽快忽慢時畫面比較穩）
   NET.acc+=d;const lag=NET.q.length>3;
   while(NET.q.length&&(NET.acc>=NET_DT||lag&&NET.q.length>2)){netApply(NET.q.shift());NET.acc=Math.max(0,NET.acc-NET_DT);}
@@ -125,7 +125,7 @@ function netClientFrame(d){
   ALPHA=clamp(NET.acc/NET_DT,0,1);
   for(const q of parts){q.x+=q.vx*d;q.y+=q.vy*d;q.z+=q.vz*d;q.vy-=9*d;q.t-=d;}parts=parts.filter(q=>q.t>0&&q.y>-.2);
   if(state==='over'&&!NET.overShown){NET.overShown=true;netOver();}}
-function netOver(){if(document.pointerLockElement)document.exitPointerLock();const win=score[ME]>score[1-ME];
+function netOver(){$('resG').innerHTML='';if(document.pointerLockElement)document.exitPointerLock();const win=score[ME]>score[1-ME];
   $('resT').textContent=win?'勝利！':'落敗…';$('resS').textContent=`${score[0]} - ${score[1]}`;$('resN').textContent=NET.host?'可以再來一場，或回到房間換位置':'等房主決定再來一場或回房間';
   $('bAgain').hidden=!NET.host;$('bNext').hidden=true;$('bMenu').textContent='回到房間';show('vOver');}
 // ---------- 房間畫面 ----------

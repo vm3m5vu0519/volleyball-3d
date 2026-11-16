@@ -48,7 +48,8 @@ let S=Object.assign({pace:.85,diff:'normal',win:25,sound:1,shake:1,hint:1,traj:1
 if(!S.fbUI){S.traj=0;S.hint=0;S.fbUI=1;}if(S.tell===undefined)S.tell=1;
 // 難度只套在對手：MATCH.diff[隊伍]；自己隊友固定「普通」（關卡模式／對手強度設定會改 MATCH）
 let MATCH={mode:'free',stage:0,diff:['normal','normal'],bonus:[0,0]};
-const D=p=>DIFF[(p&&MATCH.diff[p.team])||'normal']||DIFF.normal;
+// 隊友和對手用同一套底層邏輯（同一組 AI 參數）；強弱只看屬性（難度加成、王牌、成長）
+const D=p=>DIFF.normal;
 function saveS(){store('fb-set',S);}
 // ---------------- 音效：全部用 WebAudio 即時合成（影片沒有聲音軌，依真實排球的聲音設計） ----------------
 // 擊球＝短促的「啪」：一段濾波雜訊（皮革拍擊）＋一個快速下滑的低頻（球體的悶響）；扣球再加高頻的爆裂和一點破音

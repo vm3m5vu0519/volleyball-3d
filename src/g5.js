@@ -84,7 +84,7 @@ function render(dt){
     const gc=null;glow.visible=!!gc;
     if(gc){glow.material.color.set(gc);glow.position.copy(ballMesh.position);glow.scale.setScalar((ball.meteor?1.5:1)*(1+.15*Math.sin(time*40)));}ballM.emissive.set(gc||'#222');
     blob.position.set(ballMesh.position.x,.02,ballMesh.position.z);const s=clamp(1.3-ball.y*.07,.45,1.3);blob.scale.setScalar(s);
-    const fast=state==='play'&&(ball.atk||ball.serve&&ball.drive)&&Math.hypot(ball.vx,ball.vy,ball.vz)>8&&ball.trail.length>3;ribbon.visible=fast;if(fast){updRibbon('#ffffff');ribbon.material.opacity=ball.atk?.8:.0;}}
+    const fast=state==='play'&&(ball.atk||ball.serve&&ball.drive)&&Math.hypot(ball.vx,ball.vy,ball.vz)>8&&ball.trail.length>3;const tc=state==='play'&&ball.trailC&&ball.trail.length>3;ribbon.visible=fast||tc;if(fast||tc){updRibbon(ball.trailC||'#ffffff');ribbon.material.opacity=ball.trailC?.95:ball.atk?.8:.0;}}
   else{glow.visible=false;ribbon.visible=false;}
   updTraj();
   // 預判提示：對方攻手在空中、已經決定落點時才出現；越接近擊球越清楚，但一直都很淡
@@ -120,6 +120,7 @@ function drawHUD(){
   if(flash>0){g.fillStyle=`rgba(255,255,255,${flash*1.5})`;g.fillRect(0,0,cw,ch);}
   if(state==='menu'||state==='over'||!ball)return;
   const sc=clamp(cw/1280,.7,1.3);
+  drawBlockWall(g,cw,ch,sc);drawSkillMark(g,cw,ch,sc);drawAces(g,cw,ch,sc);drawTrain(g,cw,ch,sc);
   // ---- 以下全部比照 Free Ball 的畫面指標 ----
   // 1) 擊球圈：輪到你打的球（來球、托給你的球、發球拋起的球）外面套一圈發光的黃框；進到擊球範圍時框變粗、變亮
   const bs=ballScreen(cw,ch);
@@ -218,7 +219,8 @@ function keyGlyph(g,k,x,y,sc,shift){const mL=/滑鼠左鍵|左鍵/.test(k),mR=/�
   g.restore();}
 
 // ---------------- 選單 ----------------
-const PAGES=['vMenu','vPrep','vHelp','vPause','vOver','vSet','vMocap','vSkin','vNet'];
+const PAGES=['vMenu','vPrep','vHelp','vPause','vOver','vSet','vMocap','vSkin','vNet','vTrain'];
+$('mTrain').onclick=()=>{renderTrain();show('vTrain');};
 function show(id){PAGES.filter(x=>x!=='vSet').forEach(x=>$(x).hidden=x!==id);if(id){const b=$(id).querySelector('button');if(b)b.focus();}else g3.focus();
   if(id==='vPrep')renderPrep();if(id==='vHelp')renderHelp();}
 document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{toMenu(b.dataset.go);});
@@ -234,10 +236,10 @@ function togglePause(){if(!inMatch())return;if(NET.on){if(document.pointerLockEl
 $('bResume').onclick=togglePause;
 $('bRestart').onclick=()=>{paused=false;show(null);newGame();};
 $('bTitle').onclick=()=>{paused=false;toMenu('vMenu');};
-$('bAgain').onclick=()=>{if(NET.on){if(NET.host)netStart();return;}show(null);newGame();};
+$('bAgain').onclick=()=>{if(NET.on){if(NET.host)netStart();return;}$('bAgain').textContent='再來一場';if(MATCH.mode==='train'){trainStart(MATCH.drill);return;}show(null);newGame();};
 $('bNext').onclick=()=>{MATCH.stage=Math.min(MATCH.stage+1,STAGES.length-1);show(null);newGame();};
 $('bMenu').onclick=()=>{if(NET.on){if(NET.host){netSend({t:'lock',v:false});netSend({t:'lobbyback'});}state='menu';human=null;NET.started=false;$('bMenu').textContent='回主選單';$('bAgain').hidden=false;show('vNet');renderNet();return;}toMenu('vMenu');};
-function statBars(base){return Object.keys(STAT).map(k=>{const b=base[k],x=0;
+function statBars(base,add){return Object.keys(STAT).map(k=>{const b=base[k],x=add&&add[k]||0;
   return `<span>${STAT[k]}</span><i><em style="width:${Math.min(100,(b+x)*100/12)}%"></em><b style="width:${b*100/12}%"></b></i><span>${b+x}</span>`;}).join('');}
 function press(box,v){box.querySelectorAll('[data-v]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===v)));}
 function renderPrep(){
@@ -249,7 +251,7 @@ function renderPrep(){
     line.innerHTML=`<div class="lbl">${ROLE[r].name}${r===prep.role?'<small>你</small>':'<small style="color:var(--dim)">隊友</small>'}</div><div class="cards"></div>`;
     const cards=line.querySelector('.cards');
     CHARS[r].forEach(c=>{const b=document.createElement('button');b.className='cc';b.dataset.v=c.id;const th=PV.thumbs[c.id];
-      b.innerHTML=`<div class="top"><img class="th" data-th="${c.id}" alt="" ${th?`src="${th}"`:'hidden'}><span class="sw" style="background:${c.hair}" ${th?'hidden':''}></span><div><div class="nm">${c.name}</div><div class="ty">${c.type}</div></div></div><div class="nt">${c.note}</div><div class="stats">${statBars(c.st)}</div>`;
+      b.innerHTML=`<div class="top"><img class="th" data-th="${c.id}" alt="" ${th?`src="${th}"`:'hidden'}><span class="sw" style="background:${c.hair}" ${th?'hidden':''}></span><div><div class="nm">${c.name}<small style="color:var(--gold);margin-left:6px">Lv ${(GROW[c.id]||{lv:1}).lv}${(GROW[c.id]||{}).pts?` ・+${GROW[c.id].pts}點`:""}</small></div><div class="ty">${c.type}</div></div></div><div class="nt">${c.note}</div><div class="stats">${statBars(c.st,growthAdd(c.id))}</div>`;
       b.onclick=()=>{pickChar(r,c.id);press(cards,c.id);pvShow(r,c.id);};cards.appendChild(b);});
     press(cards,prep.chars[r]);box.appendChild(line);});
   if(!PV.role||!$('pChars').contains(document.activeElement))pvShow(prep.role,prep.chars[prep.role]);
@@ -259,13 +261,14 @@ $('pGo').onclick=()=>{show(null);newGame();g3.focus();try{const r=g3.requestPoin
 function renderHelp(){
   const K=a=>`<kbd>${k1(a)}</kbd>`,air='<i>空中</i>',hold='<i>按住</i>';
   const G=[{t:'移動與鏡頭',rows:[['滑鼠','轉鏡頭（點一下畫面鎖定游標）'],[`${K('fwd')}${K('left')}${K('back')}${K('right')}`,'往鏡頭方向跑'],[K('jump'),'跳；往網前跑幾步再跳＝助跑，跳更高、打更重'],[K('cam'),'切換鏡頭：動作視角／固定視角／轉播']]},
-   {t:'進攻',sub:'球托給你時',rows:[[`${K('jump')} → ${air}${K('atk')}`,'扣球：按下去就一定打得到，在跳躍最高點出手最強'],['準星','畫面中央的準星指到哪裡，球就往哪裡打'],[`${air}${K('tip')}`,'輕打：把球輕輕推到準星位置'],[K('call'),'叫球：要舉球手托給你']]},
-   {t:'舉球',sub:'你選舉球手時，隊友一傳後輪到你',rows:[['黃圈','地上的黃圈是球落到頭上的位置，跑過去（一傳會傳高一點，球飛過來時畫面變慢，慢的程度在設定「舉球思考時間」調整）'],['準星','對準要托給的攻手（頭上出現黃色標記）'],[K('atk'),'舉球（差一點會自動跨一步）'],[`${K('s1')}${K('s2')}${K('s3')}`,'直接指定托給左攻／中間／右攻（不按就看準星）；對方發球或進攻時就能先選好下一球'],[`${K('stype')}／滾輪`,'切換攻擊方式：自動、高球（最穩）、平快（低平快，攔網來不及）、快攻（只有中間手，托在身邊、第一時間打；選左右攻會改成平快）；一傳太差時會改托修正高球'],[K('tip'),'二次吊球：直接把球推過網'],[`${hold}${K('rcv')}`,'墊球舉：比較保險，但沒那麼準']]},
+   {t:'進攻',sub:'球托給你時',rows:[[`${K('jump')} → ${air}${K('atk')}`,'扣球：按下去就一定打得到，在跳躍最高點出手最強'],['準星','畫面中央的準星指到哪裡，球就往哪裡打'],['攔網牆','起跳後網上會出現對方攔網手的紅色矩形：打縫隙或頭上＝乾淨過網；虛線外側＝可能打手出界；打正中間要看力量'],['力量','助跑越長、跳越高、在最高點出手，球越重越難攔'],['旋球','扣球前一瞬間滑鼠往左／右甩＝側旋（球會彎），往下甩＝上旋（過網後下墜）'],[`${air}${K('tip')}`,'輕打：把球輕輕推到準星位置'],[K('call'),'叫球：要舉球手托給你']]},
+   {t:'舉球',sub:'你選舉球手時，隊友一傳後輪到你',rows:[['黃圈','地上的黃圈是球落到頭上的位置，跑過去（一傳會傳高一點，球飛過來時畫面變慢，慢的程度在設定「舉球思考時間」調整）'],['準星','對準要托給的攻手（頭上出現黃色標記）'],[K('atk'),'舉球（差一點會自動跨一步）'],[`${K('jump')} → ${air}${K('atk')}`,'跳舉：一傳靠網又高時跳起來舉，節奏更快'],[`${K('jump')} → ${air}${K('tip')}`,'二次球：舉球員直接吊過網'],[`${K('s1')}${K('s2')}${K('s3')}`,'直接指定托給左攻／中間／右攻（不按就看準星）；對方發球或進攻時就能先選好下一球'],[`${K('stype')}／滾輪`,'切換攻擊方式：自動、高球（最穩）、平快（低平快，攔網來不及）、快攻（只有中間手，托在身邊、第一時間打；選左右攻會改成平快）；一傳太差時會改托修正高球'],[K('tip'),'二次吊球：直接把球推過網'],[`${hold}${K('rcv')}`,'墊球舉：比較保險，但沒那麼準']]},
    {t:'接球・防守',rows:[[`${hold}${K('rcv')}`,'接球姿勢：球掉進手臂就自動墊給舉球手'],[`<i>跑動中</i>${K('rcv')}`,'球太遠時飛撲'],[`<i>網前</i>${K('block')}`,'攔網：對方攻手起跳時按，原地起跳、手自動舉高、會往球的位置橫移']]},
    {t:'發球',sub:'輪到你發球時',rows:[[K('atk'),'拋球，球到手上方再按一次'],[`${hold}${K('mod')}＋${K('atk')}`,'跳發：快又重'],['準星','發球落點']]},
    {t:'技能',sub:'右下角量表滿了才能用',rows:[[K('skill'),'發動技能（左攻：強力扣球／右攻：精準扣球／中間：鐵壁攔網／舉球：神準舉球）'],['集氣','碰到球、得分、每打完一球都會集氣；一場至少能放一兩次']]},
    {t:'其他',rows:[[K('pause'),'暫停（Esc 也會放開滑鼠；多人連線時不會暫停）']]}];
   const notes=[['畫面提示',['球後面的白線是飛行軌跡，前面的點是接下來會飛的路線：黃色會落在我方，藍色落在對方','球跑出畫面時，畫面邊緣會有黃色箭頭指向球','地上的光圈是落點；黃色起跳圈出現時，跑過去在「跳！」時起跳']],
+    ['成長',['每個角色有自己的等級，比賽依表現拿經驗值，升級得能力點，在賽前準備頁的角色預覽裡加點','主選單「訓練」：扣球／接發／攔網練習，加該能力的經驗值（滿 100 加 1 點），成長最多到 12','每場兩隊各有一位隨機「王牌」（頭上有 ★），屬性 +2']],
     ['多人連線',['主選單「多人連線」：房主建立房間，朋友輸入代碼加入，各自選位置，沒人坐的位置由 AI 打','需要先執行 server.js（離線包裡有「多人連線伺服器.bat」），再用 cloudflared 分享網址']],
     ['規則',['4 對 4，先取設定分數且領先 2 分獲勝','得分的一方發球；換發時換下一位發球（舉球手不發球）','每隊最多碰三次，同一人不能連碰，攔網不算次數']]];
   $('helpList').innerHTML=G.map(g=>`<div class="cg"><h4>${g.t}${g.sub?`<small>${g.sub}</small>`:''}</h4>${g.rows.map(([k,t])=>`<div class="cr"><span class="ck">${k}</span><span>${t}</span></div>`).join('')}</div>`).join('')

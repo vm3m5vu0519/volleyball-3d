@@ -281,7 +281,7 @@ function pvInit(){if(PV.rend||!renderer)return;const c=$('pView');try{PV.rend=ne
 function pvSkinOf(r,cid){return(cid===prep.chars[r]&&prep.skins[r])||CHAR_SKIN[cid]||'__none';}
 function pvMakeP(r,cid){const p=mkP(ME||0,r,charOf(r,cid),false);p.x=p.z=p.y=p.ox=p.oz=p.oy=0;p.yaw=p.oyaw=0;p.skinId=pvSkinOf(r,cid);p.num=[4,1,7,3][ROLES.indexOf(r)]+(ME?8:0);return p;}
 function pvShow(r,cid){pvInit();PV.role=r;PV.cid=cid;const c=charOf(r,cid);
-  $('pvInfo').innerHTML=`<div class="pvN"><b></b><span></span></div><div class="pvR"></div><div class="pvT"></div><div class="stats">${statBars(c.st)}</div>`;
+  $('pvInfo').innerHTML=`<div class="pvN"><b></b><span></span></div><div class="pvR"></div><div class="pvT"></div><div class="stats">${statBars(c.st,growthAdd(cid))}</div>${growthHTML(cid)}`;
   $('pvInfo').querySelector('b').textContent=c.name;$('pvInfo').querySelector('.pvN span').textContent=c.type;
   $('pvInfo').querySelector('.pvR').textContent=`${ROLE[r].name}${r===prep.role?'・你操控':''}${PV.sc?'':'（這個瀏覽器無法顯示 3D）'}`;$('pvInfo').querySelector('.pvT').textContent=c.note;
   pvRig();}

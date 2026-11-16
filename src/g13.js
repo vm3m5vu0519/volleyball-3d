@@ -42,15 +42,21 @@ const STAGES=[
   {name:'全國四強',opp:'體育班',diff:'hard',bonus:1,win:25,note:'困難 AI＋能力 +1。'},
   {name:'全國決賽',opp:'衛冕冠軍',diff:'hell',bonus:2,win:25,note:'地獄 AI＋能力 +2。打贏就破關！'}];
 let stageProg=+(load('vb-stage',0))||0;
-const winPts=()=>MATCH.mode==='stage'?STAGES[MATCH.stage].win:MATCH.mode==='net'?MATCH.win:+S.win;
+const winPts=()=>MATCH.mode==='stage'?STAGES[MATCH.stage].win:MATCH.mode==='net'?MATCH.win:MATCH.mode==='train'?999:+S.win;
 function matchSetup(){const opp=1-prep.side;MATCH.diff=['normal','normal'];
-  if(MATCH.mode==='stage'){const st=STAGES[MATCH.stage];MATCH.diff[opp]=st.diff;MATCH.bonus=[0,0];MATCH.bonus[opp]=st.bonus;}
-  else{MATCH.diff[opp]=S.diff in DIFF?S.diff:'normal';MATCH.bonus=[0,0];MATCH.bonus[opp]={easy:-1,normal:0,hard:1,hell:2}[MATCH.diff[opp]];}}
+  const DB={easy:-1,normal:0,hard:1,hell:2};MATCH.bonus=[0,0];
+  if(MATCH.mode==='stage'){const st=STAGES[MATCH.stage];MATCH.diff[opp]=st.diff;MATCH.bonus[opp]=DB[st.diff]+st.bonus;}
+  else{MATCH.diff[opp]=S.diff in DIFF?S.diff:'normal';MATCH.bonus[opp]=DB[MATCH.diff[opp]];}}
+// 每場每隊隨機一位王牌：屬性 +2（可以超過 10，最多 12）
+function pickAces(){for(const t of [0,1]){const c=team(t).filter(p=>p.role!=='set'||rnd()<.25),a=c[Math.floor(rnd()*c.length)];if(!a)continue;a.ace=true;
+  const st={};for(const k in a.st)st[k]=Math.min(12,a.st[k]+2);a.st=st;a.jumpH=.62+Math.min(10,st.jmp)*.045+Math.max(0,st.jmp-10)*.03;}
+}
+function aceSay(){const A2=players.filter(p=>p.ace);if(A2.length)say('本場王牌：'+A2.map(p=>`${COL[p.team].name} ${p.ch.name}`).join('、'),'#ffd23f');}
 // 對手能力加成（關卡）：每項 +n，最多 10
 function applyBonus(){for(const p of players){const b=MATCH.bonus[p.team]||0;if(!b)continue;const st={};for(const k in p.st)st[k]=clamp(p.st[k]+b,1,10);p.st=st;p.jumpH=.62+st.jmp*.045;}}
 function stageWin(){if(MATCH.mode!=='stage')return;if(MATCH.stage+1>stageProg){stageProg=Math.min(STAGES.length,MATCH.stage+1);store('vb-stage',stageProg);}}
 // 賽前準備頁：模式、對手強度、關卡列表
-function renderMode(){const box=$('pMode');if(!box)return;
+function renderMode(){const box=$('pMode');if(!box)return;if(MATCH.mode!=='stage')MATCH.mode='free';
   box.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===MATCH.mode));
   $('pFree').hidden=MATCH.mode!=='free';$('pStage').hidden=MATCH.mode!=='stage';
   $('pDiff').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===S.diff));
