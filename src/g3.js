@@ -147,7 +147,8 @@ function updatePlayer(p,dt){
   p.yaw=angLerp(p.yaw,want,Math.min(1,dt*(p.dive>0?20:p.human?16:12)));}
 function humanInput(dt){
   const p=human;if(!p)return;
-  if(T('call')&&state==='play'){p.calledAt=time;talk(p,'給我！');SFX.call();}
+  if(T('call')&&(state==='play'||state==='serve')){p.calledAt=time;talk(p,'給我！'+(p.reqType&&p.reqType!=='auto'?REQ_N[p.reqType]:''));SFX.call();}
+  if(p.role!=='set'&&T('stype'))reqStep(p,1); // 攻擊手：R／滾輪 決定要哪種球
   if(T('skill')){if(!skActivate(p)&&!p.skOn)say('技能量表還沒滿（'+Math.floor(p.sk||0)+'%）','#a9b0cc');}
   if(state==='serve'&&server===p){
     if(!ball.toss&&T('atk')&&time-(p.tossAt||-9)>.35){startToss(p,A('mod')?'jump':'stand');if(ball.tossKind==='jump')say('跳發！','#fff');}
@@ -171,7 +172,8 @@ function humanInput(dt){
   if(p.ready&&!(p.lungeT>0)&&ball.lastTeam!==p.team&&p.lunged!==ball.serial){const Lb=predict(BUMPY);
     if(Lb&&Math.sign(Lb.x)===sd(p.team)&&Lb.t<.42&&Lb.t>.06){const ax=Lb.x-Math.sin(p.yaw)*.3,az=Lb.z-Math.cos(p.yaw)*.3,dd=Math.hypot(ax-p.x,az-p.z);
       if(dd>.45&&dd<2.6){const tt=Math.max(.1,Lb.t-.05);p.vx=(ax-p.x)/tt;p.vz=(az-p.z)/tt;const v=Math.hypot(p.vx,p.vz);if(v>9){p.vx*=9/v;p.vz*=9/v;}p.lungeT=tt;p.lunged=ball.serial;}}}
-  if(p.y>0&&!p.hitDone&&(T('atk')||T('tip'))&&!p.swingReq){p.swingReq=T('tip')?'tip':'atk';p.pressLate=ball.vy<0&&ball.y<p.y+HANDUP-.1;p.charging=true;p.chargeT=0;p.prevD=9;
+  // 空中：左鍵＝左旋扣球、右鍵＝右旋扣球、鍵盤扣球鍵＝不旋（滑鼠甩動另外加旋轉）
+  if(p.y>0&&!p.hitDone&&(T('atk')||T('tip')||T('rcv')&&!setPhase(p))&&!p.swingReq){p.swingReq=T('tip')?'tip':'atk';p.spinReq=T('tip')?0:spinBtn();p.pressLate=ball.vy<0&&ball.y<p.y+HANDUP-.1;p.charging=true;p.chargeT=0;p.prevD=9;
     const c=MOCAP.spike;if(c)playAct(p,'spike',Math.max(0,clipKey(c)-.4),{hold:clipKey(c)-.12});}
   if(p.charging){p.chargeT+=dt;p.power=Math.min(1,p.chargeT/.3);}
   // 舉球：1／2／3 直接指定托給誰（不按就看準星），R 或滾輪切換攻擊方式

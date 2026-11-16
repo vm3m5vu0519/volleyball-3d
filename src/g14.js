@@ -66,9 +66,9 @@ function netStartLocal(serveT){
   g3.focus();try{const r=g3.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
 // ---------- 房主：遠端玩家的輸入 ----------
 // 跑遊戲邏輯時，暫時把「玩家」「按鍵」「鏡頭」「準星」換成那位遠端玩家的，原本的單人程式碼就能直接用
-function withCtx(p,fn){const rc=p.rc,sv=[human,A,T,camYaw,camPitch,camFwd,cursorG.x,cursorG.z,cursorG.ok,spinNow];
-  spinNow=()=>rc.sp||[0,0];human=p;A=a=>rc.held.has(a);T=a=>rc.trig.has(a);camYaw=rc.cy;camPitch=rc.cp;camFwd={x:rc.cf[0],z:rc.cf[1]};cursorG.x=rc.cg[0];cursorG.z=rc.cg[1];cursorG.ok=!!rc.cg[2];
-  try{return fn();}finally{human=sv[0];A=sv[1];T=sv[2];camYaw=sv[3];camPitch=sv[4];camFwd=sv[5];cursorG.x=sv[6];cursorG.z=sv[7];cursorG.ok=sv[8];spinNow=sv[9];}}
+function withCtx(p,fn){const rc=p.rc,sv=[human,A,T,camYaw,camPitch,camFwd,cursorG.x,cursorG.z,cursorG.ok,spinNow,spinBtn];
+  spinNow=()=>rc.sp||[0,0];spinBtn=()=>rc.trig.has('rcv')&&!rc.trig.has('atk')?1:rc.trig.has('_sl')?-1:0;human=p;A=a=>rc.held.has(a);T=a=>rc.trig.has(a);camYaw=rc.cy;camPitch=rc.cp;camFwd={x:rc.cf[0],z:rc.cf[1]};cursorG.x=rc.cg[0];cursorG.z=rc.cg[1];cursorG.ok=!!rc.cg[2];
+  try{return fn();}finally{human=sv[0];A=sv[1];T=sv[2];camYaw=sv[3];camPitch=sv[4];camFwd=sv[5];cursorG.x=sv[6];cursorG.z=sv[7];cursorG.ok=sv[8];spinNow=sv[9];spinBtn=sv[10];}}
 function netEach(fn){if(!NET.host)return;for(const p of players)if(p.rc)withCtx(p,fn);}
 function netClearTrig(){if(NET.host)for(const p of players)if(p.rc)p.rc.trig.clear();}
 // ---------- 狀態序列化 ----------
@@ -114,7 +114,7 @@ function netApply(m){
 function netHostFrame(d){if(!NET.host||!NET.started)return;NET.sendT+=d;if(NET.sendT>=NET_DT){NET.sendT=Math.min(NET.sendT-NET_DT,NET_DT);netSend(netSnap());}}
 function netClientFrame(d){
   // 把自己的按鍵整理好送給房主（按住的動作＋這段時間按下去的動作）
-  const H=[],skip=new Set(['cam','pause']);for(const a of ACTS){if(skip.has(a))continue;if(A(a))H.push(a);if(T(a))NET.trig.add(a);}
+  const H=[],skip=new Set(['cam','pause']);for(const a of ACTS){if(skip.has(a))continue;if(A(a))H.push(a);if(T(a))NET.trig.add(a);}if(hitK['m:0'])NET.trig.add('_sl');
   if(T('cam')){S.cam=((S.cam|0)+1)%3;saveS();syncSeg();say('鏡頭：'+CAMN[S.cam],'#c9bde0');}
   clearHits();NET.inT+=d;
   if(NET.inT>=1/30||NET.trig.size){NET.inT=0;netSend({t:'in',h:H,tr:[...NET.trig],cy:+camYaw.toFixed(3),cp:+camPitch.toFixed(3),cf:[+camFwd.x.toFixed(3),+camFwd.z.toFixed(3)],cg:[+cursorG.x.toFixed(2),+cursorG.z.toFixed(2),cursorG.ok],sp:mouseRecent()});NET.trig.clear();}

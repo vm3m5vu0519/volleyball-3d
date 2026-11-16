@@ -168,12 +168,12 @@ function drawHUD(){
     // 技能：量表＋按鍵（滿了會閃），發動中顯示技能名稱和剩餘秒數
     const SKD=skOf(human),sk=human.sk||0,full=sk>=100,pul=full?.6+.4*Math.sin(time*8):1,skc=SKD?SKD.col:'#ff7a1a';
     rr(g,x1-19*sc,y0+18*sc,16*sc,16*sc,2,full||human.skOn?skc:'rgba(255,255,255,.25)');keyGlyph(g,k1('skill'),x1-11*sc,y0+57*sc,1.15*sc);
-    const gx=cw-20*sc,gy=ch*.69,gh=ch*.27,fh=(gh-6*sc)*sk/100;rr(g,gx,gy,14*sc,gh,2,'rgba(255,255,255,.22)');
+    const gx=cw-20*sc,gy=ch*.69,gh=ch*.27,fh=(gh-6*sc)*sk/100;rr(g,gx,gy,14*sc,gh,2,'rgba(8,22,30,.55)');
     if(fh>1){g.globalAlpha=pul;rr(g,gx+3*sc,gy+gh-3*sc-fh,8*sc,fh,2,skc);g.globalAlpha=1;}
     T2(g,full?'MAX':String(Math.floor(sk)),gx+7*sc,gy-8*sc,11*sc,full?skc:'#eef6f7');
     if(SKD){const tx=human.skOn?`技能中：${SKD.name}（${SK_DUR[human.skOn]>0?Math.ceil(human.skT)+' 秒':{power:'下一次扣球',precise:'下一次扣球',toss:'下一次舉球'}[human.skOn]}）`:full?`${k1('skill')} 發動：${SKD.name}`:`技能：${SKD.name}`;
       g.font=`700 ${12*sc}px "Noto Sans TC",sans-serif`;const tw=g.measureText(tx).width+18*sc;rr(g,x1-tw+6*sc,y0-30*sc,tw,22*sc,11,human.skOn||full?'rgba(8,22,30,.78)':'rgba(8,22,30,.45)');
-      T2(g,tx,x1-3*sc,y0-19*sc,12*sc,human.skOn||full?skc:'#cfe2ea','right');}}
+      T2(g,tx,x1-3*sc,y0-19*sc,12*sc,human.skOn||full?skc:'#cfe2ea','right');}drawReq(g,cw,ch,sc,x1,y0);}
   // 技能發動中的球員：腳下一圈淡淡的光環
   for(const p of players){if(!p.skOn)continue;const S2=skOf(p),px=lerp(p.ox,p.x,ALPHA),pz=lerp(p.oz,p.z,ALPHA),q=proj(px,.05,pz,cw,ch);if(!q.ok)continue;
     const q2=proj(px+.55,.05,pz,cw,ch),r=Math.max(8,Math.abs(q2.x-q.x));g.save();g.globalAlpha=.55+.25*Math.sin(time*6);g.strokeStyle=S2.col;g.lineWidth=2.5*sc;g.beginPath();g.ellipse(q.x,q.y,r,r*.35,0,0,Math.PI*2);g.stroke();g.restore();}
@@ -261,7 +261,7 @@ $('pGo').onclick=()=>{show(null);newGame();g3.focus();try{const r=g3.requestPoin
 function renderHelp(){
   const K=a=>`<kbd>${k1(a)}</kbd>`,air='<i>空中</i>',hold='<i>按住</i>';
   const G=[{t:'移動與鏡頭',rows:[['滑鼠','轉鏡頭（點一下畫面鎖定游標）'],[`${K('fwd')}${K('left')}${K('back')}${K('right')}`,'往鏡頭方向跑'],[K('jump'),'跳；往網前跑幾步再跳＝助跑，跳更高、打更重'],[K('cam'),'切換鏡頭：動作視角／固定視角／轉播']]},
-   {t:'進攻',sub:'球托給你時',rows:[[`${K('jump')} → ${air}${K('atk')}`,'扣球：按下去就一定打得到，在跳躍最高點出手最強'],['準星','畫面中央的準星指到哪裡，球就往哪裡打'],['攔網牆','起跳後網上會出現對方攔網手的紅色矩形：打縫隙或頭上＝乾淨過網；虛線外側＝可能打手出界；打正中間要看力量'],['力量','助跑越長、跳越高、在最高點出手，球越重越難攔'],['旋球','扣球前一瞬間滑鼠往左／右甩＝側旋（球會彎），往下甩＝上旋（過網後下墜）'],[`${air}${K('tip')}`,'輕打：把球輕輕推到準星位置'],[K('call'),'叫球：要舉球手托給你']]},
+   {t:'進攻',sub:'球托給你時',rows:[[`${K('jump')} → ${air}${K('atk')}`,'扣球：按下去就一定打得到，在跳躍最高點出手最強'],['準星','畫面中央的準星指到哪裡，球就往哪裡打'],['攔網牆','起跳後網上會出現對方攔網手的紅色矩形：打縫隙或頭上＝乾淨過網；虛線外側＝可能打手出界；打正中間要看力量'],['力量','助跑越長、跳越高、在最高點出手，球越重越難攔'],['旋球','空中按滑鼠左鍵＝左旋扣球、右鍵＝右旋扣球（球會往那邊彎），鍵盤扣球鍵＝不旋；出手前滑鼠甩動會再加旋轉，往下甩＝上旋'],[`${K('call')}`,'要球：舉球員會把下一球舉給你'],[`${K('stype')}／滾輪`,'要哪種球：自動／高球／平快／快攻（快攻要先衝到網前、早一點起跳；一傳不好會降級）'],[`${air}${K('tip')}`,'輕打：把球輕輕推到準星位置'],[K('call'),'叫球：要舉球手托給你']]},
    {t:'舉球',sub:'你選舉球手時，隊友一傳後輪到你',rows:[['黃圈','地上的黃圈是球落到頭上的位置，跑過去（一傳會傳高一點，球飛過來時畫面變慢，慢的程度在設定「舉球思考時間」調整）'],['準星','對準要托給的攻手（頭上出現黃色標記）'],[K('atk'),'舉球（差一點會自動跨一步）'],[`${K('jump')} → ${air}${K('atk')}`,'跳舉：一傳靠網又高時跳起來舉，節奏更快'],[`${K('jump')} → ${air}${K('tip')}`,'二次球：舉球員直接吊過網'],[`${K('s1')}${K('s2')}${K('s3')}`,'直接指定托給左攻／中間／右攻（不按就看準星）；對方發球或進攻時就能先選好下一球'],[`${K('stype')}／滾輪`,'切換攻擊方式：自動、高球（最穩）、平快（低平快，攔網來不及）、快攻（只有中間手，托在身邊、第一時間打；選左右攻會改成平快）；一傳太差時會改托修正高球'],[K('tip'),'二次吊球：直接把球推過網'],[`${hold}${K('rcv')}`,'墊球舉：比較保險，但沒那麼準']]},
    {t:'接球・防守',rows:[[`${hold}${K('rcv')}`,'接球姿勢：球掉進手臂就自動墊給舉球手'],[`<i>跑動中</i>${K('rcv')}`,'球太遠時飛撲'],[`<i>網前</i>${K('block')}`,'攔網：對方攻手起跳時按，原地起跳、手自動舉高、會往球的位置橫移']]},
    {t:'發球',sub:'輪到你發球時',rows:[[K('atk'),'拋球，球到手上方再按一次'],[`${hold}${K('mod')}＋${K('atk')}`,'跳發：快又重'],['準星','發球落點']]},

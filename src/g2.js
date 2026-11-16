@@ -121,7 +121,7 @@ function touch(p,z,intent){
   const wasAtk=fresh&&(ball.atk||ball.serve),heavy=fresh&&ball.heavy,v=Math.hypot(ball.vx,ball.vy,ball.vz);
   if(fresh){ball.touches=0;ball.setInfo=null;ball.setter=null;ball.quickMB=null;}
   ball.touches++;if(ball.touches>3){fault(1-t,'四次擊球');return;}
-  ball.serial=++SERIAL;ball.spS=0;ball.spT=0;ball.trailC=null;ball.mark=null;ball.lastTeam=t;ball.lastP=p;ball.blockTouch=false;ball.cool=.2;ball.letGo=null;if(ball.touches===1){ball.passSer=ball.serial;for(const hs of team(t))if(hs.human&&hs.setPick&&hs.setPick.s===-1)hs.setPick.s=ball.serial;}
+  ball.serial=++SERIAL;ball.spS=0;ball.spT=0;ball.trailC=null;ball.mark=null;ball.trail=[]; /* 拖尾只畫這次碰球之後的軌跡（不然會連到上一段，變成空中一條白線） */ball.lastTeam=t;ball.lastP=p;ball.blockTouch=false;ball.cool=.2;ball.letGo=null;if(ball.touches===1){ball.passSer=ball.serial;for(const hs of team(t))if(hs.human&&hs.setPick&&hs.setPick.s===-1)hs.setPick.s=ball.serial;}
   ball.serve=false;ball.atk=false;ball.heavy=false;ball.float=0;ball.tip=false;
   p.touchFx=.8;p.touchN=String(ball.touches);
   if(wasAtk)q*=clamp(1.15-(v-13)/26+p.st.rcv*.025,.3,1);
@@ -214,8 +214,12 @@ function doSet(p,q){
   if(h.role==='mb'&&ball.passQ>.55&&!h.human)type='quick';
   else if(h.role!=='mb'&&(ball.fastPlan||ball.passQ>.7&&rnd()<.3))type='fast'; // 一傳好時邊攻也會打平快
   if(ball.passQ<.4&&!SKs)type='safe';
+  // 玩家攻擊手叫球（V）＋指定球種（R／滾輪）：照他要的舉，一傳不夠好才降級
+  if(h.human&&h.reqType&&h.reqType!=='auto'&&time-h.calledAt<2){const w=h.reqType,pq=ball.passQ;
+    type=w==='quick'?(pq>=.45||SKs?'quick':pq>=.3?'fast':'safe'):w==='fast'?(pq>=.3||SKs?'fast':'safe'):'high';
+    if(type!==w)say(`一傳不夠好，${REQ_N[w]}改成${{high:'高球',fast:'平快',quick:'快攻',safe:'修正球'}[type]}`,'#a9b0cc');}
   if(p.role==='set'&&p.ch.id==='yukina'&&rnd()<.12&&ball.passQ>.6&&!h.human){doTip(p,.8);return;}
-  const lane=type==='quick'?{d:.7,z:clamp(h.z,-1,1.2)}:type==='safe'?{d:1.6,z:clamp(h.z,-3,3)}:
+  const lane=type==='quick'?{d:.7,z:h.human?clamp(h.z,-M.wid+.6,M.wid-.6):clamp(h.z,-1,1.2)}:type==='safe'?{d:1.6,z:clamp(h.z,-3,3)}:
     type==='fast'?{d:1.0,z:(h.role==='oh'?-3.4:h.role==='op'?3.4:clamp(h.z,-2,2))*.92}:
     h.human?{d:1.05,z:clamp(h.z,-M.wid+.5,M.wid-.5)}:{d:1.05,z:h.role==='oh'?-3.4:h.role==='op'?3.4:clamp(h.z,-2,2)};
   const hitY=HANDUP+jumpProf(h,.6).hApex-.1;
@@ -269,7 +273,7 @@ const SERVEN={stand:'飄球',jump:'跳發',jfloat:'平飄'};
 // 用真正的飛行模擬（含空氣阻力、飄球晃動）算球過網時的高度
 function netY(){const b={x:ball.x,y:ball.y,z:ball.z,vx:ball.vx,vy:ball.vy,vz:ball.vz,float:ball.float,fseed:ball.fseed};let px=b.x;for(let i=0;i<360;i++){px=b.x;stepB(b,1/60);if(Math.sign(px)!==Math.sign(b.x)&&px!==0)return b.y;if(b.y<0)return -1;}return 9;}
 function doServe(p,kind,q){
-  const t=p.team,so=sd(1-t);ball.toss=false;ball.held=null;ball.serve=true;ball.serial=++SERIAL;ball.serveTag=null;
+  const t=p.team,so=sd(1-t);ball.toss=false;ball.held=null;ball.serve=true;ball.serial=++SERIAL;ball.serveTag=null;ball.trail=[];
   let d=4.5+rnd()*3.8,z=(rnd()-.5)*2*(M.wid-.6);
   if(p.human){const a=humanAim(t);d=a.d;z=a.z;}
   else{// AI 發球落點策略：深角、短球、兩人中間的縫、指定接球比較差的人、隨便發

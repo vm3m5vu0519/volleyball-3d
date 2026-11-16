@@ -31,7 +31,7 @@ function blockResolve(zc,yc,atkT,defT){
   const R=blockRects(defT);if(!R.length)return false;const Z=blockZone(R,zc,yc);if(!Z)return false;
   const {r,k,u}=Z,b=r.b,P=ball.tip?2:(ball.power||6),B=blockStrength(r,R,zc);
   if(r.wall)skTake(b,['wall']);
-  b.swing=.4;b.pose='block';b.touchFx=.8;b.touchN='攔';ball.cool=.12;ball.serial=++SERIAL;ball.letGo=null;ball.spS=0;ball.spT=0;PC={};
+  b.swing=.4;b.pose='block';b.touchFx=.8;b.touchN='攔';ball.cool=.12;ball.serial=++SERIAL;ball.letGo=null;ball.spS=0;ball.spT=0;ball.trail=[];PC={};
   const fxAt=(c,n)=>{burst(0,yc,zc,c,n,3);};
   const own=(vx,vy)=>{ball.drive=false;ball.vx=vx;ball.vy=vy;ball.lastTeam=defT;ball.lastP=b;ball.touches=0;ball.blockTouch=true;ball.atk=false;ball.heavy=false;};
   const res=k=>{BSTAT[k]=(BSTAT[k]||0)+1;if(k!=='stuff')trainEv('block',b,k);};
@@ -65,8 +65,10 @@ const MOUSE_HIST=[];
 addEventListener('mousemove',e=>{if(!document.pointerLockElement)return;MOUSE_HIST.push([performance.now(),e.movementX||0,e.movementY||0]);if(MOUSE_HIST.length>60)MOUSE_HIST.shift();});
 function mouseRecent(ms=120){const t=performance.now()-ms;let dx=0,dy=0;for(const m of MOUSE_HIST)if(m[0]>=t){dx+=m[1];dy+=m[2];}return[dx,dy];}
 let spinNow=()=>mouseRecent();
+// 扣球用哪個鍵：左鍵 -1（左旋）、右鍵 +1（右旋）、其他 0；多人連線時房主用遠端送來的（withCtx 會換掉）
+let spinBtn=()=>T('rcv')&&!T('atk')?1:hitK['m:0']?-1:0;
 function spinFrom(p,t){
-  if(p.human){const[dx,dy]=spinNow();const s=clamp(dx/220,-1,1),tp=clamp(.35+dy/260,0,1);
+  if(p.human){const[dx,dy]=spinNow();const s=clamp((p.spinReq||0)*.85+dx/220,-1,1),tp=clamp(.35+dy/260,0,1);p.spinReq=0;
     // 側旋方向換算到世界座標：攻擊方向往 so，滑鼠往右甩＝球往攻擊者的右邊彎
     return{s,t:tp};} // applySpin 的方向本身就跟著球速轉：s>0 一律往攻擊者的右邊彎（兩隊都一樣）
   return{s:(rnd()-.5)*.5,t:.25+rnd()*.35};}
@@ -124,3 +126,12 @@ function netTouchCheck(){if(state!=='play')return;for(const b of players){if(b.y
   if(Math.abs(b.x)<.32&&Math.abs(b.vz)>1.7){b.ntChk=b.jumpN;if(rnd()<.12){NSTAT.touch=(NSTAT.touch||0)+1;fault(1-b.team,'攔網觸網！');return;}}}}
 function drawAces(g,cw,ch,sc){for(const p of players){if(!p.ace)continue;const q=proj(lerp(p.ox,p.x,ALPHA),lerp(p.oy,p.y,ALPHA)+(p.pname?2.4:2.1),lerp(p.oz,p.z,ALPHA),cw,ch);if(!q.ok)continue;
   T2(g,'★',q.x,q.y,15*sc,'#ffd23f');}}
+// ---------- 攻擊手要球 ----------
+const REQ_T=['auto','high','fast','quick'],REQ_N={auto:'自動',high:'高球',fast:'平快',quick:'快攻'};
+function reqStep(p,dir){const i=REQ_T.indexOf(p.reqType||'auto');p.reqType=REQ_T[(i+dir+REQ_T.length)%REQ_T.length];
+  if(p===human)say('要球：'+REQ_N[p.reqType]+(p.reqType==='quick'?'（快攻要先衝到網前、早一點起跳）':''),'#c9f0ff');SFX.call&&SFX.call();}
+function drawReq(g,cw,ch,sc,x1,y0){if(!human||human.role==='set'||!(state==='play'||state==='serve'))return;
+  const called=time-(human.calledAt||-9)<2,rt=human.reqType||'auto';
+  const tx=called?`已叫球：${REQ_N[rt]}`:`要球：${REQ_N[rt]}　${k1('call')} 叫球・${k1('stype')}／滾輪 換球種`;
+  g.font=`700 ${12*sc}px "Noto Sans TC",sans-serif`;const tw=g.measureText(tx).width+18*sc;rr(g,x1-tw+6*sc,y0-56*sc,tw,22*sc,11,called?'rgba(20,70,90,.85)':'rgba(8,22,30,.45)');
+  T2(g,tx,x1-3*sc,y0-45*sc,12*sc,called?'#c9f0ff':'#cfe2ea','right');}

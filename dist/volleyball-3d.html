@@ -423,7 +423,7 @@ function cheer(){if(!S.sound||!AC||!NOISE)return;const t=AC.currentTime,d=out(1,
   const g=AC.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.16,t+.25);g.gain.exponentialRampToValueAtTime(.001,t+1.8);s.connect(f);f.connect(g);g.connect(d);s.start(t);s.stop(t+1.9);}
 
 const ACTS=['fwd','back','left','right','jump','atk','rcv','tip','block','mod','call','cam','pause','stype','s1','s2','s3','skill'];
-const ACT_LABEL={skill:'技能（量表滿了可以用）',fwd:'往前（鏡頭方向）',back:'往後',left:'往左',right:'往右',jump:'跳躍',atk:'扣球・發球',rcv:'接球（按住＝接球姿勢）',tip:'輕打・吊球',block:'攔網',mod:'技巧鍵（跳發）',call:'叫球（要舉球手托給你）',cam:'切換鏡頭',pause:'暫停',stype:'舉球：切換攻擊方式（滾輪也可以）',s1:'舉球：托給左攻',s2:'舉球：托給中間',s3:'舉球：托給右攻'};
+const ACT_LABEL={skill:'技能（量表滿了可以用）',fwd:'往前（鏡頭方向）',back:'往後',left:'往左',right:'往右',jump:'跳躍',atk:'扣球・發球（空中＝左旋扣球）',rcv:'接球（按住＝接球姿勢；空中＝右旋扣球）',tip:'輕打・吊球',block:'攔網',mod:'技巧鍵（跳發）',call:'叫球（要舉球手托給你）',cam:'切換鏡頭',pause:'暫停',stype:'切換球種：舉球員＝攻擊方式、攻擊手＝要哪種球（滾輪也可以）',s1:'舉球：托給左攻',s2:'舉球：托給中間',s3:'舉球：托給右攻'};
 const DEFAULT_KEYS={fwd:['k:KeyW','k:ArrowUp'],back:['k:KeyS','k:ArrowDown'],left:['k:KeyA','k:ArrowLeft'],right:['k:KeyD','k:ArrowRight'],jump:['k:Space',''],
   atk:['m:0','k:KeyJ'],rcv:['m:2','k:KeyK'],tip:['k:KeyF',''],block:['k:KeyE',''],mod:['k:ShiftLeft',''],call:['k:KeyV',''],cam:['k:KeyC',''],pause:['k:Escape','k:KeyP'],stype:['k:KeyR',''],s1:['k:Digit1',''],s2:['k:Digit2',''],s3:['k:Digit3',''],skill:['k:KeyQ','']};
 let KB=JSON.parse(JSON.stringify(DEFAULT_KEYS));
@@ -463,7 +463,7 @@ addEventListener('mousedown',e=>{ensureAudio();
   const c='m:'+e.button;if(!held[c])hitK[c]=true;held[c]=true;});
 addEventListener('mouseup',e=>{held['m:'+e.button]=false;});
 // 滾輪：舉球時切換攻擊方式
-addEventListener('wheel',e=>{if(typeof NET!=='undefined'&&NET.client&&inMatch()){NET.trig.add('stype');e.preventDefault();return;}if(!inMatch()||paused||typeof human==='undefined'||!human||!setPhase(human))return;e.preventDefault();setTypeStep(human,e.deltaY>0?1:-1);},{passive:false});
+addEventListener('wheel',e=>{if(typeof NET!=='undefined'&&NET.client&&inMatch()){NET.trig.add('stype');e.preventDefault();return;}if(!inMatch()||paused||typeof human==='undefined'||!human)return;if(human.role!=='set'){e.preventDefault();reqStep(human,e.deltaY>0?1:-1);return;}if(!setPhase(human))return;e.preventDefault();setTypeStep(human,e.deltaY>0?1:-1);},{passive:false});
 document.addEventListener('contextmenu',e=>e.preventDefault());
 addEventListener('blur',()=>{for(const k in held)held[k]=false;});
 const mouse={x:0,y:0,in:false},cursorG={x:0,z:0,ok:false};
@@ -602,7 +602,7 @@ function touch(p,z,intent){
   const wasAtk=fresh&&(ball.atk||ball.serve),heavy=fresh&&ball.heavy,v=Math.hypot(ball.vx,ball.vy,ball.vz);
   if(fresh){ball.touches=0;ball.setInfo=null;ball.setter=null;ball.quickMB=null;}
   ball.touches++;if(ball.touches>3){fault(1-t,'四次擊球');return;}
-  ball.serial=++SERIAL;ball.spS=0;ball.spT=0;ball.trailC=null;ball.mark=null;ball.lastTeam=t;ball.lastP=p;ball.blockTouch=false;ball.cool=.2;ball.letGo=null;if(ball.touches===1){ball.passSer=ball.serial;for(const hs of team(t))if(hs.human&&hs.setPick&&hs.setPick.s===-1)hs.setPick.s=ball.serial;}
+  ball.serial=++SERIAL;ball.spS=0;ball.spT=0;ball.trailC=null;ball.mark=null;ball.trail=[]; /* 拖尾只畫這次碰球之後的軌跡（不然會連到上一段，變成空中一條白線） */ball.lastTeam=t;ball.lastP=p;ball.blockTouch=false;ball.cool=.2;ball.letGo=null;if(ball.touches===1){ball.passSer=ball.serial;for(const hs of team(t))if(hs.human&&hs.setPick&&hs.setPick.s===-1)hs.setPick.s=ball.serial;}
   ball.serve=false;ball.atk=false;ball.heavy=false;ball.float=0;ball.tip=false;
   p.touchFx=.8;p.touchN=String(ball.touches);
   if(wasAtk)q*=clamp(1.15-(v-13)/26+p.st.rcv*.025,.3,1);
@@ -695,8 +695,12 @@ function doSet(p,q){
   if(h.role==='mb'&&ball.passQ>.55&&!h.human)type='quick';
   else if(h.role!=='mb'&&(ball.fastPlan||ball.passQ>.7&&rnd()<.3))type='fast'; // 一傳好時邊攻也會打平快
   if(ball.passQ<.4&&!SKs)type='safe';
+  // 玩家攻擊手叫球（V）＋指定球種（R／滾輪）：照他要的舉，一傳不夠好才降級
+  if(h.human&&h.reqType&&h.reqType!=='auto'&&time-h.calledAt<2){const w=h.reqType,pq=ball.passQ;
+    type=w==='quick'?(pq>=.45||SKs?'quick':pq>=.3?'fast':'safe'):w==='fast'?(pq>=.3||SKs?'fast':'safe'):'high';
+    if(type!==w)say(`一傳不夠好，${REQ_N[w]}改成${{high:'高球',fast:'平快',quick:'快攻',safe:'修正球'}[type]}`,'#a9b0cc');}
   if(p.role==='set'&&p.ch.id==='yukina'&&rnd()<.12&&ball.passQ>.6&&!h.human){doTip(p,.8);return;}
-  const lane=type==='quick'?{d:.7,z:clamp(h.z,-1,1.2)}:type==='safe'?{d:1.6,z:clamp(h.z,-3,3)}:
+  const lane=type==='quick'?{d:.7,z:h.human?clamp(h.z,-M.wid+.6,M.wid-.6):clamp(h.z,-1,1.2)}:type==='safe'?{d:1.6,z:clamp(h.z,-3,3)}:
     type==='fast'?{d:1.0,z:(h.role==='oh'?-3.4:h.role==='op'?3.4:clamp(h.z,-2,2))*.92}:
     h.human?{d:1.05,z:clamp(h.z,-M.wid+.5,M.wid-.5)}:{d:1.05,z:h.role==='oh'?-3.4:h.role==='op'?3.4:clamp(h.z,-2,2)};
   const hitY=HANDUP+jumpProf(h,.6).hApex-.1;
@@ -750,7 +754,7 @@ const SERVEN={stand:'飄球',jump:'跳發',jfloat:'平飄'};
 // 用真正的飛行模擬（含空氣阻力、飄球晃動）算球過網時的高度
 function netY(){const b={x:ball.x,y:ball.y,z:ball.z,vx:ball.vx,vy:ball.vy,vz:ball.vz,float:ball.float,fseed:ball.fseed};let px=b.x;for(let i=0;i<360;i++){px=b.x;stepB(b,1/60);if(Math.sign(px)!==Math.sign(b.x)&&px!==0)return b.y;if(b.y<0)return -1;}return 9;}
 function doServe(p,kind,q){
-  const t=p.team,so=sd(1-t);ball.toss=false;ball.held=null;ball.serve=true;ball.serial=++SERIAL;ball.serveTag=null;
+  const t=p.team,so=sd(1-t);ball.toss=false;ball.held=null;ball.serve=true;ball.serial=++SERIAL;ball.serveTag=null;ball.trail=[];
   let d=4.5+rnd()*3.8,z=(rnd()-.5)*2*(M.wid-.6);
   if(p.human){const a=humanAim(t);d=a.d;z=a.z;}
   else{// AI 發球落點策略：深角、短球、兩人中間的縫、指定接球比較差的人、隨便發
@@ -922,7 +926,8 @@ function updatePlayer(p,dt){
   p.yaw=angLerp(p.yaw,want,Math.min(1,dt*(p.dive>0?20:p.human?16:12)));}
 function humanInput(dt){
   const p=human;if(!p)return;
-  if(T('call')&&state==='play'){p.calledAt=time;talk(p,'給我！');SFX.call();}
+  if(T('call')&&(state==='play'||state==='serve')){p.calledAt=time;talk(p,'給我！'+(p.reqType&&p.reqType!=='auto'?REQ_N[p.reqType]:''));SFX.call();}
+  if(p.role!=='set'&&T('stype'))reqStep(p,1); // 攻擊手：R／滾輪 決定要哪種球
   if(T('skill')){if(!skActivate(p)&&!p.skOn)say('技能量表還沒滿（'+Math.floor(p.sk||0)+'%）','#a9b0cc');}
   if(state==='serve'&&server===p){
     if(!ball.toss&&T('atk')&&time-(p.tossAt||-9)>.35){startToss(p,A('mod')?'jump':'stand');if(ball.tossKind==='jump')say('跳發！','#fff');}
@@ -946,7 +951,8 @@ function humanInput(dt){
   if(p.ready&&!(p.lungeT>0)&&ball.lastTeam!==p.team&&p.lunged!==ball.serial){const Lb=predict(BUMPY);
     if(Lb&&Math.sign(Lb.x)===sd(p.team)&&Lb.t<.42&&Lb.t>.06){const ax=Lb.x-Math.sin(p.yaw)*.3,az=Lb.z-Math.cos(p.yaw)*.3,dd=Math.hypot(ax-p.x,az-p.z);
       if(dd>.45&&dd<2.6){const tt=Math.max(.1,Lb.t-.05);p.vx=(ax-p.x)/tt;p.vz=(az-p.z)/tt;const v=Math.hypot(p.vx,p.vz);if(v>9){p.vx*=9/v;p.vz*=9/v;}p.lungeT=tt;p.lunged=ball.serial;}}}
-  if(p.y>0&&!p.hitDone&&(T('atk')||T('tip'))&&!p.swingReq){p.swingReq=T('tip')?'tip':'atk';p.pressLate=ball.vy<0&&ball.y<p.y+HANDUP-.1;p.charging=true;p.chargeT=0;p.prevD=9;
+  // 空中：左鍵＝左旋扣球、右鍵＝右旋扣球、鍵盤扣球鍵＝不旋（滑鼠甩動另外加旋轉）
+  if(p.y>0&&!p.hitDone&&(T('atk')||T('tip')||T('rcv')&&!setPhase(p))&&!p.swingReq){p.swingReq=T('tip')?'tip':'atk';p.spinReq=T('tip')?0:spinBtn();p.pressLate=ball.vy<0&&ball.y<p.y+HANDUP-.1;p.charging=true;p.chargeT=0;p.prevD=9;
     const c=MOCAP.spike;if(c)playAct(p,'spike',Math.max(0,clipKey(c)-.4),{hold:clipKey(c)-.12});}
   if(p.charging){p.chargeT+=dt;p.power=Math.min(1,p.chargeT/.3);}
   // 舉球：1／2／3 直接指定托給誰（不按就看準星），R 或滾輪切換攻擊方式
@@ -2218,7 +2224,7 @@ function blockResolve(zc,yc,atkT,defT){
   const R=blockRects(defT);if(!R.length)return false;const Z=blockZone(R,zc,yc);if(!Z)return false;
   const {r,k,u}=Z,b=r.b,P=ball.tip?2:(ball.power||6),B=blockStrength(r,R,zc);
   if(r.wall)skTake(b,['wall']);
-  b.swing=.4;b.pose='block';b.touchFx=.8;b.touchN='攔';ball.cool=.12;ball.serial=++SERIAL;ball.letGo=null;ball.spS=0;ball.spT=0;PC={};
+  b.swing=.4;b.pose='block';b.touchFx=.8;b.touchN='攔';ball.cool=.12;ball.serial=++SERIAL;ball.letGo=null;ball.spS=0;ball.spT=0;ball.trail=[];PC={};
   const fxAt=(c,n)=>{burst(0,yc,zc,c,n,3);};
   const own=(vx,vy)=>{ball.drive=false;ball.vx=vx;ball.vy=vy;ball.lastTeam=defT;ball.lastP=b;ball.touches=0;ball.blockTouch=true;ball.atk=false;ball.heavy=false;};
   const res=k=>{BSTAT[k]=(BSTAT[k]||0)+1;if(k!=='stuff')trainEv('block',b,k);};
@@ -2252,8 +2258,10 @@ const MOUSE_HIST=[];
 addEventListener('mousemove',e=>{if(!document.pointerLockElement)return;MOUSE_HIST.push([performance.now(),e.movementX||0,e.movementY||0]);if(MOUSE_HIST.length>60)MOUSE_HIST.shift();});
 function mouseRecent(ms=120){const t=performance.now()-ms;let dx=0,dy=0;for(const m of MOUSE_HIST)if(m[0]>=t){dx+=m[1];dy+=m[2];}return[dx,dy];}
 let spinNow=()=>mouseRecent();
+// 扣球用哪個鍵：左鍵 -1（左旋）、右鍵 +1（右旋）、其他 0；多人連線時房主用遠端送來的（withCtx 會換掉）
+let spinBtn=()=>T('rcv')&&!T('atk')?1:hitK['m:0']?-1:0;
 function spinFrom(p,t){
-  if(p.human){const[dx,dy]=spinNow();const s=clamp(dx/220,-1,1),tp=clamp(.35+dy/260,0,1);
+  if(p.human){const[dx,dy]=spinNow();const s=clamp((p.spinReq||0)*.85+dx/220,-1,1),tp=clamp(.35+dy/260,0,1);p.spinReq=0;
     // 側旋方向換算到世界座標：攻擊方向往 so，滑鼠往右甩＝球往攻擊者的右邊彎
     return{s,t:tp};} // applySpin 的方向本身就跟著球速轉：s>0 一律往攻擊者的右邊彎（兩隊都一樣）
   return{s:(rnd()-.5)*.5,t:.25+rnd()*.35};}
@@ -2311,6 +2319,15 @@ function netTouchCheck(){if(state!=='play')return;for(const b of players){if(b.y
   if(Math.abs(b.x)<.32&&Math.abs(b.vz)>1.7){b.ntChk=b.jumpN;if(rnd()<.12){NSTAT.touch=(NSTAT.touch||0)+1;fault(1-b.team,'攔網觸網！');return;}}}}
 function drawAces(g,cw,ch,sc){for(const p of players){if(!p.ace)continue;const q=proj(lerp(p.ox,p.x,ALPHA),lerp(p.oy,p.y,ALPHA)+(p.pname?2.4:2.1),lerp(p.oz,p.z,ALPHA),cw,ch);if(!q.ok)continue;
   T2(g,'★',q.x,q.y,15*sc,'#ffd23f');}}
+// ---------- 攻擊手要球 ----------
+const REQ_T=['auto','high','fast','quick'],REQ_N={auto:'自動',high:'高球',fast:'平快',quick:'快攻'};
+function reqStep(p,dir){const i=REQ_T.indexOf(p.reqType||'auto');p.reqType=REQ_T[(i+dir+REQ_T.length)%REQ_T.length];
+  if(p===human)say('要球：'+REQ_N[p.reqType]+(p.reqType==='quick'?'（快攻要先衝到網前、早一點起跳）':''),'#c9f0ff');SFX.call&&SFX.call();}
+function drawReq(g,cw,ch,sc,x1,y0){if(!human||human.role==='set'||!(state==='play'||state==='serve'))return;
+  const called=time-(human.calledAt||-9)<2,rt=human.reqType||'auto';
+  const tx=called?`已叫球：${REQ_N[rt]}`:`要球：${REQ_N[rt]}　${k1('call')} 叫球・${k1('stype')}／滾輪 換球種`;
+  g.font=`700 ${12*sc}px "Noto Sans TC",sans-serif`;const tw=g.measureText(tx).width+18*sc;rr(g,x1-tw+6*sc,y0-56*sc,tw,22*sc,11,called?'rgba(20,70,90,.85)':'rgba(8,22,30,.45)');
+  T2(g,tx,x1-3*sc,y0-45*sc,12*sc,called?'#c9f0ff':'#cfe2ea','right');}
 // ================= 角色成長 =================
 // 每個角色（依角色 id）有自己的等級和經驗值，存在 localStorage 'vb-growth'
 //   比賽：依表現給經驗值（得分、好的一傳、攔網、救球、勝利）
@@ -2515,9 +2532,9 @@ function netStartLocal(serveT){
   g3.focus();try{const r=g3.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
 // ---------- 房主：遠端玩家的輸入 ----------
 // 跑遊戲邏輯時，暫時把「玩家」「按鍵」「鏡頭」「準星」換成那位遠端玩家的，原本的單人程式碼就能直接用
-function withCtx(p,fn){const rc=p.rc,sv=[human,A,T,camYaw,camPitch,camFwd,cursorG.x,cursorG.z,cursorG.ok,spinNow];
-  spinNow=()=>rc.sp||[0,0];human=p;A=a=>rc.held.has(a);T=a=>rc.trig.has(a);camYaw=rc.cy;camPitch=rc.cp;camFwd={x:rc.cf[0],z:rc.cf[1]};cursorG.x=rc.cg[0];cursorG.z=rc.cg[1];cursorG.ok=!!rc.cg[2];
-  try{return fn();}finally{human=sv[0];A=sv[1];T=sv[2];camYaw=sv[3];camPitch=sv[4];camFwd=sv[5];cursorG.x=sv[6];cursorG.z=sv[7];cursorG.ok=sv[8];spinNow=sv[9];}}
+function withCtx(p,fn){const rc=p.rc,sv=[human,A,T,camYaw,camPitch,camFwd,cursorG.x,cursorG.z,cursorG.ok,spinNow,spinBtn];
+  spinNow=()=>rc.sp||[0,0];spinBtn=()=>rc.trig.has('rcv')&&!rc.trig.has('atk')?1:rc.trig.has('_sl')?-1:0;human=p;A=a=>rc.held.has(a);T=a=>rc.trig.has(a);camYaw=rc.cy;camPitch=rc.cp;camFwd={x:rc.cf[0],z:rc.cf[1]};cursorG.x=rc.cg[0];cursorG.z=rc.cg[1];cursorG.ok=!!rc.cg[2];
+  try{return fn();}finally{human=sv[0];A=sv[1];T=sv[2];camYaw=sv[3];camPitch=sv[4];camFwd=sv[5];cursorG.x=sv[6];cursorG.z=sv[7];cursorG.ok=sv[8];spinNow=sv[9];spinBtn=sv[10];}}
 function netEach(fn){if(!NET.host)return;for(const p of players)if(p.rc)withCtx(p,fn);}
 function netClearTrig(){if(NET.host)for(const p of players)if(p.rc)p.rc.trig.clear();}
 // ---------- 狀態序列化 ----------
@@ -2563,7 +2580,7 @@ function netApply(m){
 function netHostFrame(d){if(!NET.host||!NET.started)return;NET.sendT+=d;if(NET.sendT>=NET_DT){NET.sendT=Math.min(NET.sendT-NET_DT,NET_DT);netSend(netSnap());}}
 function netClientFrame(d){
   // 把自己的按鍵整理好送給房主（按住的動作＋這段時間按下去的動作）
-  const H=[],skip=new Set(['cam','pause']);for(const a of ACTS){if(skip.has(a))continue;if(A(a))H.push(a);if(T(a))NET.trig.add(a);}
+  const H=[],skip=new Set(['cam','pause']);for(const a of ACTS){if(skip.has(a))continue;if(A(a))H.push(a);if(T(a))NET.trig.add(a);}if(hitK['m:0'])NET.trig.add('_sl');
   if(T('cam')){S.cam=((S.cam|0)+1)%3;saveS();syncSeg();say('鏡頭：'+CAMN[S.cam],'#c9bde0');}
   clearHits();NET.inT+=d;
   if(NET.inT>=1/30||NET.trig.size){NET.inT=0;netSend({t:'in',h:H,tr:[...NET.trig],cy:+camYaw.toFixed(3),cp:+camPitch.toFixed(3),cf:[+camFwd.x.toFixed(3),+camFwd.z.toFixed(3)],cg:[+cursorG.x.toFixed(2),+cursorG.z.toFixed(2),cursorG.ok],sp:mouseRecent()});NET.trig.clear();}
@@ -2771,12 +2788,12 @@ function drawHUD(){
     // 技能：量表＋按鍵（滿了會閃），發動中顯示技能名稱和剩餘秒數
     const SKD=skOf(human),sk=human.sk||0,full=sk>=100,pul=full?.6+.4*Math.sin(time*8):1,skc=SKD?SKD.col:'#ff7a1a';
     rr(g,x1-19*sc,y0+18*sc,16*sc,16*sc,2,full||human.skOn?skc:'rgba(255,255,255,.25)');keyGlyph(g,k1('skill'),x1-11*sc,y0+57*sc,1.15*sc);
-    const gx=cw-20*sc,gy=ch*.69,gh=ch*.27,fh=(gh-6*sc)*sk/100;rr(g,gx,gy,14*sc,gh,2,'rgba(255,255,255,.22)');
+    const gx=cw-20*sc,gy=ch*.69,gh=ch*.27,fh=(gh-6*sc)*sk/100;rr(g,gx,gy,14*sc,gh,2,'rgba(8,22,30,.55)');
     if(fh>1){g.globalAlpha=pul;rr(g,gx+3*sc,gy+gh-3*sc-fh,8*sc,fh,2,skc);g.globalAlpha=1;}
     T2(g,full?'MAX':String(Math.floor(sk)),gx+7*sc,gy-8*sc,11*sc,full?skc:'#eef6f7');
     if(SKD){const tx=human.skOn?`技能中：${SKD.name}（${SK_DUR[human.skOn]>0?Math.ceil(human.skT)+' 秒':{power:'下一次扣球',precise:'下一次扣球',toss:'下一次舉球'}[human.skOn]}）`:full?`${k1('skill')} 發動：${SKD.name}`:`技能：${SKD.name}`;
       g.font=`700 ${12*sc}px "Noto Sans TC",sans-serif`;const tw=g.measureText(tx).width+18*sc;rr(g,x1-tw+6*sc,y0-30*sc,tw,22*sc,11,human.skOn||full?'rgba(8,22,30,.78)':'rgba(8,22,30,.45)');
-      T2(g,tx,x1-3*sc,y0-19*sc,12*sc,human.skOn||full?skc:'#cfe2ea','right');}}
+      T2(g,tx,x1-3*sc,y0-19*sc,12*sc,human.skOn||full?skc:'#cfe2ea','right');}drawReq(g,cw,ch,sc,x1,y0);}
   // 技能發動中的球員：腳下一圈淡淡的光環
   for(const p of players){if(!p.skOn)continue;const S2=skOf(p),px=lerp(p.ox,p.x,ALPHA),pz=lerp(p.oz,p.z,ALPHA),q=proj(px,.05,pz,cw,ch);if(!q.ok)continue;
     const q2=proj(px+.55,.05,pz,cw,ch),r=Math.max(8,Math.abs(q2.x-q.x));g.save();g.globalAlpha=.55+.25*Math.sin(time*6);g.strokeStyle=S2.col;g.lineWidth=2.5*sc;g.beginPath();g.ellipse(q.x,q.y,r,r*.35,0,0,Math.PI*2);g.stroke();g.restore();}
@@ -2864,7 +2881,7 @@ $('pGo').onclick=()=>{show(null);newGame();g3.focus();try{const r=g3.requestPoin
 function renderHelp(){
   const K=a=>`<kbd>${k1(a)}</kbd>`,air='<i>空中</i>',hold='<i>按住</i>';
   const G=[{t:'移動與鏡頭',rows:[['滑鼠','轉鏡頭（點一下畫面鎖定游標）'],[`${K('fwd')}${K('left')}${K('back')}${K('right')}`,'往鏡頭方向跑'],[K('jump'),'跳；往網前跑幾步再跳＝助跑，跳更高、打更重'],[K('cam'),'切換鏡頭：動作視角／固定視角／轉播']]},
-   {t:'進攻',sub:'球托給你時',rows:[[`${K('jump')} → ${air}${K('atk')}`,'扣球：按下去就一定打得到，在跳躍最高點出手最強'],['準星','畫面中央的準星指到哪裡，球就往哪裡打'],['攔網牆','起跳後網上會出現對方攔網手的紅色矩形：打縫隙或頭上＝乾淨過網；虛線外側＝可能打手出界；打正中間要看力量'],['力量','助跑越長、跳越高、在最高點出手，球越重越難攔'],['旋球','扣球前一瞬間滑鼠往左／右甩＝側旋（球會彎），往下甩＝上旋（過網後下墜）'],[`${air}${K('tip')}`,'輕打：把球輕輕推到準星位置'],[K('call'),'叫球：要舉球手托給你']]},
+   {t:'進攻',sub:'球托給你時',rows:[[`${K('jump')} → ${air}${K('atk')}`,'扣球：按下去就一定打得到，在跳躍最高點出手最強'],['準星','畫面中央的準星指到哪裡，球就往哪裡打'],['攔網牆','起跳後網上會出現對方攔網手的紅色矩形：打縫隙或頭上＝乾淨過網；虛線外側＝可能打手出界；打正中間要看力量'],['力量','助跑越長、跳越高、在最高點出手，球越重越難攔'],['旋球','空中按滑鼠左鍵＝左旋扣球、右鍵＝右旋扣球（球會往那邊彎），鍵盤扣球鍵＝不旋；出手前滑鼠甩動會再加旋轉，往下甩＝上旋'],[`${K('call')}`,'要球：舉球員會把下一球舉給你'],[`${K('stype')}／滾輪`,'要哪種球：自動／高球／平快／快攻（快攻要先衝到網前、早一點起跳；一傳不好會降級）'],[`${air}${K('tip')}`,'輕打：把球輕輕推到準星位置'],[K('call'),'叫球：要舉球手托給你']]},
    {t:'舉球',sub:'你選舉球手時，隊友一傳後輪到你',rows:[['黃圈','地上的黃圈是球落到頭上的位置，跑過去（一傳會傳高一點，球飛過來時畫面變慢，慢的程度在設定「舉球思考時間」調整）'],['準星','對準要托給的攻手（頭上出現黃色標記）'],[K('atk'),'舉球（差一點會自動跨一步）'],[`${K('jump')} → ${air}${K('atk')}`,'跳舉：一傳靠網又高時跳起來舉，節奏更快'],[`${K('jump')} → ${air}${K('tip')}`,'二次球：舉球員直接吊過網'],[`${K('s1')}${K('s2')}${K('s3')}`,'直接指定托給左攻／中間／右攻（不按就看準星）；對方發球或進攻時就能先選好下一球'],[`${K('stype')}／滾輪`,'切換攻擊方式：自動、高球（最穩）、平快（低平快，攔網來不及）、快攻（只有中間手，托在身邊、第一時間打；選左右攻會改成平快）；一傳太差時會改托修正高球'],[K('tip'),'二次吊球：直接把球推過網'],[`${hold}${K('rcv')}`,'墊球舉：比較保險，但沒那麼準']]},
    {t:'接球・防守',rows:[[`${hold}${K('rcv')}`,'接球姿勢：球掉進手臂就自動墊給舉球手'],[`<i>跑動中</i>${K('rcv')}`,'球太遠時飛撲'],[`<i>網前</i>${K('block')}`,'攔網：對方攻手起跳時按，原地起跳、手自動舉高、會往球的位置橫移']]},
    {t:'發球',sub:'輪到你發球時',rows:[[K('atk'),'拋球，球到手上方再按一次'],[`${hold}${K('mod')}＋${K('atk')}`,'跳發：快又重'],['準星','發球落點']]},
