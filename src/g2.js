@@ -222,7 +222,7 @@ function doSet(p,q){
   if(h.human&&h.reqType&&h.reqType!=='auto'&&time-h.calledAt<2){const w=h.reqType,pq=ball.passQ;
     type=w==='quick'?(pq>=.45||SKs?'quick':pq>=.3?'fast':'safe'):w==='fast'?(pq>=.3||SKs?'fast':'safe'):'high';
     if(type!==w)say(`一傳不夠好，${REQ_N[w]}改成${{high:'高球',fast:'平快',quick:'快攻',safe:'修正球'}[type]}`,'#a9b0cc');}
-  if(p.role==='set'&&p.ch.id==='linxin'&&rnd()<.12&&ball.passQ>.6&&!h.human){doTip(p,.8);return;}
+  if(p.role==='set'&&p.ch.id==='s2'&&rnd()<.12&&ball.passQ>.6&&!h.human){doTip(p,.8);return;}
   const lane=type==='quick'?{d:.7,z:h.human?clamp(h.z,-M.wid+.6,M.wid-.6):clamp(h.z,-1,1.2)}:type==='safe'?{d:1.6,z:clamp(h.z,-3,3)}:
     type==='fast'?{d:1.0,z:(h.role==='oh'?-3.4:h.role==='op'?3.4:clamp(h.z,-2,2))*.92}:
     h.human?{d:1.05,z:clamp(h.z,-M.wid+.5,M.wid-.5)}:{d:1.05,z:h.role==='oh'?-3.4:h.role==='op'?3.4:clamp(h.z,-2,2)};
