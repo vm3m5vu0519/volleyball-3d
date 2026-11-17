@@ -221,7 +221,7 @@ function keyGlyph(g,k,x,y,sc,shift){const mL=/滑鼠左鍵|左鍵/.test(k),mR=/�
 // ---------------- 選單 ----------------
 const PAGES=['vMenu','vPrep','vHelp','vPause','vOver','vSet','vMocap','vSkin','vNet','vTrain','vTree'];
 $('mTrain').onclick=()=>{renderTrain();show('vTrain');};
-$('mTree').onclick=()=>openTree(prep.chars[prep.role]);
+$('mTree').onclick=()=>openTree(prep.chars[prep.role]||null);
 function show(id){PAGES.filter(x=>x!=='vSet').forEach(x=>$(x).hidden=x!==id);if(id){const b=$(id).querySelector('button');if(b)b.focus();}else g3.focus();
   if(id==='vPrep')renderPrep();if(id==='vHelp')renderHelp();}
 document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{toMenu(b.dataset.go);});

@@ -28,18 +28,22 @@ const SPOT={oh:{r:{d:5.2,z:-3},a:{d:3.8,z:-3.3},c:{d:4.8,z:-2.2},g:{d:6.6,z:-2.8
   set:{r:{d:1.0,z:2.4},a:{d:.9,z:.9},c:{d:2.4,z:1},g:{d:4.6,z:1.2}}};
 const STAT={pow:'力量',jmp:'彈跳',spd:'速度',rcv:'接球',set:'舉球',blk:'攔網'};
 const CHARS={
- oh:[{id:'go',name:'阿剛',hair:'#3a2418',style:'spiky',type:'重砲型',st:{pow:9,jmp:7,spd:6,rcv:4,set:3,blk:5},note:'扣球最重'},
-     {id:'ryu',name:'龍二',hair:'#26324e',style:'spiky',type:'高點型',st:{pow:7,jmp:9,spd:6,rcv:4,set:3,blk:6},note:'跳得最高，能從攔網上面打'},
-     {id:'kenta',name:'健太',hair:'#4a3214',style:'short',type:'全能型',st:{pow:7,jmp:7,spd:7,rcv:6,set:4,blk:5},note:'接球也穩'}],
- mb:[{id:'taiki',name:'大樹',hair:'#3a3a28',style:'short',type:'高牆型',st:{pow:6,jmp:7,spd:5,rcv:3,set:3,blk:9},note:'攔網最強'},
-     {id:'sho',name:'小翔',hair:'#e8c040',style:'spiky',type:'速攻型',st:{pow:6,jmp:8,spd:9,rcv:3,set:2,blk:5},note:'起跳最快，快攻幾乎接不到'},
-     {id:'ren',name:'蓮',hair:'#7a3a7a',style:'pony',type:'平衡型',st:{pow:6,jmp:7,spd:7,rcv:5,set:4,blk:7},note:'快攻和攔網都穩'}],
- op:[{id:'misaki',name:'美咲',hair:'#e09a3a',style:'pony',type:'速度型',st:{pow:6,jmp:6,spd:9,rcv:7,set:4,blk:4},note:'跑得最快，防守範圍大'},
-     {id:'shan',name:'大山',hair:'#2a2a33',style:'short',type:'力量型',st:{pow:8,jmp:6,spd:5,rcv:6,set:3,blk:7},note:'右邊的重砲，也很會攔'},
-     {id:'fu',name:'阿福',hair:'#7a4a22',style:'bowl',type:'防守型',st:{pow:5,jmp:5,spd:7,rcv:9,set:5,blk:4},note:'一傳最穩'}],
- set:[{id:'momo',name:'小桃',hair:'#f07aa0',style:'buns',type:'精準型',st:{pow:3,jmp:5,spd:7,rcv:5,set:9,blk:4},note:'托球最準'},
-     {id:'yukina',name:'雪奈',hair:'#c9c2ff',style:'pony',type:'攻擊型',st:{pow:5,jmp:6,spd:6,rcv:5,set:7,blk:6},note:'偶爾自己二次吊球'},
-     {id:'ming',name:'阿明',hair:'#5a3a20',style:'bowl',type:'快攻型',st:{pow:3,jmp:5,spd:8,rcv:5,set:8,blk:4},note:'節奏快，愛打快攻'}]};
+ // 外攻手 Outside Hitter
+ oh:[{id:'zhan',name:'志遠',hair:'#3a2418',style:'spiky',type:'重砲型',st:{pow:9,jmp:7,spd:6,rcv:4,set:3,blk:5},note:'扣球最重，球過來就是一錘'},
+     {id:'kai',name:'凱',hair:'#26324e',style:'spiky',type:'高點型',st:{pow:7,jmp:9,spd:6,rcv:4,set:3,blk:6},note:'跳得最高，能從攔網上面打'},
+     {id:'yuze',name:'宇澤',hair:'#4a3214',style:'short',type:'全能型',st:{pow:7,jmp:7,spd:7,rcv:6,set:4,blk:5},note:'哪裡缺補哪裡，接球也穩'}],
+ // 中柱 Middle Blocker
+ mb:[{id:'zong',name:'宗霖',hair:'#3a3a28',style:'short',type:'高牆型',st:{pow:6,jmp:7,spd:5,rcv:3,set:3,blk:9},note:'攔網最強，像一道牆'},
+     {id:'siang',name:'翔',hair:'#e8c040',style:'spiky',type:'速攻型',st:{pow:6,jmp:8,spd:9,rcv:3,set:2,blk:5},note:'起跳最快，快攻幾乎接不到'},
+     {id:'lian',name:'蓮華',hair:'#7a3a7a',style:'pony',type:'平衡型',st:{pow:6,jmp:7,spd:7,rcv:5,set:4,blk:7},note:'快攻和攔網都穩，不挑球路'}],
+ // 對角攻擊手 Opposite
+ op:[{id:'yuki',name:'雪姬',hair:'#e09a3a',style:'pony',type:'速度型',st:{pow:6,jmp:6,spd:9,rcv:7,set:4,blk:4},note:'跑得最快，防守範圍極大'},
+     {id:'tieh',name:'鐵雄',hair:'#2a2a33',style:'short',type:'力量型',st:{pow:8,jmp:6,spd:5,rcv:6,set:3,blk:7},note:'右邊重砲，也很會攔'},
+     {id:'bao',name:'寶哥',hair:'#7a4a22',style:'bowl',type:'防守型',st:{pow:5,jmp:5,spd:7,rcv:9,set:5,blk:4},note:'一傳最穩，球永遠回得去'}],
+ // 舉球員 Setter
+ set:[{id:'tao',name:'道晴',hair:'#f07aa0',style:'buns',type:'精準型',st:{pow:3,jmp:5,spd:7,rcv:5,set:9,blk:4},note:'托球最準，能找到每個人的甜蜜點'},
+     {id:'linxin',name:'林芯',hair:'#c9c2ff',style:'pony',type:'攻擊型',st:{pow:5,jmp:6,spd:6,rcv:5,set:7,blk:6},note:'不只是舉球員，偶爾自己二次吊球'},
+     {id:'zishi',name:'子石',hair:'#5a3a20',style:'bowl',type:'快攻型',st:{pow:3,jmp:5,spd:8,rcv:5,set:8,blk:4},note:'節奏最快，讓對手永遠跟不上'}]};
 const DIFF={easy:{miss:1.7,blk:.4,spd:.88,q:-.15,read:.5,err:1.6},normal:{miss:1,blk:.75,spd:1,q:0,read:1,err:1},hard:{miss:.55,blk:1,spd:1.08,q:.1,read:1.6,err:.6},hell:{miss:.3,blk:1.2,spd:1.15,q:.2,read:2.2,err:.35}};
 const LINES={call:['我的！','我來！','交給我！'],spike:['喝！','看招！'],block:['擋下來！'],dive:['嘿呀！'],win:['好球！','讚！'],lose:['抱歉！','下一球！']};
 

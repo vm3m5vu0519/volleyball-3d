@@ -67,8 +67,12 @@ function skM(p,sid){const s=TS[sid],b=s&&TB.find(x=>x.id===s.br);return .7+pStat
 const skRk=(p,sid)=>Math.max(1,pr(p,sid));
 // ---------- 技能樹畫面 ----------
 const TV={cid:null,sel:null,hov:null,prev:null};
-function openTree(cid){TV.from=PAGES.find(x=>x!=='vTree'&&!$(x).hidden)||'vPrep';TV.cid=cid||PV.cid||prep.chars[prep.role];TV.sel=null;show('vTree');$('trBack').textContent=TV.from==='vMenu'?'← 主選單':'← 賽前準備';renderTree();}
-function treeChars(){return ROLES.map(r=>({r,c:charOf(r,prep.chars[r])}));}
+function openTree(cid){TV.from=PAGES.find(x=>x!=='vTree'&&!$(x).hidden)||'vMenu';
+  // 如果沒有指定角色，用第一個有效角色當預設
+  const fallback=cid||PV.cid||prep.chars[prep.role]||Object.values(CHARS)[0][0].id;
+  TV.cid=fallback;TV.sel=null;show('vTree');$('trBack').textContent=TV.from==='vMenu'?'← 主選單':'← 賽前準備';renderTree();}
+// 全部角色都可以在技能樹培養
+function treeChars(){return ROLES.flatMap(r=>CHARS[r].map(c=>({r,c})));}
 function effSt(cid,extra){const r=charRole(cid),c=CHARS[r].find(x=>x.id===cid),g=treeOf(cid),st={};for(const k of STAT_KEYS){st[k]=Math.min(GROW_CAP,c.st[k]+(g.add[k]||0)+(extra===k?1:0));}return{base:c.st,st};}
 // 六角雷達圖：灰＝原本能力、金＝加點後、虛線＝再加一點的預覽
 function radarSvg(cid,prevK){const {base,st}=effSt(cid),pv=prevK?effSt(cid,prevK).st:null,K=['pow','jmp','spd','blk','set','rcv'],R=86,c=110;
@@ -85,7 +89,10 @@ function nodeHTML(g,s,cid){const r=g.tree[s.id]||0,lock=gateReason(g.tree,s),can
   return`<button class="tNode${s.act?' act':''}${s.tier===3?' t3':''}${lock?' lock':''}${can?' can':''}${r>=s.max?' max':''}${TV.sel===s.id?' sel':''}${g.eq===s.id?' eq':''}" data-sk="${s.id}" style="--bc:${s.col||b.col}" aria-label="${s.name} ${r}/${s.max}">
     <span class="tIc">${s.act?'◆':'●'}</span><span class="tNm">${s.name}</span><span class="tSeg">${seg}</span>${g.eq===s.id?'<em class="tEq">Q</em>':''}</button>`;}
 function renderTree(){const box=$('trBody');if(!box||!TV.cid)return;const cid=TV.cid,g=treeOf(cid),role=charRole(cid),ch=CHARS[role].find(c=>c.id===cid),{st}=effSt(cid);
-  $('trWho').innerHTML=treeChars().map(({r,c})=>`<button class="pill" data-tc="${c.id}" aria-pressed="${c.id===cid}">${ROLE[r].short}・${c.name}<small> Lv ${gOf(c.id).lv}</small></button>`).join('');
+  // 角色選擇：依位置分組
+  const whoH=ROLES.map(r=>{const rcs=CHARS[r].map(c=>`<button class="pill" data-tc="${c.id}" aria-pressed="${c.id===cid}">${c.name}<small> Lv${gOf(c.id).lv}</small></button>`).join('');
+    return`<span class="trWhoGrp"><small>${ROLE[r].short}</small>${rcs}</span>`;}).join('');
+  $('trWho').innerHTML=whoH;
   $('trPts').innerHTML=`<span>Lv <b>${g.lv}</b></span><span>技能點 <b>${g.sp}</b></span><span>屬性點 <b>${g.pts}</b></span><span class="trEqN">上場技能（Q）：<b style="color:${g.eq?TS[g.eq].col:'var(--dim)'}">${g.eq?TS[g.eq].name:'沒有'}</b></span>`;
   // 技能樹：4 欄 × （T1、門檻、T2、門檻、T3）
   let h='';for(const b of TB){const n=brPts(g.tree,b.id),m=(.7+st[b.stat]*.06);
