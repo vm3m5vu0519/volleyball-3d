@@ -75,7 +75,7 @@ function startDive(p,L,sp){actKey(p,'dive',.25);if(p.human||Math.hypot(p.x-human
 // 玩家飛撲：照球到達的時間算速度，身體滑到「手剛好在球下面」的位置；球還太遠時先記下來，時機到了自動撲出去
 function diveCan(p){return state==='play'&&ball&&!(ball.lastTeam===p.team&&(ball.lastP===p||ball.touches>=3));}
 function tryDive(p){if(!diveCan(p))return false;const L=predict(.45);if(!L||Math.sign(L.x)!==sd(p.team))return false;const dd=Math.hypot(L.x-p.x,L.z-p.z);
-  if(dd<1.0||dd>4.2+p.st.rcv*.06)return false;if(L.t>.72){p.diveQ={s:ball.serial,until:time+1.6};return true;}humanDive(p,L);return true;}
+  if(dd<1.0||dd>(4.2+p.st.rcv*.06)*(1+.06*pr(p,'d_dive'))*(p.skOn==='guard'?1.25:1))return false;if(L.t>.72){p.diveQ={s:ball.serial,until:time+1.6};return true;}humanDive(p,L);return true;}
 function humanDive(p,L){const dx=L.x-p.x,dz=L.z-p.z,l=Math.hypot(dx,dz)||1,ux=dx/l,uz=dz/l,reach=.85,dist=Math.max(0,l-reach),t=Math.max(.16,L.t-.04),k=1.2;
   let v=dist*k/(1-Math.exp(-k*t));v=Math.min(6.5+p.st.rcv*.15,Math.max(3,v));p.diveQ=null;startDive(p,L,v);p.vx=ux*v;p.vz=uz*v;p.dive=p.diveT=clamp(L.t+.18,.45,.95);p.diveAim=L;p.arm='rcv';p.armT=p.dive+.05;}
 function doJump(p,keepV,app){if(p.y>0||p.dive>0||p.rec>0||p.stun>0)return;p.jumpN=(p.jumpN||0)+1;
@@ -152,12 +152,12 @@ function humanInput(dt){
   if(p.role!=='set'&&T('stype'))reqStep(p,1); // 攻擊手：R／滾輪 決定要哪種球
   if(T('skill')){if(!skActivate(p)&&!p.skOn)say('技能量表還沒滿（'+Math.floor(p.sk||0)+'%）','#a9b0cc');}
   if(state==='serve'&&server===p){
-    if(!ball.toss&&T('atk')&&time-(p.tossAt||-9)>.35){startToss(p,A('mod')?'jump':'stand');if(ball.tossKind==='jump')say('跳發！','#fff');}
-    else if(ball.toss&&T('atk')&&time-p.tossAt>.15){const kind=ball.tossKind==='jump'&&p.y>.2?'jump':'stand',c=srvContact(p,'stand'),f=tnet(p.team),hx=p.x+f*.3,hy=p.y+HANDUP+.12,d=Math.hypot(ball.y-hy,(ball.x-hx)*.7,(ball.z-c.z)*.5);
+    if(!ball.toss&&(T('atk')||T('rcv'))&&time-(p.tossAt||-9)>.35){startToss(p,T('rcv')&&!T('atk')?'jf':A('mod')?'jump':'stand');if(ball.tossKind==='jump')say('跳發！','#fff');else if(ball.tossKind==='jf')say('跳飄球！','#fff');}
+    else if(ball.toss&&(T('atk')||T('rcv'))&&time-p.tossAt>.15){const kind=jumpSrv(ball.tossKind)&&p.y>.2?ball.tossKind:'stand',c=srvContact(p,'stand'),f=tnet(p.team),hx=p.x+f*.3,hy=p.y+HANDUP+.12,d=Math.hypot(ball.y-hy,(ball.x-hx)*.7,(ball.z-c.z)*.5);
       // 發球判定：球在擊球手附近 1.4 公尺內都打得到，越接近手（球在最佳高度）越好
       if(d<1.4){ball.x=lerp(ball.x,hx,.6);ball.y=lerp(ball.y,hy,.7);doServe(p,kind,clamp(1-d/1.4,0,1));}}
     // 跳發：拋出後自動助跑兩步、起跳
-    if(ball.toss&&ball.tossKind==='jump'&&p.y===0){const ta=time-p.tossAt;if(ta>.12&&ball.vy>2.4){p.vx=tnet(p.team)*2.6;p.vz=0;p.lungeT=.05;}if(ball.vy<2.6&&ball.vy>0&&p.loadT<=0){p.loadT=.1;p.loadApp=.6;}}
+    if(ball.toss&&jumpSrv(ball.tossKind)&&p.y===0){const ta=time-p.tossAt;if(ta>.12&&ball.vy>2.4){p.vx=tnet(p.team)*(ball.tossKind==='jf'?1.5:2.6);p.vz=0;p.lungeT=.05;}if(ball.vy<2.6&&ball.vy>0&&p.loadT<=0){p.loadT=.1;p.loadApp=.6;}}
     return;}
   if(state!=='play')return;
   // 起跳：先在地上蹲一下（0.12 秒），再離地
@@ -207,10 +207,10 @@ function update0(dt){
   stT+=dt;
   if(state==='serve'){const s=server;
     if(!ball.toss)placeHeld();
-    if(!s.human&&!ball.toss&&stT>2.6){s.tk=rnd()<.15+s.st.pow*.04?'jump':rnd()<.4?'jfloat':'stand';startToss(s,s.tk);}
+    if(!s.human&&!ball.toss&&stT>2.6){s.tk=rnd()<.15+s.st.pow*.04?'jump':rnd()<.35?'jf':rnd()<.35?'jfloat':'stand';startToss(s,s.tk);}
     if(ball.toss){ball.vy-=G*dt;ball.y+=ball.vy*dt;ball.x+=ball.vx*dt;ball.z+=ball.vz*dt;
-      if(!s.human){if(s.tk==='jump'&&s.y===0){if(time-s.tossAt>.12&&ball.vy>2.4){s.vx=tnet(s.team)*2.6;s.vz=0;s.lungeT=.05;}if(ball.vy<2.6&&ball.vy>0&&s.loadT<=0){s.loadT=.1;s.loadApp=.6;}}
-        if(ball.vy<0&&ball.y<=s.y+HANDUP+.2&&(s.tk!=='jump'||s.y>.3))doServe(s,s.tk,clamp(.5+rnd()*.45+D(s).q,0,1));}
+      if(!s.human){if(jumpSrv(s.tk)&&s.y===0){if(time-s.tossAt>.12&&ball.vy>2.4){s.vx=tnet(s.team)*(s.tk==='jf'?1.5:2.6);s.vz=0;s.lungeT=.05;}if(ball.vy<2.6&&ball.vy>0&&s.loadT<=0){s.loadT=.1;s.loadApp=.6;}}
+        if(ball.vy<0&&ball.y<=s.y+HANDUP+.2&&(!jumpSrv(s.tk)||s.y>.3))doServe(s,s.tk,clamp(.5+rnd()*.45+D(s).q,0,1));}
       if(state==='serve'&&ball.y<.7){ball.toss=false;ball.held=s;placeHeld();say('重新拋球','#a9b0cc');}}
     clearHits();return;}
   if(state==='point'){deadBall(dt);if(stT>3.0){if(gameOver())endMatch();else setupServe(serveTeam);}clearHits();return;}

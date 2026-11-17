@@ -43,6 +43,27 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .sec h3 small{color:var(--dim);font-size:13px;margin-left:8px;letter-spacing:0}
 .big2{display:flex;gap:10px;flex-wrap:wrap}
 .resG{display:flex;flex-wrap:wrap;gap:8px 16px;justify-content:center;margin:4px 0 14px;font-size:14px;color:var(--dim)}.resG b{color:var(--ink)}.resG em{color:var(--gold);font-style:normal;font-weight:800}
+.trTop{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}.trPts{display:flex;flex-wrap:wrap;gap:16px;font-size:14px;color:var(--dim)}.trPts b{color:var(--gold);font-size:17px}
+#trWho .pill small{opacity:.75;font-size:11px}
+.trGrid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}@media (max-width:900px){.trGrid{grid-template-columns:1fr}}
+.tTree{display:grid;grid-template-columns:repeat(4,minmax(168px,1fr));gap:10px;overflow-x:auto;padding:8px 2px 4px}
+.tCol{display:flex;flex-direction:column;gap:8px;align-items:stretch;border-top:3px solid var(--bc);padding-top:8px;min-width:0}
+.tHd b{display:block;color:var(--bc);font-size:15px}.tHd small{display:block;color:var(--dim);font-size:11px;line-height:1.4}
+.tRow{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.tGate{font-size:11px;color:var(--dim);text-align:center;border-top:1px dashed rgba(255,255,255,.25);padding-top:3px}.tGate.ok{color:var(--mint)}
+.tNode{position:relative;width:76px;min-height:84px;padding:8px 4px 6px;border:2px solid rgba(255,255,255,.18);background:rgba(255,255,255,.04);display:flex;flex-direction:column;align-items:center;gap:4px;border-radius:12px}
+.tNode .tIc{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:15px;color:var(--bc);background:rgba(0,0,0,.35);border:2px solid var(--bc)}
+.tNode.act .tIc{border-radius:8px;transform:rotate(45deg)}.tNode.act .tIc{font-size:0}.tNode.act .tIc::after{content:"";width:10px;height:10px;background:var(--bc);border-radius:2px}
+.tNode .tNm{font-size:12px;line-height:1.2;text-align:center}
+.tSeg{display:flex;gap:3px}.tSeg i{width:12px;height:5px;border-radius:2px;background:rgba(255,255,255,.18)}.tSeg i.on{background:var(--bc)}
+.tNode.lock{opacity:.42}.tNode.can{border-color:var(--bc);animation:tPulse 1.6s ease-in-out infinite}.tNode.max{border-color:#ffd23f}.tNode.sel{background:rgba(255,255,255,.14);outline:2px solid #fff;outline-offset:1px}
+.tNode.t3{width:92px;border-width:3px}.tEq{position:absolute;top:-8px;right:-8px;font-style:normal;font-weight:900;font-size:11px;background:var(--bc);color:#0b1a22;border-radius:6px;padding:1px 5px}
+@keyframes tPulse{50%{box-shadow:0 0 0 4px rgba(255,255,255,.08)}}@media (prefers-reduced-motion:reduce){.tNode.can{animation:none}}
+.trInfo{margin-top:12px;border-top:1px solid rgba(255,255,255,.12);padding-top:10px;display:flex;flex-direction:column;gap:6px;font-size:14px;min-height:96px}
+.tiH b{font-size:17px;margin-right:8px}.tiH span{color:var(--dim);font-size:12px}.tiN{color:var(--mint)}.tiM{color:#c9bde0;font-size:13px}.tiL{color:#ff8a7a;font-size:13px}
+.radar{width:100%;max-width:320px;display:block;margin:0 auto}.rdG{fill:none;stroke:rgba(255,255,255,.14)}.rdBase{fill:rgba(160,170,180,.35);stroke:rgba(200,210,220,.6)}.rdCur{fill:rgba(255,138,42,.35);stroke:#ff8a2a;stroke-width:2}
+.rdPrev{fill:none;stroke:#3ed3b8;stroke-width:2;stroke-dasharray:4 3}.rdL{fill:var(--ink);font-size:11px}.rdV{fill:var(--gold);font-weight:700}.rdA{fill:var(--mint)}
+.trStat{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:8px}.trStat .tb{font-size:13px;padding:6px}.trStat small{color:var(--dim)}
 .gr{margin-top:10px;display:flex;flex-direction:column;gap:6px;font-size:13px}.grH{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center}.grH b{color:var(--gold);font-size:15px}
 .grH i{height:8px;border-radius:4px;background:rgba(255,255,255,.12);overflow:hidden}.grH em{display:block;height:100%;background:var(--gold)}.grP b{color:var(--gold)}.grB{display:flex;flex-wrap:wrap;gap:6px}.grB .tb{padding:4px 8px;font-size:13px}.grS{color:var(--dim);font-size:12px}
 .nForm{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}.nForm label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--dim);min-width:0}
@@ -161,6 +182,7 @@ kbd{color:var(--ink);background:#000;padding:1px 7px;border:2px solid var(--dim)
       <button class="mb big" id="mStart">開始比賽</button>
       <button class="mb" id="mNet">多人連線</button>
       <button class="mb" id="mTrain">訓練</button>
+      <button class="mb" id="mTree">球員培養（技能樹）</button>
       <button class="mb" id="mSettings">遊戲設定・按鍵</button>
       <button class="mb" id="mHelp">操作說明</button>
       <button class="mb" id="mSkin">角色外觀（套皮）</button>
@@ -226,6 +248,15 @@ kbd{color:var(--ink);background:#000;padding:1px 7px;border:2px solid var(--dim)
   <div class="help" id="helpList"></div>
 </div></div>
 
+<div class="page" id="vTree" hidden><div class="wrap">
+  <div class="head"><button class="tb" id="trBack">← 賽前準備</button><h2>球員培養</h2></div>
+  <div class="big2" id="trWho"></div>
+  <div class="sec trTop"><div id="trPts" class="trPts"></div><div class="big2"><button class="tb" id="trAuto">自動配點</button><button class="tb" id="trReset">重置技能點</button></div></div>
+  <div class="trGrid" id="trBody">
+    <div class="sec" style="min-width:0"><h3>技能樹<small>技能不綁位置；同一欄前面投夠點才開下一層</small></h3><div class="tTree" id="trTree"></div><div class="trInfo" id="trInfo"></div></div>
+    <div class="sec" style="min-width:0"><h3>能力<small>屬性點加在這裡</small></h3><div id="trRadar"></div></div>
+  </div>
+</div></div>
 <div class="page" id="vSkin" hidden><div class="wrap">
   <div class="head"><button class="tb" data-go="vMenu">← 主選單</button><h2>角色外觀（套皮）</h2></div>
   <p class="sub">把你喜歡的角色模型換到球員身上。模型只存在你的瀏覽器裡，不會上傳到任何地方。動作由遊戲自動套上去，模型本身不需要有動畫。</p>

@@ -398,7 +398,7 @@ function poseRig(p,R,dt){
   else if(pose==='bump'||pose==='dig'){const f=p.swing>.18;T.pt=.3;T.tL=T.tR=(f?-1.1:-.8)-T.pt;T.kL=T.kR=f?1.55:1.15;T.sx=.25;T.aLx=T.aRx=(f?-1.1:-1.35)-.55;T.aLz=.24;T.aRz=-.24;T.eL=T.eR=-.03;}
   else if(pose==='over'){T.aLx=T.aRx=-2.05;T.aLz=-.48;T.aRz=.48;T.eL=T.eR=-.95;T.sx=-.08;T.kL=T.kR=.45;T.tL=T.tR=-.22;}
   // 發球動作（aL＝拋球手，aR＝擊球手；拋球手那側的腳在前）
-  if(state==='serve'&&server===p&&!air){const jt=ball.toss&&ball.tossKind==='jump';
+  if(state==='serve'&&server===p&&!air){const jt=ball.toss&&jumpSrv(ball.tossKind);
     if(!ball.toss){const b=Math.sin(time*2.2)*.03;T.aLx=-1.05+b;T.aLz=.32;T.eL=-.75;T.aRx=-.25;T.aRz=-.05;T.eR=-.55;T.tL=-.32;T.kL=.38;T.tR=.14;T.kR=.12;T.sx=.14;T.sy=-.08;}
     else if(jt){const up=ball.vy>2.4;if(up){T.aLx=T.aRx=-2.6;T.eL=T.eR=-.15;T.sx=.1;}else{T.aLx=T.aRx=.9;T.eL=T.eR=-.15;T.sx=.4;}}
     else{const ta=time-(p.tossAt||time),k=clamp(ta/.28,0,1),c=clamp((ta-.15)/.35,0,1);

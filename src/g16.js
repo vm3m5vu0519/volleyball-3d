@@ -11,7 +11,7 @@ const xpNeed=lv=>80+lv*40;
 function gSave(){store('vb-growth',GROW);}
 function applyGrowth(){if(MATCH.mode==='net')return;for(const p of players){if(p.team!==ME||!p.ch)continue;const g=GROW[p.ch.id];if(!g)continue;
   const st=Object.assign({},p.st);for(const k in g.add)if(k in st)st[k]=Math.min(GROW_CAP,st[k]+g.add[k]);p.st=st;p.jumpH=.62+Math.min(10,st.jmp)*.045+Math.max(0,st.jmp-10)*.03;}}
-function gAddXp(id,n){const g=gOf(id);let up=0;g.xp+=n;while(g.lv<GROW_MAX_LV&&g.xp>=xpNeed(g.lv)){g.xp-=xpNeed(g.lv);g.lv++;g.pts++;up++;}if(g.lv>=GROW_MAX_LV)g.xp=0;return up;}
+function gAddXp(id,n){const g=gOf(id);let up=0;g.xp+=n;treeOf(id);while(g.lv<GROW_MAX_LV&&g.xp>=xpNeed(g.lv)){g.xp-=xpNeed(g.lv);g.lv++;g.pts++;g.sp=(g.sp||0)+1;up++;}if(g.lv>=GROW_MAX_LV)g.xp=0;return up;}
 function gStatXp(id,k,n){const g=gOf(id);g.sx[k]=(g.sx[k]||0)+n;let up=0;while(g.sx[k]>=100){g.sx[k]-=100;if(gBase(id,k)+(g.add[k]||0)<GROW_CAP){g.add[k]=(g.add[k]||0)+1;up++;}}return up;}
 function gBase(id,k){for(const r of ROLES){const c=CHARS[r].find(c=>c.id===id);if(c)return c.st[k]||0;}return 0;}
 function gSpend(id,k){const g=gOf(id);if(g.pts<=0||gBase(id,k)+(g.add[k]||0)>=GROW_CAP)return false;g.pts--;g.add[k]=(g.add[k]||0)+1;gSave();return true;}
@@ -28,8 +28,9 @@ function settleGrowth(win){if(MATCH.mode==='net'||MATCH.mode==='train')return[];
 function growthHTML(cid){const g=GROW[cid]||{lv:1,xp:0,pts:0,add:{},sx:{}},need=xpNeed(g.lv);
   return `<div class="gr"><div class="grH"><b>Lv ${g.lv}</b><i><em style="width:${g.lv>=GROW_MAX_LV?100:Math.round(g.xp*100/need)}%"></em></i><span>${g.lv>=GROW_MAX_LV?'MAX':g.xp+' / '+need}</span></div>`+
     (g.pts>0?`<div class="grP">可分配能力點：<b>${g.pts}</b>　點下面的 ＋ 加點</div><div class="grB">${STAT_KEYS.map(k=>`<button class="tb" data-gs="${k}" ${gBase(cid,k)+(g.add[k]||0)>=GROW_CAP?'disabled':''}>＋${STAT_N[k]}</button>`).join('')}</div>`:'')+
-    `<div class="grS">訓練經驗：${STAT_KEYS.filter(k=>g.sx[k]).map(k=>`${STAT_N[k]} ${g.sx[k]}/100`).join('、')||'還沒有（主選單 → 訓練）'}</div></div>`;}
+    `<button class="tb" data-opentree="${cid}">技能樹・屬性 ▶ <small>技能點 ${treeOf(cid).sp}・上場技能 ${treeOf(cid).eq?TS[treeOf(cid).eq].name:'沒有'}</small></button><div class="grS">訓練經驗：${STAT_KEYS.filter(k=>g.sx[k]).map(k=>`${STAT_N[k]} ${g.sx[k]}/100`).join('、')||'還沒有（主選單 → 訓練）'}</div></div>`;}
 function growthAdd(cid){const g=GROW[cid];return g?g.add:{};}
+document.addEventListener('click',e=>{const o=e.target.closest('[data-opentree]');if(o){openTree(o.dataset.opentree);return;}});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-gs]');if(!b||!PV.cid)return;if(gSpend(PV.cid,b.dataset.gs)){SFX.call&&SFX.call();pvShow(PV.role,PV.cid);if(typeof renderPrep==='function')renderPrep();}});
 // ---------- 訓練模式 ----------
 // 扣球：對面送球過來 → 隊友一傳 → 舉球一定給你 → 扣進對方場內（對方有攔網）

@@ -171,7 +171,7 @@ function drawHUD(){
     const gx=cw-20*sc,gy=ch*.69,gh=ch*.27,fh=(gh-6*sc)*sk/100;rr(g,gx,gy,14*sc,gh,2,'rgba(8,22,30,.55)');
     if(fh>1){g.globalAlpha=pul;rr(g,gx+3*sc,gy+gh-3*sc-fh,8*sc,fh,2,skc);g.globalAlpha=1;}
     T2(g,full?'MAX':String(Math.floor(sk)),gx+7*sc,gy-8*sc,11*sc,full?skc:'#eef6f7');
-    if(SKD){const tx=human.skOn?`技能中：${SKD.name}（${SK_DUR[human.skOn]>0?Math.ceil(human.skT)+' 秒':{power:'下一次扣球',precise:'下一次扣球',toss:'下一次舉球'}[human.skOn]}）`:full?`${k1('skill')} 發動：${SKD.name}`:`技能：${SKD.name}`;
+    if(SKD){const tx=human.skOn?`技能中：${SKD.name}（${SK_DUR[human.skOn]>0?Math.ceil(human.skT)+' 秒':(TS[human.skOn]&&TS[human.skOn].when||'')}）`:full?`${k1('skill')} 發動：${SKD.name}`:`技能：${SKD.name}`;
       g.font=`700 ${12*sc}px "Noto Sans TC",sans-serif`;const tw=g.measureText(tx).width+18*sc;rr(g,x1-tw+6*sc,y0-30*sc,tw,22*sc,11,human.skOn||full?'rgba(8,22,30,.78)':'rgba(8,22,30,.45)');
       T2(g,tx,x1-3*sc,y0-19*sc,12*sc,human.skOn||full?skc:'#cfe2ea','right');}drawReq(g,cw,ch,sc,x1,y0);}
   // 技能發動中的球員：腳下一圈淡淡的光環
@@ -219,8 +219,9 @@ function keyGlyph(g,k,x,y,sc,shift){const mL=/滑鼠左鍵|左鍵/.test(k),mR=/�
   g.restore();}
 
 // ---------------- 選單 ----------------
-const PAGES=['vMenu','vPrep','vHelp','vPause','vOver','vSet','vMocap','vSkin','vNet','vTrain'];
+const PAGES=['vMenu','vPrep','vHelp','vPause','vOver','vSet','vMocap','vSkin','vNet','vTrain','vTree'];
 $('mTrain').onclick=()=>{renderTrain();show('vTrain');};
+$('mTree').onclick=()=>openTree(prep.chars[prep.role]);
 function show(id){PAGES.filter(x=>x!=='vSet').forEach(x=>$(x).hidden=x!==id);if(id){const b=$(id).querySelector('button');if(b)b.focus();}else g3.focus();
   if(id==='vPrep')renderPrep();if(id==='vHelp')renderHelp();}
 document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{toMenu(b.dataset.go);});
@@ -264,13 +265,13 @@ function renderHelp(){
    {t:'進攻',sub:'球托給你時',rows:[[`${K('jump')} → ${air}${K('atk')}`,'扣球：按下去就一定打得到，在跳躍最高點出手最強'],['準星','畫面中央的準星指到哪裡，球就往哪裡打'],['攔網牆','起跳後網上會出現對方攔網手的紅色矩形：打縫隙或頭上＝乾淨過網；虛線外側＝可能打手出界；打正中間要看力量'],['力量','助跑越長、跳越高、在最高點出手，球越重越難攔'],['旋球','空中按滑鼠左鍵＝左旋扣球、右鍵＝右旋扣球（球會往那邊彎），鍵盤扣球鍵＝不旋；出手前滑鼠甩動會再加旋轉，往下甩＝上旋'],[`${K('call')}`,'要球：舉球員會把下一球舉給你'],[`${K('stype')}／滾輪`,'要哪種球：自動／高球／平快／快攻（快攻要先衝到網前、早一點起跳；一傳不好會降級）'],[`${air}${K('tip')}`,'輕打：把球輕輕推到準星位置'],[K('call'),'叫球：要舉球手托給你']]},
    {t:'舉球',sub:'你選舉球手時，隊友一傳後輪到你',rows:[['黃圈','地上的黃圈是球落到頭上的位置，跑過去（一傳會傳高一點，球飛過來時畫面變慢，慢的程度在設定「舉球思考時間」調整）'],['準星','對準要托給的攻手（頭上出現黃色標記）'],[K('atk'),'舉球（差一點會自動跨一步）'],[`${K('jump')} → ${air}${K('rcv')}`,'跳舉：一傳靠網又高時跳起來，在空中按右鍵托球，節奏更快'],[`${K('jump')} → ${air}${K('atk')}`,'二次攻擊：跳起來按左鍵直接扣過網'],[`${K('jump')} → ${air}${K('tip')}`,'二次球：舉球員直接吊過網'],[`${K('s1')}${K('s2')}${K('s3')}`,'直接指定托給左攻／中間／右攻（不按就看準星）；對方發球或進攻時就能先選好下一球'],[`${K('stype')}／滾輪`,'切換攻擊方式：自動、高球（最穩）、平快（低平快，攔網來不及）、快攻（只有中間手，托在身邊、第一時間打；選左右攻會改成平快）；一傳太差時會改托修正高球'],[K('tip'),'二次吊球：直接把球推過網'],[`${hold}${K('rcv')}`,'墊球舉：比較保險，但沒那麼準']]},
    {t:'接球・防守',rows:[[`${hold}${K('rcv')}`,'接球姿勢：球掉進手臂就自動墊給舉球手'],[`<i>跑動中</i>${K('rcv')}`,'球太遠時飛撲'],[`<i>網前</i>${K('block')}`,'攔網：對方攻手起跳時按，原地起跳、手自動舉高、會往球的位置橫移']]},
-   {t:'發球',sub:'輪到你發球時',rows:[[K('atk'),'拋球，球到手上方再按一次'],[`${hold}${K('mod')}＋${K('atk')}`,'跳發：快又重'],['準星','發球落點']]},
-   {t:'技能',sub:'右下角量表滿了才能用',rows:[[K('skill'),'發動技能（左攻：強力扣球／右攻：精準扣球／中間：鐵壁攔網／舉球：神準舉球）'],['集氣','碰到球、得分、每打完一球都會集氣；一場至少能放一兩次']]},
+   {t:'發球',sub:'輪到你發球時',rows:[[K('atk'),'拋球，球到手上方再按一次'],[`${hold}${K('mod')}＋${K('atk')}`,'跳發：快又重'],[K('rcv'),'跳飄球：右鍵拋球，自動助跑起跳，在空中再按一次（左右鍵都可以）。球不旋轉、弧線平、會飄，最難接'],['準星','發球落點']]},
+   {t:'技能',sub:'右下角量表滿了才能用',rows:[[K('skill'),'發動技能：在「球員培養」技能樹裡挑一個主動技能帶上場（不綁位置，威力看那一欄對應的能力）'],['集氣','碰到球、得分、每打完一球都會集氣；一場至少能放一兩次']]},
    {t:'其他',rows:[[K('pause'),'暫停（Esc 也會放開滑鼠；多人連線時不會暫停）']]}];
   const notes=[['畫面提示',['球後面的白線是飛行軌跡，前面的點是接下來會飛的路線：黃色會落在我方，藍色落在對方','球跑出畫面時，畫面邊緣會有黃色箭頭指向球','地上的光圈是落點；黃色起跳圈出現時，跑過去在「跳！」時起跳']],
     ['成長',['每個角色有自己的等級，比賽依表現拿經驗值，升級得能力點，在賽前準備頁的角色預覽裡加點','主選單「訓練」：扣球／接發／攔網練習，加該能力的經驗值（滿 100 加 1 點），成長最多到 12','每場兩隊各有一位隨機「王牌」（頭上有 ★），屬性 +2']],
     ['多人連線',['主選單「多人連線」：房主建立房間，朋友輸入代碼加入，各自選位置，沒人坐的位置由 AI 打','需要先執行 server.js（離線包裡有「多人連線伺服器.bat」），再用 cloudflared 分享網址']],
-    ['規則',['4 對 4，先取設定分數且領先 2 分獲勝','得分的一方發球；換發時換下一位發球（舉球手不發球）','每隊最多碰三次，同一人不能連碰，攔網不算次數']]];
+    ['規則',['4 對 4，先取設定分數且領先 2 分獲勝','得分的一方發球；換發時換下一位發球（四個人輪流，舉球員也要發）','每隊最多碰三次，同一人不能連碰，攔網不算次數']]];
   $('helpList').innerHTML=G.map(g=>`<div class="cg"><h4>${g.t}${g.sub?`<small>${g.sub}</small>`:''}</h4>${g.rows.map(([k,t])=>`<div class="cr"><span class="ck">${k}</span><span>${t}</span></div>`).join('')}</div>`).join('')
     +notes.map(([t,l])=>`<div class="cg"><h4>${t}</h4><ul>${l.map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join('');}
 function demo(){players=[];PID=0;

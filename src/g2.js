@@ -60,7 +60,7 @@ function newGame(){
   for(const t of [0,1])for(const r of ROLES){
     if(t===ME){const p=mkP(t,r,charOf(r,prep.chars[r]),r===prep.role);if(p.human)human=p;players.push(p);}
     else players.push(mkP(t,r,pick(CHARS[r].filter(c=>c.id!==prep.chars[r])),false));}
-  players.forEach((p,i)=>p.num=[4,1,7,3][i%4]+(p.team?8:0));applyBonus();applyGrowth();pickAces();
+  players.forEach((p,i)=>p.num=[4,1,7,3][i%4]+(p.team?8:0));applyBonus();applyGrowth();pickAces();treeApply();
   score=[0,0];served=[false,false];serverIdx=[0,0];msgs=[];parts=[];
   serveTeam=rnd()<.5?0:1;served[serveTeam]=true;rebuildRigs();
   camYaw=camYawT=ME?-Math.PI/2:Math.PI/2;camPitch=camPitchT=.3;setupServe(serveTeam);say(`${COL[serveTeam].name}先發球`,COL[serveTeam].ui,true);aceSay();SFX.whistle();}
@@ -68,17 +68,18 @@ function setupServe(t){if(MATCH.mode==='train'){if(trainSetup(t))return;t=serveT
   state='serve';stT=0;
   const first=!players.some(p=>p.placed);players.forEach(p=>{const s=spot(p,'r');if(first||p.human){p.x=sd(p.team)*s.d;p.z=s.z;}p.placed=1;p.y=p.vy=p.vx=p.vz=0;p.dive=p.rec=p.stun=p.swing=p.loadT=p.landT=0;p.diveQ=null;p.jk='';p.arm=null;p.jumpAt=0;p.pose='';p.run=0;p.app=0;
     p.yaw=p.team?-Math.PI/2:Math.PI/2;p.tx=sd(p.team)*s.d;p.tz=s.z;p.blockTried=-1;p.act=null;p.swingReq=null;p.charging=false;p.approach=false;});
-  // 輪發：舉球手不發球
-  const order=team(t).filter(p=>p.role!=='set');server=order[serverIdx[t]%order.length];
+  // 輪發：四個人照順序輪流發球（舉球員也要發；他發球時由別人代舉）
+  const order=team(t);server=order[serverIdx[t]%order.length];
   server.x=sd(t)*(M.half+1.4);server.z=server.human?0:(rnd()-.5)*3;server.tx=server.x;server.tz=server.z;
   ball=newBall();ball.held=server;placeHeld();ball.ox=ball.x;ball.oy=ball.y;ball.oz=ball.z;
   players.forEach(p=>{p.ox=p.x;p.oy=p.y;p.oz=p.z;});PC={};}
 // 發球前球拿在拋球手的掌心（位置從角色骨架讀，上一格算好的）
 function placeHeld(){const s=ball.held,h=s.holdP;if(h&&Math.hypot(h.x-s.x,h.z-s.z)<1.2){ball.x=h.x;ball.y=h.y+BR*.85;ball.z=h.z;}else{ball.x=s.x+tnet(s.team)*.32;ball.y=1.05;ball.z=s.z+.22;}ball.vx=ball.vy=ball.vz=0;}
 // 拋球：從手上拋起，算好水平速度，讓球落到擊球手的正上方（站發）或身體前方約 1.5 公尺（跳發，人會助跑跟上）
-function srvContact(p,kind){const f=tnet(p.team),side=p.hitS&&Math.abs(p.hitS.z-p.z)>.03?Math.sign(p.hitS.z-p.z):-f;return{x:p.x+f*(kind==='jump'?1.75:.3),y:kind==='jump'?HANDUP+.15+p.jumpH*.85:HANDUP+.12,z:p.z+side*.3};}
+const jumpSrv=k=>k==='jump'||k==='jf'; // 跳起來發的球：跳發（大力）、跳飄（不旋、會飄）
+function srvContact(p,kind){const f=tnet(p.team),side=p.hitS&&Math.abs(p.hitS.z-p.z)>.03?Math.sign(p.hitS.z-p.z):-f;if(kind==='jf')return{x:p.x+f*1.05,y:HANDUP+.12+p.jumpH*.6,z:p.z+side*.3};return{x:p.x+f*(kind==='jump'?1.75:.3),y:kind==='jump'?HANDUP+.15+p.jumpH*.85:HANDUP+.12,z:p.z+side*.3};}
 function startToss(p,kind){ball.held=p;placeHeld();ball.held=null;ball.toss=true;ball.tossKind=kind;
-  const vy=kind==='jump'?7.2:5.4,c=srvContact(p,kind),y0=ball.y,a=.5*G,b=-vy,cc=c.y-y0,disc=b*b-4*a*cc,t=disc>0?(-b+Math.sqrt(disc))/(2*a):.9;
+  const vy=kind==='jump'?7.2:kind==='jf'?6.3:5.4,c=srvContact(p,kind),y0=ball.y,a=.5*G,b=-vy,cc=c.y-y0,disc=b*b-4*a*cc,t=disc>0?(-b+Math.sqrt(disc))/(2*a):.9;
   ball.vy=vy;ball.vx=(c.x-ball.x)/t;ball.vz=(c.z-ball.z)/t;ball.tossT=t;p.tossAt=time;}
 function point(w,why){
   if(state!=='play')return;state='point';stT=0;score[w]++;skPoint(w);
@@ -95,7 +96,7 @@ function zoneOf(p){
   if(p.stun>0||p.rec>0)return null;
   const fx=Math.sin(p.yaw),fz=Math.cos(p.yaw),by=ball.y-p.y,hd=Math.hypot(ball.x-p.x,ball.z-p.z);
   // 撲球：判定範圍和品質都下修；來球越快越難撲好（g2 touch 另外依球速再扣）
-  if(p.dive>0){const r=1.05+p.st.rcv*.025,d=Math.hypot(ball.x-(p.x+fx*.9),ball.z-(p.z+fz*.9));if(d<r&&ball.y<.95){const v=Math.hypot(ball.vx,ball.vy,ball.vz);return{k:'dig',q:clamp(1-d/r,0,1)*.6*clamp(1.25-v/30,.45,1)+.04};}return null;}
+  if(p.dive>0){const r=(1.05+p.st.rcv*.025)*(1+.06*pr(p,'d_dive'))*(p.skOn==='guard'?1+.3*skM(p,'guard'):1),d=Math.hypot(ball.x-(p.x+fx*.9),ball.z-(p.z+fz*.9));if(d<r&&ball.y<.95){const v=Math.hypot(ball.vx,ball.vy,ball.vz);return{k:'dig',q:clamp(1-d/r,0,1)*.6*clamp(1.25-v/30,.45,1)+.04};}return null;}
   if(p.y>.2){const hx=p.x+fx*.3,hz=p.z+fz*.3,hy=p.y+HANDUP+.05,d=Math.hypot(ball.x-hx,ball.z-hz,(ball.y-hy)*.9),r=.65+p.st.jmp*.02;
     if(d<r){const apex=clamp(1-Math.abs(p.vy)/2.4,0,1);return{k:'air',q:clamp(1-d/r,0,1)*.55+apex*.45};}return null;}
   if(p.human&&setPhase(p)){if(by>1.25&&by<2.95&&hd<1.2){const d=Math.hypot(hd,(by-OVERY)*.8);return{k:'over',q:clamp(1-d/1.25,0,1)};}}
@@ -122,11 +123,14 @@ function touch(p,z,intent){
   if(fresh){ball.touches=0;ball.setInfo=null;ball.setter=null;ball.quickMB=null;}
   ball.touches++;if(ball.touches>3){fault(1-t,'四次擊球');return;}
   ball.serial=++SERIAL;ball.spS=0;ball.spT=0;ball.trailC=null;ball.mark=null;ball.trail=[]; /* 拖尾只畫這次碰球之後的軌跡（不然會連到上一段，變成空中一條白線） */ball.lastTeam=t;ball.lastP=p;ball.blockTouch=false;ball.cool=.2;ball.letGo=null;if(ball.touches===1){ball.passSer=ball.serial;for(const hs of team(t))if(hs.human&&hs.setPick&&hs.setPick.s===-1)hs.setPick.s=ball.serial;}
+  const flt=fresh?(ball.float||0):0; /* 跳飄球：飄得越兇越難接 */
   ball.serve=false;ball.atk=false;ball.heavy=false;ball.float=0;ball.tip=false;
   p.touchFx=.8;p.touchN=String(ball.touches);
   if(wasAtk)q*=clamp(1.15-(v-13)/26+p.st.rcv*.025,.3,1);
   // AI 品質：來球難度（z.q、球速）＋能力＋比較大的隨機起伏（讓一傳有好有壞，後面的節奏才會不同）
   if(!p.human)q=clamp(q*.5+.19+(z.k==='air'?p.st.pow:z.k==='over'?p.st.set:p.st.rcv)*.035+(rnd()-.5)*.6+D(p).q,0,1);
+  if(flt>1.05)q*=clamp(1.08-(flt-1)*.75*(1-.3*pr(p,'d_float'))+p.st.rcv*.02,.5,1);
+  if(fresh&&z.k!=='air'){q=Math.min(1,q+.025*pr(p,'d_pass')+(p.skOn==='eye'?(.06+.04*skRk(p,'eye'))*skM(p,'eye'):0));if(z.k==='dig'&&p.skOn==='guard')q=Math.max(q,.5);}
   if(z.shank){q=.03+rnd()*.15;pop(p,'接壞了','#a9b0cc');}
   if(z.k==='air'&&ball.setInfo&&ball.setInfo.boost&&ball.setInfo.hitter===p)q=Math.min(1,q+ball.setInfo.boost); // 神準舉球：攻手品質加一點
   p.swing=.35;
@@ -183,7 +187,7 @@ function setTarget(p){const cands=team(p.team).filter(x=>x!==p&&x.stun<=0);if(!c
   let best=null,bs=-9;for(const c of cands){const a=spot(c,'a'),tx=c.y>.25?c.x:sd(c.team)*a.d,tz=c.y>.25?c.z:a.z,dx=tx-p.x,dz=tz-p.z,l=Math.hypot(dx,dz)||1,s=(dx*d.x+dz*d.z)/l;if(s>bs){bs=s;best=c;}}
   return best;}
 function doSet(p,q){
-  const SKs=skTake(p,['toss']);if(SKs)p._skToss=1;
+  const SKs=skTake(p,['toss']);if(SKs)p._skToss=(.06+.04*skRk(p,'toss'))*skM(p,'toss');
   const t=p.team,sdt=sd(t),cands=team(t).filter(x=>x!==p&&x.stun<=0&&(x.role!=='set'||p.human));
   if(p.human&&cands.length){const h=setTarget(p);if(h){
     if(h.y>.25&&h.vy>-1&&Math.abs(h.x)<2.6){const tA=timeToApex(h),tt=clamp(tA+.12,.42,.75),hy=heightAfter(h,tt)+HANDUP,fx=Math.sin(h.yaw),fz=Math.cos(h.yaw);
@@ -194,7 +198,7 @@ function doSet(p,q){
     const side=h.role==='oh'?-3.4:h.role==='op'?3.4:clamp(spot(h,'a').z,-2,2);
     const lane=type==='quick'?{d:.7,z:h.role==='mb'?clamp(spot(h,'a').z,-1,1.2):clamp(p.z+Math.sign(side-p.z||1)*1.3,-M.wid+.6,M.wid-.6)}:
       type==='safe'?{d:1.6,z:clamp(h.z,-3,3)}:type==='fast'?{d:1.0,z:side*.92}:{d:1.05,z:side};
-    const hitY=HANDUP+jumpProf(h,.6).hApex-.1,ek={high:1,safe:.9,fast:1.35,quick:1.5}[type],err=((1-q)*1.5*(1.3-p.st.set*.05)+(1-ball.passQ)*.25)*ek*(SKs?0:1);
+    const hitY=HANDUP+jumpProf(h,.6).hApex-.1,ek={high:1,safe:.9,fast:1.35,quick:1.5}[type]*(type==='fast'||type==='quick'?1-.12*pr(p,'s_quick'):1),err=((1-q)*1.5*(1.3-p.st.set*.05)+(1-ball.passQ)*.25)*ek*(SKs?0:1)*(1-.12*pr(p,'s_toss'));
     lobTo(sdt*Math.max(.45,lane.d+(rnd()-.5)*err),hitY,lane.z+(rnd()-.5)*err*1.6,Math.max(hitY+.45,{quick:3.2,fast:3.45,safe:4.5,high:4.0}[type]));
     setMemo[t].push(h.id);if(setMemo[t].length>2)setMemo[t].shift();finishSet(p,h,type);return;}}
   cands.splice(0,cands.length,...cands.filter(x=>x.role!=='set'));
@@ -227,7 +231,7 @@ function doSet(p,q){
   if(type==='fast')err*=1.35;
   lobTo(sdt*Math.max(.45,lane.d+(rnd()-.5)*err),hitY,lane.z+(rnd()-.5)*err*1.6,Math.max(hitY+(type==='fast'?.6:.45),type==='quick'?3.25:type==='safe'?4.5:type==='fast'?3.45:4.0));
   finishSet(p,h,type);}
-function finishSet(p,h,type){ball.setInfo={hitter:h,type};if(p._skToss){ball.setInfo.boost=.15;p._skToss=0;ball.trailC='#ffd23f';burst(ball.x,ball.y,ball.z,'#ffd23f',22,4);say('神準舉球！','#ffd23f',true);}const CALL={high:'高球',quick:'快攻',safe:'修正球',fast:'平快'};talk(p,(h.human?'給你・':'')+CALL[type]+'！');SFX.set();}
+function finishSet(p,h,type){ball.setInfo={hitter:h,type};if(p._skToss){ball.setInfo.boost=p._skToss;p._skToss=0;ball.trailC='#ffd23f';burst(ball.x,ball.y,ball.z,'#ffd23f',22,4);say('神準舉球！','#ffd23f',true);}const CALL={high:'高球',quick:'快攻',safe:'修正球',fast:'平快'};talk(p,(h.human?'給你・':'')+CALL[type]+'！');SFX.set();}
 // 落點：玩家用畫面中央的準星（鏡頭看哪裡就打哪裡），AI 找對方空檔
 // 瞄準規則：準星指到哪就打哪，但一定限制在對方場內（離邊線 0.4 公尺）；會出界只會因為擊球時機差（落點散開）
 function humanAim(t){const so=sd(1-t);let x=cursorG.ok?cursorG.x:so*5,z=cursorG.ok?cursorG.z:0;
@@ -254,9 +258,9 @@ function doSpike(p,q){
   if(!p.human&&!SK){plan=p.plan||aiPlan(p);p.plan=null;if(plan.k==='tip'){p.tipAim=plan.aim;doTip(p,q);return;}}else if(!p.human){plan=p.plan&&p.plan.k!=='tip'?p.plan:{k:'power',B:blockRead(t)};p.plan=null;}
   const a=p.human?humanAim(t):plan.aim||planAim(p,plan.k,plan.B);let d=a.d,zz=a.z;
   if(!p.human&&SK!=='precise'&&plan&&plan.k!=='deep'){const rb=aiReadBlock(p,d,zz,t);d=rb.d;zz=rb.z;if(rb.k)RSTAT[rb.k]=(RSTAT[rb.k]||0)+1;}
-  const err=SK==='precise'?0:(1-q)*(p.human?.5:1.6*D(p).err);d+=(rnd()-.5)*err;zz+=(rnd()-.5)*err*1.3;
+  const err=SK==='precise'?0:(1-q)*(p.human?.5:1.6*D(p).err)*(1-.1*pr(p,'a_aim'));d+=(rnd()-.5)*err;zz+=(rnd()-.5)*err*1.3;
   if(!p.human&&!SK&&rnd()<.22*(1-q)*(1-q)*D(p).err)d+=2.4;
-  const speed=(14+p.st.pow*1.1)*(.72+.42*q)*(.88+.22*(p.app||0))*(p.human?1:.9)*(SK==='power'?1.1:1);
+  const speed=(14+p.st.pow*1.1)*(.72+.42*q)*(.88+.22*(p.app||0))*(p.human?1:.9)*(SK==='power'?1+(.05+.02*skRk(p,'power'))*skM(p,'power'):1)*(1+.03*pr(p,'a_pow'));
   driveTo(so*d,zz,speed);p.hangT=.18;
   ball.atk=true;ball.attacker=p;ball.toolAim=!!(plan&&plan.k==='tool');ball.power=attackPower(p,q,SK);ball.skPower=SK==='power';ball.trailC=SK==='power'?'#ff9a3c':SK==='precise'?'#5ad1ff':null;
   {const sp=spinFrom(p,t);ball.spS=sp.s;ball.spT=sp.t;ball.spX=Math.sign(ball.x)||sd(t);if(p.human&&Math.abs(sp.s)>.35)pop(p,sp.s>0?'右旋':'左旋','#c9bde0');}
@@ -269,7 +273,7 @@ function doTip(p,q=.6){
   if(p.human){const a=humanAim(t);d=clamp(a.d,1,M.half-.6);z=clamp(a.z,-M.wid+.4,M.wid-.4);}else if(p.tipAim){d=p.tipAim.d;z=p.tipAim.z;p.tipAim=null;}else{d=1.2+rnd()*2.4;z=(rnd()-.5)*2*(M.wid-.8);}
   d+=(rnd()-.5)*(1-q)*.8;lobTo(so*d,0,z,Math.max(ball.y+.45,NETH+.8));ball.tip=true;pop(p,'輕打','#ffffff');SFX.hit();}
 function doOver(p,q){const so=sd(1-p.team);lobTo(so*(4+rnd()*3.5),0,(rnd()-.5)*2*(M.wid-1),4.0);ball.free=true;talk(p,'過去！');SFX.hit();}
-const SERVEN={stand:'飄球',jump:'跳發',jfloat:'平飄'};
+const SERVEN={stand:'飄球',jump:'跳發',jfloat:'平飄',jf:'跳飄'};
 // 用真正的飛行模擬（含空氣阻力、飄球晃動）算球過網時的高度
 function netY(){const b={x:ball.x,y:ball.y,z:ball.z,vx:ball.vx,vy:ball.vy,vz:ball.vz,float:ball.float,fseed:ball.fseed};let px=b.x;for(let i=0;i<360;i++){px=b.x;stepB(b,1/60);if(Math.sign(px)!==Math.sign(b.x)&&px!==0)return b.y;if(b.y<0)return -1;}return 9;}
 function doServe(p,kind,q){
@@ -286,13 +290,17 @@ function doServe(p,kind,q){
     if(kind==='jump')d=Math.max(d,5.6); // 跳發球速快，太短的落點會直接打網
   }
   // 時機越差，落點散得越開：PERFECT 幾乎打在準星上，BAD 可能偏 1.5 公尺以上
-  const sc=Math.pow(1-q,1.5)*(kind==='jump'?3:2.4);d+=(rnd()-.5)*sc;z+=(rnd()-.5)*sc*.8;
-  if(kind==='jump'){let spd=(13+p.st.pow*.7)*(.85+.25*q);driveTo(so*d,z,spd);if(!p.human)for(let i=0;i<6&&netY()<NETH+.3;i++){spd*=.95;d=Math.min(d+.25,8.6);driveTo(so*d,z,spd);} /* AI 跳發：過網太低就稍微放慢、打深一點 */ball.power=p.st.pow*.5;burst(ball.x,ball.y,ball.z,'#ffd23f',12,3);doShake(.2);SFX.spike();if(typeof hitFx==='function')hitFx(p,'spike',q,'air',0,false);}
+  const SKa=skTake(p,['ace']),am=SKa?skM(p,'ace'):0;if(SKa){q=Math.max(q,.92);pop(p,'重砲發球！',TS.ace.col);}
+  const sc=Math.pow(1-q,1.5)*(kind==='jump'?3:2.4)*(1-.12*pr(p,'s_serve'));d+=(rnd()-.5)*sc;z+=(rnd()-.5)*sc*.8;
+  const sv=(1+.02*pr(p,'s_serve'))*(1+.1*am);
+  if(kind==='jump'){let spd=(13+p.st.pow*.7)*(.85+.25*q)*sv;driveTo(so*d,z,spd);if(!p.human)for(let i=0;i<6&&netY()<NETH+.3;i++){spd*=.95;d=Math.min(d+.25,8.6);driveTo(so*d,z,spd);} /* AI 跳發：過網太低就稍微放慢、打深一點 */ball.power=p.st.pow*.5;burst(ball.x,ball.y,ball.z,'#ffd23f',12,3);doShake(.2);SFX.spike();if(typeof hitFx==='function')hitFx(p,'spike',q,'air',0,false);}
   else{if(typeof fxSpawn==='function'){fxSpawn({tex:'ring',col:'#ffffff',x:ball.x,y:ball.y,z:ball.z,s0:.15,s1:1.2,life:.28,a:.8});fxSpawn({tex:'glow',col:'#ffffff',x:ball.x,y:ball.y,z:ball.z,s0:.7,s1:.2,life:.12,depth:false});}
-    d=Math.max(d,2.5);driveTo(so*d,z,12.5+p.st.pow*.3);ball.drive=false;
+    d=Math.max(d,2.5);driveTo(so*d,z,(12.5+p.st.pow*.3)*sv);ball.drive=false;
     // 弧度至少要高過網子 0.35 公尺：落點很近網時自動把弧線拉高
-    let ap=kind==='jfloat'?Math.max(ball.y+.25,3.15):Math.max(ball.y+.5,3.7); // 平飄：弧度低、速度快
-    for(let i=0;i<14;i++){lobTo(so*d,0,z,ap);ball.float=1;if(netY()>NETH+.35)break;ap+=.25;}
-    ball.float=1;SFX.hit();}
-  ball.lastTeam=t;ball.lastP=p;ball.touches=0;ball.cool=.3;state='play';p.swing=kind==='jump'?.35:.5;p.pose=kind==='jump'?'spike':'serve';actKey(p,'serve',.1);
+    // 跳飄：跳起來在高點打，弧線最平、飄得最兇；平飄：站著打，弧度低；一般飄球：弧度高
+    let ap=kind==='jf'?Math.max(ball.y+.08,NETH+.75):kind==='jfloat'?Math.max(ball.y+.25,3.15):Math.max(ball.y+.5,3.7);const fl=(kind==='jf'?1.35+p.st.pow*.02:1)+(SKa?.3*am:0);
+    if(kind==='jf')d=Math.max(d,5.2);
+    for(let i=0;i<14;i++){lobTo(so*d,0,z,ap);ball.float=fl;if(netY()>NETH+.3)break;ap+=.2;}
+    ball.float=fl;SFX.hit();if(kind==='jf'){doShake(.08);if(typeof hitFx==='function')hitFx(p,'spike',q*.6,'air',0,false);}}
+  ball.lastTeam=t;ball.lastP=p;ball.touches=0;ball.cool=.3;state='play';p.swing=jumpSrv(kind)?.35:.5;p.pose=jumpSrv(kind)?'spike':'serve';actKey(p,'serve',.1);
   const lab=q>.82?['PERFECT','#ffd23f']:q>.5?['GOOD','#3ee0a0']:['BAD','#a9b0cc'];pop(p,SERVEN[kind]+' '+lab[0],lab[1]);}

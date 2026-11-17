@@ -43,6 +43,27 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .sec h3 small{color:var(--dim);font-size:13px;margin-left:8px;letter-spacing:0}
 .big2{display:flex;gap:10px;flex-wrap:wrap}
 .resG{display:flex;flex-wrap:wrap;gap:8px 16px;justify-content:center;margin:4px 0 14px;font-size:14px;color:var(--dim)}.resG b{color:var(--ink)}.resG em{color:var(--gold);font-style:normal;font-weight:800}
+.trTop{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}.trPts{display:flex;flex-wrap:wrap;gap:16px;font-size:14px;color:var(--dim)}.trPts b{color:var(--gold);font-size:17px}
+#trWho .pill small{opacity:.75;font-size:11px}
+.trGrid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}@media (max-width:900px){.trGrid{grid-template-columns:1fr}}
+.tTree{display:grid;grid-template-columns:repeat(4,minmax(168px,1fr));gap:10px;overflow-x:auto;padding:8px 2px 4px}
+.tCol{display:flex;flex-direction:column;gap:8px;align-items:stretch;border-top:3px solid var(--bc);padding-top:8px;min-width:0}
+.tHd b{display:block;color:var(--bc);font-size:15px}.tHd small{display:block;color:var(--dim);font-size:11px;line-height:1.4}
+.tRow{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.tGate{font-size:11px;color:var(--dim);text-align:center;border-top:1px dashed rgba(255,255,255,.25);padding-top:3px}.tGate.ok{color:var(--mint)}
+.tNode{position:relative;width:76px;min-height:84px;padding:8px 4px 6px;border:2px solid rgba(255,255,255,.18);background:rgba(255,255,255,.04);display:flex;flex-direction:column;align-items:center;gap:4px;border-radius:12px}
+.tNode .tIc{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:15px;color:var(--bc);background:rgba(0,0,0,.35);border:2px solid var(--bc)}
+.tNode.act .tIc{border-radius:8px;transform:rotate(45deg)}.tNode.act .tIc{font-size:0}.tNode.act .tIc::after{content:"";width:10px;height:10px;background:var(--bc);border-radius:2px}
+.tNode .tNm{font-size:12px;line-height:1.2;text-align:center}
+.tSeg{display:flex;gap:3px}.tSeg i{width:12px;height:5px;border-radius:2px;background:rgba(255,255,255,.18)}.tSeg i.on{background:var(--bc)}
+.tNode.lock{opacity:.42}.tNode.can{border-color:var(--bc);animation:tPulse 1.6s ease-in-out infinite}.tNode.max{border-color:#ffd23f}.tNode.sel{background:rgba(255,255,255,.14);outline:2px solid #fff;outline-offset:1px}
+.tNode.t3{width:92px;border-width:3px}.tEq{position:absolute;top:-8px;right:-8px;font-style:normal;font-weight:900;font-size:11px;background:var(--bc);color:#0b1a22;border-radius:6px;padding:1px 5px}
+@keyframes tPulse{50%{box-shadow:0 0 0 4px rgba(255,255,255,.08)}}@media (prefers-reduced-motion:reduce){.tNode.can{animation:none}}
+.trInfo{margin-top:12px;border-top:1px solid rgba(255,255,255,.12);padding-top:10px;display:flex;flex-direction:column;gap:6px;font-size:14px;min-height:96px}
+.tiH b{font-size:17px;margin-right:8px}.tiH span{color:var(--dim);font-size:12px}.tiN{color:var(--mint)}.tiM{color:#c9bde0;font-size:13px}.tiL{color:#ff8a7a;font-size:13px}
+.radar{width:100%;max-width:320px;display:block;margin:0 auto}.rdG{fill:none;stroke:rgba(255,255,255,.14)}.rdBase{fill:rgba(160,170,180,.35);stroke:rgba(200,210,220,.6)}.rdCur{fill:rgba(255,138,42,.35);stroke:#ff8a2a;stroke-width:2}
+.rdPrev{fill:none;stroke:#3ed3b8;stroke-width:2;stroke-dasharray:4 3}.rdL{fill:var(--ink);font-size:11px}.rdV{fill:var(--gold);font-weight:700}.rdA{fill:var(--mint)}
+.trStat{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:8px}.trStat .tb{font-size:13px;padding:6px}.trStat small{color:var(--dim)}
 .gr{margin-top:10px;display:flex;flex-direction:column;gap:6px;font-size:13px}.grH{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center}.grH b{color:var(--gold);font-size:15px}
 .grH i{height:8px;border-radius:4px;background:rgba(255,255,255,.12);overflow:hidden}.grH em{display:block;height:100%;background:var(--gold)}.grP b{color:var(--gold)}.grB{display:flex;flex-wrap:wrap;gap:6px}.grB .tb{padding:4px 8px;font-size:13px}.grS{color:var(--dim);font-size:12px}
 .nForm{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}.nForm label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--dim);min-width:0}
@@ -161,6 +182,7 @@ kbd{color:var(--ink);background:#000;padding:1px 7px;border:2px solid var(--dim)
       <button class="mb big" id="mStart">開始比賽</button>
       <button class="mb" id="mNet">多人連線</button>
       <button class="mb" id="mTrain">訓練</button>
+      <button class="mb" id="mTree">球員培養（技能樹）</button>
       <button class="mb" id="mSettings">遊戲設定・按鍵</button>
       <button class="mb" id="mHelp">操作說明</button>
       <button class="mb" id="mSkin">角色外觀（套皮）</button>
@@ -226,6 +248,15 @@ kbd{color:var(--ink);background:#000;padding:1px 7px;border:2px solid var(--dim)
   <div class="help" id="helpList"></div>
 </div></div>
 
+<div class="page" id="vTree" hidden><div class="wrap">
+  <div class="head"><button class="tb" id="trBack">← 賽前準備</button><h2>球員培養</h2></div>
+  <div class="big2" id="trWho"></div>
+  <div class="sec trTop"><div id="trPts" class="trPts"></div><div class="big2"><button class="tb" id="trAuto">自動配點</button><button class="tb" id="trReset">重置技能點</button></div></div>
+  <div class="trGrid" id="trBody">
+    <div class="sec" style="min-width:0"><h3>技能樹<small>技能不綁位置；同一欄前面投夠點才開下一層</small></h3><div class="tTree" id="trTree"></div><div class="trInfo" id="trInfo"></div></div>
+    <div class="sec" style="min-width:0"><h3>能力<small>屬性點加在這裡</small></h3><div id="trRadar"></div></div>
+  </div>
+</div></div>
 <div class="page" id="vSkin" hidden><div class="wrap">
   <div class="head"><button class="tb" data-go="vMenu">← 主選單</button><h2>角色外觀（套皮）</h2></div>
   <p class="sub">把你喜歡的角色模型換到球員身上。模型只存在你的瀏覽器裡，不會上傳到任何地方。動作由遊戲自動套上去，模型本身不需要有動畫。</p>
@@ -423,7 +454,7 @@ function cheer(){if(!S.sound||!AC||!NOISE)return;const t=AC.currentTime,d=out(1,
   const g=AC.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.16,t+.25);g.gain.exponentialRampToValueAtTime(.001,t+1.8);s.connect(f);f.connect(g);g.connect(d);s.start(t);s.stop(t+1.9);}
 
 const ACTS=['fwd','back','left','right','jump','atk','rcv','tip','block','mod','call','cam','pause','stype','s1','s2','s3','skill'];
-const ACT_LABEL={skill:'技能（量表滿了可以用）',fwd:'往前（鏡頭方向）',back:'往後',left:'往左',right:'往右',jump:'跳躍',atk:'扣球・發球（空中＝左旋扣球；舉球員跳起來托第二球時＝直接扣過去）',rcv:'接球（按住＝接球姿勢；空中＝右旋扣球；舉球員跳起來托第二球時＝跳舉）',tip:'輕打・吊球',block:'攔網',mod:'技巧鍵（跳發）',call:'叫球（要舉球手托給你）',cam:'切換鏡頭',pause:'暫停',stype:'切換球種：舉球員＝攻擊方式、攻擊手＝要哪種球（滾輪也可以）',s1:'舉球：托給左攻',s2:'舉球：托給中間',s3:'舉球：托給右攻'};
+const ACT_LABEL={skill:'技能（量表滿了可以用）',fwd:'往前（鏡頭方向）',back:'往後',left:'往左',right:'往右',jump:'跳躍',atk:'扣球・發球（空中＝左旋扣球；舉球員跳起來托第二球時＝直接扣過去）',rcv:'接球（按住＝接球姿勢；空中＝右旋扣球；舉球員跳起來托第二球時＝跳舉）',tip:'輕打・吊球',block:'攔網',mod:'技巧鍵（按住＋發球鍵＝跳發）',call:'叫球（要舉球手托給你）',cam:'切換鏡頭',pause:'暫停',stype:'切換球種：舉球員＝攻擊方式、攻擊手＝要哪種球（滾輪也可以）',s1:'舉球：托給左攻',s2:'舉球：托給中間',s3:'舉球：托給右攻'};
 const DEFAULT_KEYS={fwd:['k:KeyW','k:ArrowUp'],back:['k:KeyS','k:ArrowDown'],left:['k:KeyA','k:ArrowLeft'],right:['k:KeyD','k:ArrowRight'],jump:['k:Space',''],
   atk:['m:0','k:KeyJ'],rcv:['m:2','k:KeyK'],tip:['k:KeyF',''],block:['k:KeyE',''],mod:['k:ShiftLeft',''],call:['k:KeyV',''],cam:['k:KeyC',''],pause:['k:Escape','k:KeyP'],stype:['k:KeyR',''],s1:['k:Digit1',''],s2:['k:Digit2',''],s3:['k:Digit3',''],skill:['k:KeyQ','']};
 let KB=JSON.parse(JSON.stringify(DEFAULT_KEYS));
@@ -541,7 +572,7 @@ function newGame(){
   for(const t of [0,1])for(const r of ROLES){
     if(t===ME){const p=mkP(t,r,charOf(r,prep.chars[r]),r===prep.role);if(p.human)human=p;players.push(p);}
     else players.push(mkP(t,r,pick(CHARS[r].filter(c=>c.id!==prep.chars[r])),false));}
-  players.forEach((p,i)=>p.num=[4,1,7,3][i%4]+(p.team?8:0));applyBonus();applyGrowth();pickAces();
+  players.forEach((p,i)=>p.num=[4,1,7,3][i%4]+(p.team?8:0));applyBonus();applyGrowth();pickAces();treeApply();
   score=[0,0];served=[false,false];serverIdx=[0,0];msgs=[];parts=[];
   serveTeam=rnd()<.5?0:1;served[serveTeam]=true;rebuildRigs();
   camYaw=camYawT=ME?-Math.PI/2:Math.PI/2;camPitch=camPitchT=.3;setupServe(serveTeam);say(`${COL[serveTeam].name}先發球`,COL[serveTeam].ui,true);aceSay();SFX.whistle();}
@@ -549,17 +580,18 @@ function setupServe(t){if(MATCH.mode==='train'){if(trainSetup(t))return;t=serveT
   state='serve';stT=0;
   const first=!players.some(p=>p.placed);players.forEach(p=>{const s=spot(p,'r');if(first||p.human){p.x=sd(p.team)*s.d;p.z=s.z;}p.placed=1;p.y=p.vy=p.vx=p.vz=0;p.dive=p.rec=p.stun=p.swing=p.loadT=p.landT=0;p.diveQ=null;p.jk='';p.arm=null;p.jumpAt=0;p.pose='';p.run=0;p.app=0;
     p.yaw=p.team?-Math.PI/2:Math.PI/2;p.tx=sd(p.team)*s.d;p.tz=s.z;p.blockTried=-1;p.act=null;p.swingReq=null;p.charging=false;p.approach=false;});
-  // 輪發：舉球手不發球
-  const order=team(t).filter(p=>p.role!=='set');server=order[serverIdx[t]%order.length];
+  // 輪發：四個人照順序輪流發球（舉球員也要發；他發球時由別人代舉）
+  const order=team(t);server=order[serverIdx[t]%order.length];
   server.x=sd(t)*(M.half+1.4);server.z=server.human?0:(rnd()-.5)*3;server.tx=server.x;server.tz=server.z;
   ball=newBall();ball.held=server;placeHeld();ball.ox=ball.x;ball.oy=ball.y;ball.oz=ball.z;
   players.forEach(p=>{p.ox=p.x;p.oy=p.y;p.oz=p.z;});PC={};}
 // 發球前球拿在拋球手的掌心（位置從角色骨架讀，上一格算好的）
 function placeHeld(){const s=ball.held,h=s.holdP;if(h&&Math.hypot(h.x-s.x,h.z-s.z)<1.2){ball.x=h.x;ball.y=h.y+BR*.85;ball.z=h.z;}else{ball.x=s.x+tnet(s.team)*.32;ball.y=1.05;ball.z=s.z+.22;}ball.vx=ball.vy=ball.vz=0;}
 // 拋球：從手上拋起，算好水平速度，讓球落到擊球手的正上方（站發）或身體前方約 1.5 公尺（跳發，人會助跑跟上）
-function srvContact(p,kind){const f=tnet(p.team),side=p.hitS&&Math.abs(p.hitS.z-p.z)>.03?Math.sign(p.hitS.z-p.z):-f;return{x:p.x+f*(kind==='jump'?1.75:.3),y:kind==='jump'?HANDUP+.15+p.jumpH*.85:HANDUP+.12,z:p.z+side*.3};}
+const jumpSrv=k=>k==='jump'||k==='jf'; // 跳起來發的球：跳發（大力）、跳飄（不旋、會飄）
+function srvContact(p,kind){const f=tnet(p.team),side=p.hitS&&Math.abs(p.hitS.z-p.z)>.03?Math.sign(p.hitS.z-p.z):-f;if(kind==='jf')return{x:p.x+f*1.05,y:HANDUP+.12+p.jumpH*.6,z:p.z+side*.3};return{x:p.x+f*(kind==='jump'?1.75:.3),y:kind==='jump'?HANDUP+.15+p.jumpH*.85:HANDUP+.12,z:p.z+side*.3};}
 function startToss(p,kind){ball.held=p;placeHeld();ball.held=null;ball.toss=true;ball.tossKind=kind;
-  const vy=kind==='jump'?7.2:5.4,c=srvContact(p,kind),y0=ball.y,a=.5*G,b=-vy,cc=c.y-y0,disc=b*b-4*a*cc,t=disc>0?(-b+Math.sqrt(disc))/(2*a):.9;
+  const vy=kind==='jump'?7.2:kind==='jf'?6.3:5.4,c=srvContact(p,kind),y0=ball.y,a=.5*G,b=-vy,cc=c.y-y0,disc=b*b-4*a*cc,t=disc>0?(-b+Math.sqrt(disc))/(2*a):.9;
   ball.vy=vy;ball.vx=(c.x-ball.x)/t;ball.vz=(c.z-ball.z)/t;ball.tossT=t;p.tossAt=time;}
 function point(w,why){
   if(state!=='play')return;state='point';stT=0;score[w]++;skPoint(w);
@@ -576,7 +608,7 @@ function zoneOf(p){
   if(p.stun>0||p.rec>0)return null;
   const fx=Math.sin(p.yaw),fz=Math.cos(p.yaw),by=ball.y-p.y,hd=Math.hypot(ball.x-p.x,ball.z-p.z);
   // 撲球：判定範圍和品質都下修；來球越快越難撲好（g2 touch 另外依球速再扣）
-  if(p.dive>0){const r=1.05+p.st.rcv*.025,d=Math.hypot(ball.x-(p.x+fx*.9),ball.z-(p.z+fz*.9));if(d<r&&ball.y<.95){const v=Math.hypot(ball.vx,ball.vy,ball.vz);return{k:'dig',q:clamp(1-d/r,0,1)*.6*clamp(1.25-v/30,.45,1)+.04};}return null;}
+  if(p.dive>0){const r=(1.05+p.st.rcv*.025)*(1+.06*pr(p,'d_dive'))*(p.skOn==='guard'?1+.3*skM(p,'guard'):1),d=Math.hypot(ball.x-(p.x+fx*.9),ball.z-(p.z+fz*.9));if(d<r&&ball.y<.95){const v=Math.hypot(ball.vx,ball.vy,ball.vz);return{k:'dig',q:clamp(1-d/r,0,1)*.6*clamp(1.25-v/30,.45,1)+.04};}return null;}
   if(p.y>.2){const hx=p.x+fx*.3,hz=p.z+fz*.3,hy=p.y+HANDUP+.05,d=Math.hypot(ball.x-hx,ball.z-hz,(ball.y-hy)*.9),r=.65+p.st.jmp*.02;
     if(d<r){const apex=clamp(1-Math.abs(p.vy)/2.4,0,1);return{k:'air',q:clamp(1-d/r,0,1)*.55+apex*.45};}return null;}
   if(p.human&&setPhase(p)){if(by>1.25&&by<2.95&&hd<1.2){const d=Math.hypot(hd,(by-OVERY)*.8);return{k:'over',q:clamp(1-d/1.25,0,1)};}}
@@ -603,11 +635,14 @@ function touch(p,z,intent){
   if(fresh){ball.touches=0;ball.setInfo=null;ball.setter=null;ball.quickMB=null;}
   ball.touches++;if(ball.touches>3){fault(1-t,'四次擊球');return;}
   ball.serial=++SERIAL;ball.spS=0;ball.spT=0;ball.trailC=null;ball.mark=null;ball.trail=[]; /* 拖尾只畫這次碰球之後的軌跡（不然會連到上一段，變成空中一條白線） */ball.lastTeam=t;ball.lastP=p;ball.blockTouch=false;ball.cool=.2;ball.letGo=null;if(ball.touches===1){ball.passSer=ball.serial;for(const hs of team(t))if(hs.human&&hs.setPick&&hs.setPick.s===-1)hs.setPick.s=ball.serial;}
+  const flt=fresh?(ball.float||0):0; /* 跳飄球：飄得越兇越難接 */
   ball.serve=false;ball.atk=false;ball.heavy=false;ball.float=0;ball.tip=false;
   p.touchFx=.8;p.touchN=String(ball.touches);
   if(wasAtk)q*=clamp(1.15-(v-13)/26+p.st.rcv*.025,.3,1);
   // AI 品質：來球難度（z.q、球速）＋能力＋比較大的隨機起伏（讓一傳有好有壞，後面的節奏才會不同）
   if(!p.human)q=clamp(q*.5+.19+(z.k==='air'?p.st.pow:z.k==='over'?p.st.set:p.st.rcv)*.035+(rnd()-.5)*.6+D(p).q,0,1);
+  if(flt>1.05)q*=clamp(1.08-(flt-1)*.75*(1-.3*pr(p,'d_float'))+p.st.rcv*.02,.5,1);
+  if(fresh&&z.k!=='air'){q=Math.min(1,q+.025*pr(p,'d_pass')+(p.skOn==='eye'?(.06+.04*skRk(p,'eye'))*skM(p,'eye'):0));if(z.k==='dig'&&p.skOn==='guard')q=Math.max(q,.5);}
   if(z.shank){q=.03+rnd()*.15;pop(p,'接壞了','#a9b0cc');}
   if(z.k==='air'&&ball.setInfo&&ball.setInfo.boost&&ball.setInfo.hitter===p)q=Math.min(1,q+ball.setInfo.boost); // 神準舉球：攻手品質加一點
   p.swing=.35;
@@ -664,7 +699,7 @@ function setTarget(p){const cands=team(p.team).filter(x=>x!==p&&x.stun<=0);if(!c
   let best=null,bs=-9;for(const c of cands){const a=spot(c,'a'),tx=c.y>.25?c.x:sd(c.team)*a.d,tz=c.y>.25?c.z:a.z,dx=tx-p.x,dz=tz-p.z,l=Math.hypot(dx,dz)||1,s=(dx*d.x+dz*d.z)/l;if(s>bs){bs=s;best=c;}}
   return best;}
 function doSet(p,q){
-  const SKs=skTake(p,['toss']);if(SKs)p._skToss=1;
+  const SKs=skTake(p,['toss']);if(SKs)p._skToss=(.06+.04*skRk(p,'toss'))*skM(p,'toss');
   const t=p.team,sdt=sd(t),cands=team(t).filter(x=>x!==p&&x.stun<=0&&(x.role!=='set'||p.human));
   if(p.human&&cands.length){const h=setTarget(p);if(h){
     if(h.y>.25&&h.vy>-1&&Math.abs(h.x)<2.6){const tA=timeToApex(h),tt=clamp(tA+.12,.42,.75),hy=heightAfter(h,tt)+HANDUP,fx=Math.sin(h.yaw),fz=Math.cos(h.yaw);
@@ -675,7 +710,7 @@ function doSet(p,q){
     const side=h.role==='oh'?-3.4:h.role==='op'?3.4:clamp(spot(h,'a').z,-2,2);
     const lane=type==='quick'?{d:.7,z:h.role==='mb'?clamp(spot(h,'a').z,-1,1.2):clamp(p.z+Math.sign(side-p.z||1)*1.3,-M.wid+.6,M.wid-.6)}:
       type==='safe'?{d:1.6,z:clamp(h.z,-3,3)}:type==='fast'?{d:1.0,z:side*.92}:{d:1.05,z:side};
-    const hitY=HANDUP+jumpProf(h,.6).hApex-.1,ek={high:1,safe:.9,fast:1.35,quick:1.5}[type],err=((1-q)*1.5*(1.3-p.st.set*.05)+(1-ball.passQ)*.25)*ek*(SKs?0:1);
+    const hitY=HANDUP+jumpProf(h,.6).hApex-.1,ek={high:1,safe:.9,fast:1.35,quick:1.5}[type]*(type==='fast'||type==='quick'?1-.12*pr(p,'s_quick'):1),err=((1-q)*1.5*(1.3-p.st.set*.05)+(1-ball.passQ)*.25)*ek*(SKs?0:1)*(1-.12*pr(p,'s_toss'));
     lobTo(sdt*Math.max(.45,lane.d+(rnd()-.5)*err),hitY,lane.z+(rnd()-.5)*err*1.6,Math.max(hitY+.45,{quick:3.2,fast:3.45,safe:4.5,high:4.0}[type]));
     setMemo[t].push(h.id);if(setMemo[t].length>2)setMemo[t].shift();finishSet(p,h,type);return;}}
   cands.splice(0,cands.length,...cands.filter(x=>x.role!=='set'));
@@ -708,7 +743,7 @@ function doSet(p,q){
   if(type==='fast')err*=1.35;
   lobTo(sdt*Math.max(.45,lane.d+(rnd()-.5)*err),hitY,lane.z+(rnd()-.5)*err*1.6,Math.max(hitY+(type==='fast'?.6:.45),type==='quick'?3.25:type==='safe'?4.5:type==='fast'?3.45:4.0));
   finishSet(p,h,type);}
-function finishSet(p,h,type){ball.setInfo={hitter:h,type};if(p._skToss){ball.setInfo.boost=.15;p._skToss=0;ball.trailC='#ffd23f';burst(ball.x,ball.y,ball.z,'#ffd23f',22,4);say('神準舉球！','#ffd23f',true);}const CALL={high:'高球',quick:'快攻',safe:'修正球',fast:'平快'};talk(p,(h.human?'給你・':'')+CALL[type]+'！');SFX.set();}
+function finishSet(p,h,type){ball.setInfo={hitter:h,type};if(p._skToss){ball.setInfo.boost=p._skToss;p._skToss=0;ball.trailC='#ffd23f';burst(ball.x,ball.y,ball.z,'#ffd23f',22,4);say('神準舉球！','#ffd23f',true);}const CALL={high:'高球',quick:'快攻',safe:'修正球',fast:'平快'};talk(p,(h.human?'給你・':'')+CALL[type]+'！');SFX.set();}
 // 落點：玩家用畫面中央的準星（鏡頭看哪裡就打哪裡），AI 找對方空檔
 // 瞄準規則：準星指到哪就打哪，但一定限制在對方場內（離邊線 0.4 公尺）；會出界只會因為擊球時機差（落點散開）
 function humanAim(t){const so=sd(1-t);let x=cursorG.ok?cursorG.x:so*5,z=cursorG.ok?cursorG.z:0;
@@ -735,9 +770,9 @@ function doSpike(p,q){
   if(!p.human&&!SK){plan=p.plan||aiPlan(p);p.plan=null;if(plan.k==='tip'){p.tipAim=plan.aim;doTip(p,q);return;}}else if(!p.human){plan=p.plan&&p.plan.k!=='tip'?p.plan:{k:'power',B:blockRead(t)};p.plan=null;}
   const a=p.human?humanAim(t):plan.aim||planAim(p,plan.k,plan.B);let d=a.d,zz=a.z;
   if(!p.human&&SK!=='precise'&&plan&&plan.k!=='deep'){const rb=aiReadBlock(p,d,zz,t);d=rb.d;zz=rb.z;if(rb.k)RSTAT[rb.k]=(RSTAT[rb.k]||0)+1;}
-  const err=SK==='precise'?0:(1-q)*(p.human?.5:1.6*D(p).err);d+=(rnd()-.5)*err;zz+=(rnd()-.5)*err*1.3;
+  const err=SK==='precise'?0:(1-q)*(p.human?.5:1.6*D(p).err)*(1-.1*pr(p,'a_aim'));d+=(rnd()-.5)*err;zz+=(rnd()-.5)*err*1.3;
   if(!p.human&&!SK&&rnd()<.22*(1-q)*(1-q)*D(p).err)d+=2.4;
-  const speed=(14+p.st.pow*1.1)*(.72+.42*q)*(.88+.22*(p.app||0))*(p.human?1:.9)*(SK==='power'?1.1:1);
+  const speed=(14+p.st.pow*1.1)*(.72+.42*q)*(.88+.22*(p.app||0))*(p.human?1:.9)*(SK==='power'?1+(.05+.02*skRk(p,'power'))*skM(p,'power'):1)*(1+.03*pr(p,'a_pow'));
   driveTo(so*d,zz,speed);p.hangT=.18;
   ball.atk=true;ball.attacker=p;ball.toolAim=!!(plan&&plan.k==='tool');ball.power=attackPower(p,q,SK);ball.skPower=SK==='power';ball.trailC=SK==='power'?'#ff9a3c':SK==='precise'?'#5ad1ff':null;
   {const sp=spinFrom(p,t);ball.spS=sp.s;ball.spT=sp.t;ball.spX=Math.sign(ball.x)||sd(t);if(p.human&&Math.abs(sp.s)>.35)pop(p,sp.s>0?'右旋':'左旋','#c9bde0');}
@@ -750,7 +785,7 @@ function doTip(p,q=.6){
   if(p.human){const a=humanAim(t);d=clamp(a.d,1,M.half-.6);z=clamp(a.z,-M.wid+.4,M.wid-.4);}else if(p.tipAim){d=p.tipAim.d;z=p.tipAim.z;p.tipAim=null;}else{d=1.2+rnd()*2.4;z=(rnd()-.5)*2*(M.wid-.8);}
   d+=(rnd()-.5)*(1-q)*.8;lobTo(so*d,0,z,Math.max(ball.y+.45,NETH+.8));ball.tip=true;pop(p,'輕打','#ffffff');SFX.hit();}
 function doOver(p,q){const so=sd(1-p.team);lobTo(so*(4+rnd()*3.5),0,(rnd()-.5)*2*(M.wid-1),4.0);ball.free=true;talk(p,'過去！');SFX.hit();}
-const SERVEN={stand:'飄球',jump:'跳發',jfloat:'平飄'};
+const SERVEN={stand:'飄球',jump:'跳發',jfloat:'平飄',jf:'跳飄'};
 // 用真正的飛行模擬（含空氣阻力、飄球晃動）算球過網時的高度
 function netY(){const b={x:ball.x,y:ball.y,z:ball.z,vx:ball.vx,vy:ball.vy,vz:ball.vz,float:ball.float,fseed:ball.fseed};let px=b.x;for(let i=0;i<360;i++){px=b.x;stepB(b,1/60);if(Math.sign(px)!==Math.sign(b.x)&&px!==0)return b.y;if(b.y<0)return -1;}return 9;}
 function doServe(p,kind,q){
@@ -767,15 +802,19 @@ function doServe(p,kind,q){
     if(kind==='jump')d=Math.max(d,5.6); // 跳發球速快，太短的落點會直接打網
   }
   // 時機越差，落點散得越開：PERFECT 幾乎打在準星上，BAD 可能偏 1.5 公尺以上
-  const sc=Math.pow(1-q,1.5)*(kind==='jump'?3:2.4);d+=(rnd()-.5)*sc;z+=(rnd()-.5)*sc*.8;
-  if(kind==='jump'){let spd=(13+p.st.pow*.7)*(.85+.25*q);driveTo(so*d,z,spd);if(!p.human)for(let i=0;i<6&&netY()<NETH+.3;i++){spd*=.95;d=Math.min(d+.25,8.6);driveTo(so*d,z,spd);} /* AI 跳發：過網太低就稍微放慢、打深一點 */ball.power=p.st.pow*.5;burst(ball.x,ball.y,ball.z,'#ffd23f',12,3);doShake(.2);SFX.spike();if(typeof hitFx==='function')hitFx(p,'spike',q,'air',0,false);}
+  const SKa=skTake(p,['ace']),am=SKa?skM(p,'ace'):0;if(SKa){q=Math.max(q,.92);pop(p,'重砲發球！',TS.ace.col);}
+  const sc=Math.pow(1-q,1.5)*(kind==='jump'?3:2.4)*(1-.12*pr(p,'s_serve'));d+=(rnd()-.5)*sc;z+=(rnd()-.5)*sc*.8;
+  const sv=(1+.02*pr(p,'s_serve'))*(1+.1*am);
+  if(kind==='jump'){let spd=(13+p.st.pow*.7)*(.85+.25*q)*sv;driveTo(so*d,z,spd);if(!p.human)for(let i=0;i<6&&netY()<NETH+.3;i++){spd*=.95;d=Math.min(d+.25,8.6);driveTo(so*d,z,spd);} /* AI 跳發：過網太低就稍微放慢、打深一點 */ball.power=p.st.pow*.5;burst(ball.x,ball.y,ball.z,'#ffd23f',12,3);doShake(.2);SFX.spike();if(typeof hitFx==='function')hitFx(p,'spike',q,'air',0,false);}
   else{if(typeof fxSpawn==='function'){fxSpawn({tex:'ring',col:'#ffffff',x:ball.x,y:ball.y,z:ball.z,s0:.15,s1:1.2,life:.28,a:.8});fxSpawn({tex:'glow',col:'#ffffff',x:ball.x,y:ball.y,z:ball.z,s0:.7,s1:.2,life:.12,depth:false});}
-    d=Math.max(d,2.5);driveTo(so*d,z,12.5+p.st.pow*.3);ball.drive=false;
+    d=Math.max(d,2.5);driveTo(so*d,z,(12.5+p.st.pow*.3)*sv);ball.drive=false;
     // 弧度至少要高過網子 0.35 公尺：落點很近網時自動把弧線拉高
-    let ap=kind==='jfloat'?Math.max(ball.y+.25,3.15):Math.max(ball.y+.5,3.7); // 平飄：弧度低、速度快
-    for(let i=0;i<14;i++){lobTo(so*d,0,z,ap);ball.float=1;if(netY()>NETH+.35)break;ap+=.25;}
-    ball.float=1;SFX.hit();}
-  ball.lastTeam=t;ball.lastP=p;ball.touches=0;ball.cool=.3;state='play';p.swing=kind==='jump'?.35:.5;p.pose=kind==='jump'?'spike':'serve';actKey(p,'serve',.1);
+    // 跳飄：跳起來在高點打，弧線最平、飄得最兇；平飄：站著打，弧度低；一般飄球：弧度高
+    let ap=kind==='jf'?Math.max(ball.y+.08,NETH+.75):kind==='jfloat'?Math.max(ball.y+.25,3.15):Math.max(ball.y+.5,3.7);const fl=(kind==='jf'?1.35+p.st.pow*.02:1)+(SKa?.3*am:0);
+    if(kind==='jf')d=Math.max(d,5.2);
+    for(let i=0;i<14;i++){lobTo(so*d,0,z,ap);ball.float=fl;if(netY()>NETH+.3)break;ap+=.2;}
+    ball.float=fl;SFX.hit();if(kind==='jf'){doShake(.08);if(typeof hitFx==='function')hitFx(p,'spike',q*.6,'air',0,false);}}
+  ball.lastTeam=t;ball.lastP=p;ball.touches=0;ball.cool=.3;state='play';p.swing=jumpSrv(kind)?.35:.5;p.pose=jumpSrv(kind)?'spike':'serve';actKey(p,'serve',.1);
   const lab=q>.82?['PERFECT','#ffd23f']:q>.5?['GOOD','#3ee0a0']:['BAD','#a9b0cc'];pop(p,SERVEN[kind]+' '+lab[0],lab[1]);}
 
 // ---------------- 4 AI ----------------
@@ -854,7 +893,7 @@ function startDive(p,L,sp){actKey(p,'dive',.25);if(p.human||Math.hypot(p.x-human
 // 玩家飛撲：照球到達的時間算速度，身體滑到「手剛好在球下面」的位置；球還太遠時先記下來，時機到了自動撲出去
 function diveCan(p){return state==='play'&&ball&&!(ball.lastTeam===p.team&&(ball.lastP===p||ball.touches>=3));}
 function tryDive(p){if(!diveCan(p))return false;const L=predict(.45);if(!L||Math.sign(L.x)!==sd(p.team))return false;const dd=Math.hypot(L.x-p.x,L.z-p.z);
-  if(dd<1.0||dd>4.2+p.st.rcv*.06)return false;if(L.t>.72){p.diveQ={s:ball.serial,until:time+1.6};return true;}humanDive(p,L);return true;}
+  if(dd<1.0||dd>(4.2+p.st.rcv*.06)*(1+.06*pr(p,'d_dive'))*(p.skOn==='guard'?1.25:1))return false;if(L.t>.72){p.diveQ={s:ball.serial,until:time+1.6};return true;}humanDive(p,L);return true;}
 function humanDive(p,L){const dx=L.x-p.x,dz=L.z-p.z,l=Math.hypot(dx,dz)||1,ux=dx/l,uz=dz/l,reach=.85,dist=Math.max(0,l-reach),t=Math.max(.16,L.t-.04),k=1.2;
   let v=dist*k/(1-Math.exp(-k*t));v=Math.min(6.5+p.st.rcv*.15,Math.max(3,v));p.diveQ=null;startDive(p,L,v);p.vx=ux*v;p.vz=uz*v;p.dive=p.diveT=clamp(L.t+.18,.45,.95);p.diveAim=L;p.arm='rcv';p.armT=p.dive+.05;}
 function doJump(p,keepV,app){if(p.y>0||p.dive>0||p.rec>0||p.stun>0)return;p.jumpN=(p.jumpN||0)+1;
@@ -931,12 +970,12 @@ function humanInput(dt){
   if(p.role!=='set'&&T('stype'))reqStep(p,1); // 攻擊手：R／滾輪 決定要哪種球
   if(T('skill')){if(!skActivate(p)&&!p.skOn)say('技能量表還沒滿（'+Math.floor(p.sk||0)+'%）','#a9b0cc');}
   if(state==='serve'&&server===p){
-    if(!ball.toss&&T('atk')&&time-(p.tossAt||-9)>.35){startToss(p,A('mod')?'jump':'stand');if(ball.tossKind==='jump')say('跳發！','#fff');}
-    else if(ball.toss&&T('atk')&&time-p.tossAt>.15){const kind=ball.tossKind==='jump'&&p.y>.2?'jump':'stand',c=srvContact(p,'stand'),f=tnet(p.team),hx=p.x+f*.3,hy=p.y+HANDUP+.12,d=Math.hypot(ball.y-hy,(ball.x-hx)*.7,(ball.z-c.z)*.5);
+    if(!ball.toss&&(T('atk')||T('rcv'))&&time-(p.tossAt||-9)>.35){startToss(p,T('rcv')&&!T('atk')?'jf':A('mod')?'jump':'stand');if(ball.tossKind==='jump')say('跳發！','#fff');else if(ball.tossKind==='jf')say('跳飄球！','#fff');}
+    else if(ball.toss&&(T('atk')||T('rcv'))&&time-p.tossAt>.15){const kind=jumpSrv(ball.tossKind)&&p.y>.2?ball.tossKind:'stand',c=srvContact(p,'stand'),f=tnet(p.team),hx=p.x+f*.3,hy=p.y+HANDUP+.12,d=Math.hypot(ball.y-hy,(ball.x-hx)*.7,(ball.z-c.z)*.5);
       // 發球判定：球在擊球手附近 1.4 公尺內都打得到，越接近手（球在最佳高度）越好
       if(d<1.4){ball.x=lerp(ball.x,hx,.6);ball.y=lerp(ball.y,hy,.7);doServe(p,kind,clamp(1-d/1.4,0,1));}}
     // 跳發：拋出後自動助跑兩步、起跳
-    if(ball.toss&&ball.tossKind==='jump'&&p.y===0){const ta=time-p.tossAt;if(ta>.12&&ball.vy>2.4){p.vx=tnet(p.team)*2.6;p.vz=0;p.lungeT=.05;}if(ball.vy<2.6&&ball.vy>0&&p.loadT<=0){p.loadT=.1;p.loadApp=.6;}}
+    if(ball.toss&&jumpSrv(ball.tossKind)&&p.y===0){const ta=time-p.tossAt;if(ta>.12&&ball.vy>2.4){p.vx=tnet(p.team)*(ball.tossKind==='jf'?1.5:2.6);p.vz=0;p.lungeT=.05;}if(ball.vy<2.6&&ball.vy>0&&p.loadT<=0){p.loadT=.1;p.loadApp=.6;}}
     return;}
   if(state!=='play')return;
   // 起跳：先在地上蹲一下（0.12 秒），再離地
@@ -986,10 +1025,10 @@ function update0(dt){
   stT+=dt;
   if(state==='serve'){const s=server;
     if(!ball.toss)placeHeld();
-    if(!s.human&&!ball.toss&&stT>2.6){s.tk=rnd()<.15+s.st.pow*.04?'jump':rnd()<.4?'jfloat':'stand';startToss(s,s.tk);}
+    if(!s.human&&!ball.toss&&stT>2.6){s.tk=rnd()<.15+s.st.pow*.04?'jump':rnd()<.35?'jf':rnd()<.35?'jfloat':'stand';startToss(s,s.tk);}
     if(ball.toss){ball.vy-=G*dt;ball.y+=ball.vy*dt;ball.x+=ball.vx*dt;ball.z+=ball.vz*dt;
-      if(!s.human){if(s.tk==='jump'&&s.y===0){if(time-s.tossAt>.12&&ball.vy>2.4){s.vx=tnet(s.team)*2.6;s.vz=0;s.lungeT=.05;}if(ball.vy<2.6&&ball.vy>0&&s.loadT<=0){s.loadT=.1;s.loadApp=.6;}}
-        if(ball.vy<0&&ball.y<=s.y+HANDUP+.2&&(s.tk!=='jump'||s.y>.3))doServe(s,s.tk,clamp(.5+rnd()*.45+D(s).q,0,1));}
+      if(!s.human){if(jumpSrv(s.tk)&&s.y===0){if(time-s.tossAt>.12&&ball.vy>2.4){s.vx=tnet(s.team)*(s.tk==='jf'?1.5:2.6);s.vz=0;s.lungeT=.05;}if(ball.vy<2.6&&ball.vy>0&&s.loadT<=0){s.loadT=.1;s.loadApp=.6;}}
+        if(ball.vy<0&&ball.y<=s.y+HANDUP+.2&&(!jumpSrv(s.tk)||s.y>.3))doServe(s,s.tk,clamp(.5+rnd()*.45+D(s).q,0,1));}
       if(state==='serve'&&ball.y<.7){ball.toss=false;ball.held=s;placeHeld();say('重新拋球','#a9b0cc');}}
     clearHits();return;}
   if(state==='point'){deadBall(dt);if(stT>3.0){if(gameOver())endMatch();else setupServe(serveTeam);}clearHits();return;}
@@ -1455,7 +1494,7 @@ function poseRig(p,R,dt){
   else if(pose==='bump'||pose==='dig'){const f=p.swing>.18;T.pt=.3;T.tL=T.tR=(f?-1.1:-.8)-T.pt;T.kL=T.kR=f?1.55:1.15;T.sx=.25;T.aLx=T.aRx=(f?-1.1:-1.35)-.55;T.aLz=.24;T.aRz=-.24;T.eL=T.eR=-.03;}
   else if(pose==='over'){T.aLx=T.aRx=-2.05;T.aLz=-.48;T.aRz=.48;T.eL=T.eR=-.95;T.sx=-.08;T.kL=T.kR=.45;T.tL=T.tR=-.22;}
   // 發球動作（aL＝拋球手，aR＝擊球手；拋球手那側的腳在前）
-  if(state==='serve'&&server===p&&!air){const jt=ball.toss&&ball.tossKind==='jump';
+  if(state==='serve'&&server===p&&!air){const jt=ball.toss&&jumpSrv(ball.tossKind);
     if(!ball.toss){const b=Math.sin(time*2.2)*.03;T.aLx=-1.05+b;T.aLz=.32;T.eL=-.75;T.aRx=-.25;T.aRz=-.05;T.eR=-.55;T.tL=-.32;T.kL=.38;T.tR=.14;T.kR=.12;T.sx=.14;T.sy=-.08;}
     else if(jt){const up=ball.vy>2.4;if(up){T.aLx=T.aRx=-2.6;T.eL=T.eR=-.15;T.sx=.1;}else{T.aLx=T.aRx=.9;T.eL=T.eR=-.15;T.sx=.4;}}
     else{const ta=time-(p.tossAt||time),k=clamp(ta/.28,0,1),c=clamp((ta-.15)/.35,0,1);
@@ -2223,12 +2262,12 @@ function fxHud(g,cw,ch){if(FX2.lines<=0)return;const a=Math.min(1,FX2.lines/.3),
 const BLK={handH:.42,tipH:.08,armK:.55,edge:.7};
 function attackPower(p,q,SK){
   const jf=clamp(p.y/Math.max(.3,p.jumpH||.9),0,1);           // 起跳高度比：越接近最高點越大
-  return p.st.pow*.5+(p.app||0)*2.5+jf*2+q*3+(SK==='power'?3:SK==='precise'?1:0);}
+  return p.st.pow*.5+(p.app||0)*2.5+jf*2+q*3+(SK==='power'?2+skRk(p,'power')*.6*skM(p,'power'):SK==='precise'?1+skM(p,'precise'):0)+pr(p,'a_pow')*.3;}
 // 攔網牆：回傳每位攔網手的矩形（網面座標：z 橫向、y 高度）
 function blockRects(defT){const R=[];
   for(const b of team(defT)){if(b.y<.12||Math.abs(b.x)>1.15||b.stun>0)continue;
     const wall=b.skOn==='wall',apex=1-Math.min(1,Math.abs(b.vy)/3);
-    const hw=.3+b.st.blk*.022+(wall?.14:0),top=b.y+HANDUP+.3+apex*.06+(wall?.05:0);
+    const hw=(.3+b.st.blk*.022)*(1+.04*pr(b,'b_reach'))+(wall?(.08+.03*skRk(b,'wall'))*skM(b,'wall'):0),top=b.y+HANDUP+.3+apex*.06+(wall?.05:0);
     R.push({b,cz:b.z,hw,top,hb:top-BLK.handH,aw:hw*BLK.armK,apex,wall,pen:clamp(1-Math.abs(b.x)/1.15,0,1)});}
   return R;}
 // 判定球穿過網面的點落在哪一區
@@ -2239,14 +2278,15 @@ function blockZone(R,zc,yc){let best=null;
     else if(yc<r.hb&&yc>NETH-.12&&Math.abs(zc-cz)<=r.aw)k='arm';
     if(k&&(!best||au<best.au))best={r,k,u,au};}
   return best;}
-function blockStrength(r,R,zc){let B=r.b.st.blk*.8+r.apex*3+r.pen*1.2+(r.wall?3:0)+rnd()*2.5;
+function blockStrength(r,R,zc){let B=r.b.st.blk*.8+r.apex*3+r.pen*1.2+(r.wall?(2+skRk(r.b,'wall'))*skM(r.b,'wall'):0)+pr(r.b,'b_str')*.5+rnd()*2.5;
   for(const o of R)if(o!==r&&Math.abs(zc-o.cz)<o.hw+.25)B+=1.2;    // 雙人攔網：隔壁那位的手也在附近
   return B;}
 // 回傳 true＝攔網有碰到球（已處理），false＝沒碰到，照常過網
 function blockResolve(zc,yc,atkT,defT){
   const R=blockRects(defT);if(!R.length)return false;const Z=blockZone(R,zc,yc);if(!Z)return false;
-  const {r,k,u}=Z,b=r.b,P=ball.tip?2:(ball.power||6),B=blockStrength(r,R,zc);
+  const {r,k,u}=Z,b=r.b,P=ball.tip?2:(ball.power||6);let B=blockStrength(r,R,zc);
   if(r.wall)skTake(b,['wall']);
+  if(skTake(b,['kill'])){B+=3*skM(b,'kill');pop(b,'攔死！',TS.kill.col);}
   b.swing=.4;b.pose='block';b.touchFx=.8;b.touchN='攔';ball.cool=.12;ball.serial=++SERIAL;ball.letGo=null;ball.spS=0;ball.spT=0;ball.trail=[];PC={};
   const fxAt=(c,n)=>{burst(0,yc,zc,c,n,3);};
   const own=(vx,vy)=>{ball.drive=false;ball.vx=vx;ball.vy=vy;ball.lastTeam=defT;ball.lastP=b;ball.touches=0;ball.blockTouch=true;ball.atk=false;ball.heavy=false;};
@@ -2255,7 +2295,7 @@ function blockResolve(zc,yc,atkT,defT){
   if(k==='tip'){ball.x=sd(defT)*.15;own(sd(defT)*Math.max(3,Math.abs(ball.vx)*.45),Math.max(2.5,ball.vy+3));ball.vz*=.6;
     say('擦到手！','#c9f0ff');fxAt('#c9f0ff',8);SFX.block();res('tip');return true;}
   // 手掌外緣：打手出界或亂彈
-  if(k==='edge'){const pt=clamp(.22+(P-B)*.06+(ball.toolAim?.22:0)+(Math.abs(u)-BLK.edge)*1.1+(ball.skPower?.15:0),.05,.85);
+  if(k==='edge'){const pt=clamp(.22+(P-B)*.06+(ball.toolAim?.22:0)+(Math.abs(u)-BLK.edge)*1.1+(ball.skPower?.15:0)+.06*pr(ball.attacker,'a_tool')-.06*pr(b,'b_soft'),.05,.85);
     if(rnd()<pt){const outward=Math.sign(u)===Math.sign(r.cz||u)||Math.abs(r.cz)>M.wid-1.6;
       ball.x=sd(defT)*.15;
       if(outward){lobTo(sd(defT)*(M.half*.5+rnd()*M.half),0,Math.sign(u)*(M.wid+.8+rnd()*1.6),yc+.6+rnd()*.8);
@@ -2372,7 +2412,7 @@ const xpNeed=lv=>80+lv*40;
 function gSave(){store('vb-growth',GROW);}
 function applyGrowth(){if(MATCH.mode==='net')return;for(const p of players){if(p.team!==ME||!p.ch)continue;const g=GROW[p.ch.id];if(!g)continue;
   const st=Object.assign({},p.st);for(const k in g.add)if(k in st)st[k]=Math.min(GROW_CAP,st[k]+g.add[k]);p.st=st;p.jumpH=.62+Math.min(10,st.jmp)*.045+Math.max(0,st.jmp-10)*.03;}}
-function gAddXp(id,n){const g=gOf(id);let up=0;g.xp+=n;while(g.lv<GROW_MAX_LV&&g.xp>=xpNeed(g.lv)){g.xp-=xpNeed(g.lv);g.lv++;g.pts++;up++;}if(g.lv>=GROW_MAX_LV)g.xp=0;return up;}
+function gAddXp(id,n){const g=gOf(id);let up=0;g.xp+=n;treeOf(id);while(g.lv<GROW_MAX_LV&&g.xp>=xpNeed(g.lv)){g.xp-=xpNeed(g.lv);g.lv++;g.pts++;g.sp=(g.sp||0)+1;up++;}if(g.lv>=GROW_MAX_LV)g.xp=0;return up;}
 function gStatXp(id,k,n){const g=gOf(id);g.sx[k]=(g.sx[k]||0)+n;let up=0;while(g.sx[k]>=100){g.sx[k]-=100;if(gBase(id,k)+(g.add[k]||0)<GROW_CAP){g.add[k]=(g.add[k]||0)+1;up++;}}return up;}
 function gBase(id,k){for(const r of ROLES){const c=CHARS[r].find(c=>c.id===id);if(c)return c.st[k]||0;}return 0;}
 function gSpend(id,k){const g=gOf(id);if(g.pts<=0||gBase(id,k)+(g.add[k]||0)>=GROW_CAP)return false;g.pts--;g.add[k]=(g.add[k]||0)+1;gSave();return true;}
@@ -2389,8 +2429,9 @@ function settleGrowth(win){if(MATCH.mode==='net'||MATCH.mode==='train')return[];
 function growthHTML(cid){const g=GROW[cid]||{lv:1,xp:0,pts:0,add:{},sx:{}},need=xpNeed(g.lv);
   return `<div class="gr"><div class="grH"><b>Lv ${g.lv}</b><i><em style="width:${g.lv>=GROW_MAX_LV?100:Math.round(g.xp*100/need)}%"></em></i><span>${g.lv>=GROW_MAX_LV?'MAX':g.xp+' / '+need}</span></div>`+
     (g.pts>0?`<div class="grP">可分配能力點：<b>${g.pts}</b>　點下面的 ＋ 加點</div><div class="grB">${STAT_KEYS.map(k=>`<button class="tb" data-gs="${k}" ${gBase(cid,k)+(g.add[k]||0)>=GROW_CAP?'disabled':''}>＋${STAT_N[k]}</button>`).join('')}</div>`:'')+
-    `<div class="grS">訓練經驗：${STAT_KEYS.filter(k=>g.sx[k]).map(k=>`${STAT_N[k]} ${g.sx[k]}/100`).join('、')||'還沒有（主選單 → 訓練）'}</div></div>`;}
+    `<button class="tb" data-opentree="${cid}">技能樹・屬性 ▶ <small>技能點 ${treeOf(cid).sp}・上場技能 ${treeOf(cid).eq?TS[treeOf(cid).eq].name:'沒有'}</small></button><div class="grS">訓練經驗：${STAT_KEYS.filter(k=>g.sx[k]).map(k=>`${STAT_N[k]} ${g.sx[k]}/100`).join('、')||'還沒有（主選單 → 訓練）'}</div></div>`;}
 function growthAdd(cid){const g=GROW[cid];return g?g.add:{};}
+document.addEventListener('click',e=>{const o=e.target.closest('[data-opentree]');if(o){openTree(o.dataset.opentree);return;}});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-gs]');if(!b||!PV.cid)return;if(gSpend(PV.cid,b.dataset.gs)){SFX.call&&SFX.call();pvShow(PV.role,PV.cid);if(typeof renderPrep==='function')renderPrep();}});
 // ---------- 訓練模式 ----------
 // 扣球：對面送球過來 → 隊友一傳 → 舉球一定給你 → 扣進對方場內（對方有攔網）
@@ -2427,33 +2468,156 @@ function renderTrain(){const L=$('tList');if(!L)return;L.innerHTML='';
     b.innerHTML=`<span class="sn">${D2.name}</span><span class="so">練 ${STAT_N[D2.stat]}${D2.stat2?'・'+STAT_N[D2.stat2]:''}・${ROLE[r].name} ${c.name}</span><span class="sd">${D2.desc}</span><span class="so">目前 ${STAT_N[D2.stat]} 經驗 ${(g.sx||{})[D2.stat]||0}/100・每次 60 秒</span>`;
     b.onclick=()=>trainStart(k);L.appendChild(b);}}
 
+// ================= 技能樹（獨立於位置）＋屬性雷達圖 =================
+// 參考 MECH-CORDON 駕駛員技能樹：分好幾欄（分支），每欄由上往下 T1 → T2 → T3，同一欄前面投夠點才開下一層。
+// 技能不綁位置：任何球員都能學任何技能；主動技能挑 1 個帶上場（Q 發動），被動技能全部生效。
+// 威力看能力值：每個分支綁一項能力（扣球＝力量、防守＝接球、攔網＝攔網、舉球發球＝舉球），倍率 0.7＋能力×0.06（能力 5＝×1.0、10＝×1.3）。
+// 點數：每升 1 級各得 1 屬性點（加六項能力，雷達圖）和 1 技能點（點技能樹）。每個球員各自一套，存在 vb-growth。
+const TIER_REQ={1:0,2:3,3:6};
+const TB=[
+  {id:'atk',name:'扣球',stat:'pow',col:'#ff9a3c'},
+  {id:'def',name:'防守',stat:'rcv',col:'#3ee0a0'},
+  {id:'blk',name:'攔網',stat:'blk',col:'#7af0c0'},
+  {id:'set',name:'舉球・發球',stat:'set',col:'#ffd23f'}];
+const pc=v=>Math.round(v*100)+'%';
+// act：主動技能（dur＝持續秒數，0＝留到下一次用掉）；when＝HUD 上顯示什麼時候用掉
+const TSK=[
+  {id:'power',br:'atk',tier:1,max:3,act:1,name:'強力扣球',col:'#ff9a3c',dur:0,when:'下一次扣球',d:(r,m)=>`下一次扣球品質至少 GOOD、球速 +${pc((.05+.02*r)*m)}、攻擊力 +${(2+r*.6*m).toFixed(1)}`},
+  {id:'a_pow',br:'atk',tier:1,max:3,name:'重砲',d:r=>`扣球球速 +${3*r}%、攻擊力 +${(.3*r).toFixed(1)}`},
+  {id:'a_aim',br:'atk',tier:2,max:2,name:'落點控制',d:r=>`扣球落點偏差 −${10*r}%`},
+  {id:'a_tool',br:'atk',tier:2,max:2,name:'打手出界',d:r=>`打到攔網手外緣時，打手出界機率 +${6*r}%`},
+  {id:'precise',br:'atk',tier:3,max:1,act:1,name:'精準扣球',col:'#5ad1ff',dur:0,when:'下一次扣球',d:(r,m)=>`下一次扣球照準星落點、完全不偏，品質至少 GOOD、攻擊力 +${(1+m).toFixed(1)}`},
+  {id:'eye',br:'def',tier:1,max:3,act:1,name:'鷹眼接球',col:'#3ee0a0',dur:8,when:'',d:(r,m)=>`8 秒內接球、救球品質 +${pc((.06+.04*r)*m)}`},
+  {id:'d_pass',br:'def',tier:1,max:3,name:'穩定一傳',d:r=>`接發球、接扣球品質 +${2.5*r}%`},
+  {id:'d_dive',br:'def',tier:2,max:2,name:'飛撲',d:r=>`飛撲救球的範圍 +${6*r}%`},
+  {id:'d_float',br:'def',tier:2,max:2,name:'飄球剋星',d:r=>`飄球、跳飄球對接球的影響 −${30*r}%`},
+  {id:'guard',br:'def',tier:3,max:1,act:1,name:'銅牆防守',col:'#7ad7ff',dur:10,when:'',d:(r,m)=>`10 秒內飛撲範圍 +${pc(.3*m)}，救起的球品質至少 50%`},
+  {id:'wall',br:'blk',tier:1,max:3,act:1,name:'鐵壁攔網',col:'#7af0c0',dur:8,when:'',d:(r,m)=>`8 秒內攔網手寬 +${Math.round((8+3*r)*m)} 公分、攔網力量 +${((2+r)*m).toFixed(1)}`},
+  {id:'b_reach',br:'blk',tier:1,max:3,name:'手長',d:r=>`攔網手的寬度 +${4*r}%`},
+  {id:'b_str',br:'blk',tier:2,max:2,name:'壓網',d:r=>`攔網力量 +${(.5*r).toFixed(1)}`},
+  {id:'b_soft',br:'blk',tier:2,max:2,name:'收手',d:r=>`被打手出界的機率 −${6*r}%`},
+  {id:'kill',br:'blk',tier:3,max:1,act:1,name:'攔死',col:'#b6ff7a',dur:0,when:'下一次攔網',d:(r,m)=>`下一次攔網碰到球時攔網力量 +${(3*m).toFixed(1)}（很容易直接攔網得分）`},
+  {id:'toss',br:'set',tier:1,max:3,act:1,name:'神準舉球',col:'#ffd23f',dur:0,when:'下一次舉球',d:(r,m)=>`下一次舉球完全不偏、不會被降級，攻手扣球品質 +${pc((.06+.04*r)*m)}`},
+  {id:'s_toss',br:'set',tier:1,max:3,name:'手感',d:r=>`舉球偏差 −${12*r}%`},
+  {id:'s_serve',br:'set',tier:2,max:2,name:'發球手',d:r=>`發球落點偏差 −${12*r}%、球速 +${2*r}%`},
+  {id:'s_quick',br:'set',tier:2,max:2,name:'快攻節奏',d:r=>`平快、快攻的舉球偏差 −${12*r}%`},
+  {id:'ace',br:'set',tier:3,max:1,act:1,name:'重砲發球',col:'#ff6b6b',dur:0,when:'下一次發球',d:(r,m)=>`下一次發球品質 PERFECT、球速 +${pc(.1*m)}，飄球飄得更兇`}];
+const TS={};TSK.forEach(s=>TS[s.id]=s);
+const ROLE_ACT={oh:'power',op:'power',mb:'wall',set:'toss'};
+// ---------- 資料 ----------
+function charRole(id){for(const r of ROLES)if(CHARS[r].some(c=>c.id===id))return r;return 'oh';}
+// 舊存檔：技能點＝等級−1；送一點在原本位置的技能上並裝備，讓剛開始就有技能可以用
+function treeOf(id){const g=gOf(id);if(!g.tree){g.tree={};g.sp=Math.max(0,(g.lv||1)-1);const a=ROLE_ACT[charRole(id)];g.tree[a]=1;g.eq=a;}if(g.sp==null)g.sp=0;return g;}
+const brPts=(tree,br,below)=>TSK.filter(s=>s.br===br&&(!below||s.tier<below)).reduce((n,s)=>n+(tree[s.id]||0),0);
+function gateReason(tree,s){if(s.tier>1){const need=TIER_REQ[s.tier],have=brPts(tree,s.br,s.tier);if(have<need)return`先在「${TB.find(b=>b.id===s.br).name}」前面投 ${need} 點（目前 ${have}）`;}return '';}
+function canInvest(g,s){return g.sp>0&&(g.tree[s.id]||0)<s.max&&!gateReason(g.tree,s);}
+function invest(id,sid){const g=treeOf(id),s=TS[sid];if(!canInvest(g,s))return false;g.tree[sid]=(g.tree[sid]||0)+1;g.sp--;if(s.act&&!g.eq)g.eq=sid;gSave();return true;}
+// 退一點：不能讓後面已經點的技能失去門檻
+function canRefund(g,s){const r=g.tree[s.id]||0;if(r<=0)return false;const t=Object.assign({},g.tree);t[s.id]=r-1;
+  return !TSK.some(o=>o.br===s.br&&o.tier>s.tier&&(t[o.id]||0)>0&&gateReason(t,o));}
+function refund(id,sid){const g=treeOf(id),s=TS[sid];if(!canRefund(g,s))return false;g.tree[sid]--;g.sp++;if(!g.tree[sid])delete g.tree[sid];
+  if(g.eq===sid&&!g.tree[sid])g.eq=TSK.find(o=>o.act&&g.tree[o.id])?.id||null;gSave();return true;}
+function treeReset(id){const g=treeOf(id);for(const k in g.tree)g.sp+=g.tree[k];g.tree={};g.eq=null;gSave();}
+function equip(id,sid){const g=treeOf(id);if(!TS[sid]||!TS[sid].act||!g.tree[sid])return false;g.eq=sid;gSave();return true;}
+// 自動配點：照位置的主分支 → 防守 → 其他；先主動、再被動、再下一層
+const ROLE_BR={oh:['atk','def','blk','set'],op:['atk','blk','def','set'],mb:['blk','atk','def','set'],set:['set','def','blk','atk']};
+function autoPlan(role){const o=[];for(const br of ROLE_BR[role]){const L=TSK.filter(s=>s.br===br).sort((a,b)=>a.tier-b.tier||(b.act|0)-(a.act|0));for(const s of L)for(let i=0;i<s.max;i++)o.push(s.id);}return o;}
+function autoSpend(tree,role,n){const plan=autoPlan(role);let left=n;for(let pass=0;pass<3&&left>0;pass++)for(const sid of plan){if(left<=0)break;const s=TS[sid],g={sp:left,tree};if(canInvest(g,s)){tree[sid]=(tree[sid]||0)+1;left--;}}return left;}
+function autoInvest(id){const g=treeOf(id);g.sp=autoSpend(g.tree,charRole(id),g.sp);if(!g.eq||!g.tree[g.eq])g.eq=bestAct(g.tree);gSave();}
+function bestAct(tree){const L=TSK.filter(s=>s.act&&tree[s.id]).sort((a,b)=>b.tier-a.tier||(tree[b.id]-tree[a.id]));return L.length?L[0].id:null;}
+// ---------- 比賽中 ----------
+// 對手（和多人連線）的球員：照強度給一套自動配好的技能樹，和玩家隊伍同一套規則
+function oppLevel(){if(MATCH.mode==='stage')return[1,3,6,9,12,15][MATCH.stage]||1;if(MATCH.mode==='net')return 4;const d=MATCH.diff[1-ME];return{easy:1,normal:3,hard:6,hell:9}[d]||3;}
+function treeApply(){for(const p of players){if(p.team===ME&&MATCH.mode!=='net'&&p.ch&&p.ch.id){const g=treeOf(p.ch.id);p.tree=Object.assign({},g.tree);p.eq=g.eq&&g.tree[g.eq]?g.eq:bestAct(g.tree);}
+    else{const t={},a=ROLE_ACT[p.role];t[a]=1;autoSpend(t,p.role,oppLevel()-1+(p.ace?2:0));p.tree=t;p.eq=bestAct(t);}}}
+const pr=(p,id)=>p&&p.tree?(p.tree[id]||0):0;
+const pStat=(p,k)=>p&&p.st?p.st[k]:5;
+function skM(p,sid){const s=TS[sid],b=s&&TB.find(x=>x.id===s.br);return .7+pStat(p,b?b.stat:'pow')*.06;}
+const skRk=(p,sid)=>Math.max(1,pr(p,sid));
+// ---------- 技能樹畫面 ----------
+const TV={cid:null,sel:null,hov:null,prev:null};
+function openTree(cid){TV.from=PAGES.find(x=>x!=='vTree'&&!$(x).hidden)||'vPrep';TV.cid=cid||PV.cid||prep.chars[prep.role];TV.sel=null;show('vTree');$('trBack').textContent=TV.from==='vMenu'?'← 主選單':'← 賽前準備';renderTree();}
+function treeChars(){return ROLES.map(r=>({r,c:charOf(r,prep.chars[r])}));}
+function effSt(cid,extra){const r=charRole(cid),c=CHARS[r].find(x=>x.id===cid),g=treeOf(cid),st={};for(const k of STAT_KEYS){st[k]=Math.min(GROW_CAP,c.st[k]+(g.add[k]||0)+(extra===k?1:0));}return{base:c.st,st};}
+// 六角雷達圖：灰＝原本能力、金＝加點後、虛線＝再加一點的預覽
+function radarSvg(cid,prevK){const {base,st}=effSt(cid),pv=prevK?effSt(cid,prevK).st:null,K=['pow','jmp','spd','blk','set','rcv'],R=86,c=110;
+  const pt=(i,v)=>{const a=-Math.PI/2+i*Math.PI/3,r=R*(.1+.9*Math.min(1,v/GROW_CAP));return[c+Math.cos(a)*r,c+Math.sin(a)*r];};
+  const poly=S=>K.map((k,i)=>pt(i,S[k]).map(v=>v.toFixed(1)).join(',')).join(' ');
+  const ring=s=>K.map((k,i)=>{const a=-Math.PI/2+i*Math.PI/3;return(c+Math.cos(a)*R*s).toFixed(1)+','+(c+Math.sin(a)*R*s).toFixed(1);}).join(' ');
+  const lab=K.map((k,i)=>{const a=-Math.PI/2+i*Math.PI/3,x=c+Math.cos(a)*(R+16),y=c+Math.sin(a)*(R+16)+4,an=Math.abs(x-c)<4?'middle':x>c?'start':'end',ad=st[k]-base[k];
+    return`<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${an}" class="rdL">${STAT[k]} <tspan class="rdV">${st[k]}</tspan>${ad?`<tspan class="rdA"> +${ad}</tspan>`:''}</text>`;}).join('');
+  return`<svg viewBox="-34 -6 288 232" class="radar" role="img" aria-label="能力雷達圖">${[.25,.5,.75,1].map(s=>`<polygon points="${ring(s)}" class="rdG"/>`).join('')}
+    ${K.map((k,i)=>{const p2=pt(i,GROW_CAP);return`<line x1="${c}" y1="${c}" x2="${p2[0].toFixed(1)}" y2="${p2[1].toFixed(1)}" class="rdG"/>`;}).join('')}
+    <polygon points="${poly(st)}" class="rdCur"/><polygon points="${poly(base)}" class="rdBase"/>${pv?`<polygon points="${poly(pv)}" class="rdPrev"/>`:''}${lab}</svg>`;}
+function nodeHTML(g,s,cid){const r=g.tree[s.id]||0,lock=gateReason(g.tree,s),can=canInvest(g,s),st=effSt(cid).st,b=TB.find(x=>x.id===s.br);
+  const seg=Array.from({length:s.max},(_,i)=>`<i class="${i<r?'on':''}"></i>`).join('');
+  return`<button class="tNode${s.act?' act':''}${s.tier===3?' t3':''}${lock?' lock':''}${can?' can':''}${r>=s.max?' max':''}${TV.sel===s.id?' sel':''}${g.eq===s.id?' eq':''}" data-sk="${s.id}" style="--bc:${s.col||b.col}" aria-label="${s.name} ${r}/${s.max}">
+    <span class="tIc">${s.act?'◆':'●'}</span><span class="tNm">${s.name}</span><span class="tSeg">${seg}</span>${g.eq===s.id?'<em class="tEq">Q</em>':''}</button>`;}
+function renderTree(){const box=$('trBody');if(!box||!TV.cid)return;const cid=TV.cid,g=treeOf(cid),role=charRole(cid),ch=CHARS[role].find(c=>c.id===cid),{st}=effSt(cid);
+  $('trWho').innerHTML=treeChars().map(({r,c})=>`<button class="pill" data-tc="${c.id}" aria-pressed="${c.id===cid}">${ROLE[r].short}・${c.name}<small> Lv ${gOf(c.id).lv}</small></button>`).join('');
+  $('trPts').innerHTML=`<span>Lv <b>${g.lv}</b></span><span>技能點 <b>${g.sp}</b></span><span>屬性點 <b>${g.pts}</b></span><span class="trEqN">上場技能（Q）：<b style="color:${g.eq?TS[g.eq].col:'var(--dim)'}">${g.eq?TS[g.eq].name:'沒有'}</b></span>`;
+  // 技能樹：4 欄 × （T1、門檻、T2、門檻、T3）
+  let h='';for(const b of TB){const n=brPts(g.tree,b.id),m=(.7+st[b.stat]*.06);
+    h+=`<div class="tCol" style="--bc:${b.col}"><div class="tHd"><b>${b.name}</b><small>${n} 點・威力看${STAT[b.stat]} ${st[b.stat]}（×${m.toFixed(2)}）</small></div>`;
+    for(const t of [1,2,3]){if(t>1){const need=TIER_REQ[t],have=brPts(g.tree,b.id,t);h+=`<div class="tGate${have>=need?' ok':''}">${Math.min(have,need)} / ${need}${have>=need?' ✓':''}</div>`;}
+      h+=`<div class="tRow">${TSK.filter(s=>s.br===b.id&&s.tier===t).map(s=>nodeHTML(g,s,cid)).join('')}</div>`;}
+    h+='</div>';}
+  $('trTree').innerHTML=h;
+  renderInfo();renderRadar();}
+function renderInfo(){const cid=TV.cid,g=treeOf(cid),{st}=effSt(cid);
+  document.querySelectorAll('#trTree .tNode').forEach(n=>n.classList.toggle('sel',n.dataset.sk===TV.sel));
+  // 詳細說明
+  const sid=TV.sel||TV.hov,s=sid&&TS[sid];
+  if(s){const r=g.tree[s.id]||0,b=TB.find(x=>x.id===s.br),m=.7+st[b.stat]*.06,lock=gateReason(g.tree,s);
+    $('trInfo').innerHTML=`<div class="tiH"><b style="color:${s.col||b.col}">${s.name}</b><span>${s.act?'主動技能（帶上場，量表滿了按 Q）':'被動技能（一直有效）'}・${b.name} 第 ${s.tier} 層・${r} / ${s.max}</span></div>
+      <div class="tiE">${r?`目前：${s.d(r,m)}`:'還沒學'}${r<s.max?`<br><span class="tiN">${r?'下一級':'學會後'}：${s.d(r+1,m)}</span>`:''}</div>
+      ${s.act?`<div class="tiM">威力看${STAT[b.stat]}：目前 ${st[b.stat]} → 倍率 ×${m.toFixed(2)}（能力越高，技能越強）</div>`:''}
+      ${lock?`<div class="tiL">🔒 ${lock}</div>`:''}
+      <div class="big2"><button class="tb" data-tact="inv" ${canInvest(g,s)?'':'disabled'}>投 1 點</button><button class="tb" data-tact="ref" ${canRefund(g,s)?'':'disabled'}>退 1 點</button>${s.act?`<button class="tb" data-tact="eq" ${r&&g.eq!==s.id?'':'disabled'}>${g.eq===s.id?'已帶上場':'帶上場（Q）'}</button>`:''}</div>`;}
+  else $('trInfo').innerHTML='<div class="tiE">點一個技能看說明。雙擊（或按「投 1 點」）投點，右鍵退點。◆＝主動技能（挑一個帶上場），●＝被動技能。</div>';
+}
+function renderRadar(){const cid=TV.cid,g=treeOf(cid),{st}=effSt(cid);
+  // 雷達圖＋屬性加點
+  $('trRadar').innerHTML=radarSvg(cid,TV.prev)+`<div class="trStat">${STAT_KEYS.map(k=>{const full=st[k]>=GROW_CAP;return`<button class="tb" data-ts="${k}" ${g.pts>0&&!full?'':'disabled'}>＋ ${STAT[k]} <small>${st[k]}${full?' MAX':''}</small></button>`;}).join('')}</div>
+    <p class="sub" style="font-size:12px;margin:6px 0 0">灰色＝原本能力、金色＝加點後；游標停在 ＋ 上會用虛線預覽。能力最多 ${GROW_CAP}。</p>`;}
+document.addEventListener('click',e=>{if($('vTree').hidden)return;
+  const w=e.target.closest('[data-tc]');if(w){TV.cid=w.dataset.tc;TV.sel=null;renderTree();return;}
+  const n=e.target.closest('[data-sk]');if(n){TV.sel=n.dataset.sk;renderInfo();return;}
+  const a=e.target.closest('[data-tact]');if(a&&TV.sel){const k=a.dataset.tact;if(k==='inv'?invest(TV.cid,TV.sel):k==='ref'?refund(TV.cid,TV.sel):equip(TV.cid,TV.sel)){SFX.call&&SFX.call();}renderTree();return;}
+  const s=e.target.closest('[data-ts]');if(s){if(gSpend(TV.cid,s.dataset.ts)){SFX.call&&SFX.call();}renderTree();return;}
+  if(e.target.id==='trAuto'){autoInvest(TV.cid);renderTree();return;}
+  if(e.target.id==='trReset'){const b=e.target;if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='再按一次確認';setTimeout(()=>{b.dataset.arm='';b.textContent='重置技能點';},3000);return;}treeReset(TV.cid);renderTree();return;}
+  if(e.target.id==='trBack'){show(TV.from||'vPrep');}});
+document.addEventListener('dblclick',e=>{if($('vTree').hidden)return;const n=e.target.closest('[data-sk]');if(n&&invest(TV.cid,n.dataset.sk)){TV.sel=n.dataset.sk;SFX.call&&SFX.call();renderTree();}});
+document.addEventListener('contextmenu',e=>{if($('vTree').hidden)return;const n=e.target.closest('[data-sk]');if(n){e.preventDefault();if(refund(TV.cid,n.dataset.sk)){TV.sel=n.dataset.sk;renderTree();}}});
+document.addEventListener('mouseover',e=>{if($('vTree').hidden)return;const s=e.target.closest('[data-ts]'),n=e.target.closest('[data-sk]');const pk=s&&!s.disabled?s.dataset.ts:null,hv=n?n.dataset.sk:null;
+  if(pk!==TV.prev){TV.prev=pk;renderRadar();}if(!TV.sel&&hv!==TV.hov){TV.hov=hv;renderInfo();}});
+
 // ---------------- 技能系統 ----------------
 // 每個球員一條技能量表（0–100）。碰球、得分、每一回合結束都會集氣；滿了按 Q（AI 自己挑時機）發動。
 // 數值目標：25 分制一場比賽大約可以放 2–3 次（15 分制至少 1–2 次），所以集氣量會照勝利分數換算。
 // 效果刻意做得「有感但不誇張」：只是讓這一球比較好，不會變成必殺技。
-const SKILLS={
-  oh:{id:'power',name:'強力扣球',col:'#ff9a3c',desc:'下一次扣球：擊球品質至少 GOOD、球速 +10%、比較難攔'},
-  op:{id:'precise',name:'精準扣球',col:'#5ad1ff',desc:'下一次扣球：照準星落點、不會偏、品質至少 GOOD'},
-  mb:{id:'wall',name:'鐵壁攔網',col:'#7af0c0',desc:'8 秒內攔網：手的範圍變寬一點、攔網力量提升'},
-  set:{id:'toss',name:'神準舉球',col:'#ffd23f',desc:'下一次舉球：完全不偏、不會被降級，攻手扣球品質再加一點'}};
-const SK_DUR={power:0,precise:0,wall:8,toss:0}; // 0＝留到用掉為止；鐵壁攔網只在比賽進行中倒數 8 秒
+// 技能本身定義在技能樹（g17.js 的 TSK）：每個球員帶 1 個主動技能上場（p.eq），不再綁位置
+const SK_DUR={};TSK.forEach(s=>{if(s.act)SK_DUR[s.id]=s.dur;});
 const skRate=()=>25/clamp(winPts(),11,25);
-function skOf(p){return SKILLS[p.role];}
-function skGain(p,n){if(!p||p.skOn)return;const was=p.sk||0;p.sk=Math.min(100,was+n*skRate());
+function skOf(p){return p&&p.eq?TS[p.eq]:null;}
+function skGain(p,n){if(!p||p.skOn||!skOf(p))return;const was=p.sk||0;p.sk=Math.min(100,was+n*skRate());
   if(was<100&&p.sk>=100&&p===human){say('技能量表滿了！按 '+k1('skill')+' 發動「'+skOf(p).name+'」','#ffd23f');if(SFX.call)SFX.call();}}
 function skActivate(p){if(!p||(p.sk||0)<100||p.skOn||state==='over')return false;const S2=skOf(p);if(!S2)return false;
-  p.sk=0;p.skOn=S2.id;p.skT=SK_DUR[S2.id];pop(p,S2.name,S2.col);talk(p,'看我的！');
+  p.sk=0;p.skOn=S2.id;p.skT=SK_DUR[S2.id]||0;pop(p,S2.name,S2.col);talk(p,'看我的！');
   burst(p.x,1.2+p.y,p.z,S2.col,12,2.2);if(SFX.call)SFX.call();if(p.human)say('技能發動：'+S2.name,S2.col);return true;}
 // 拿出技能（用掉）：kinds 是這個動作可以用的技能
 function skTake(p,kinds){if(!p||!p.skOn||!kinds.includes(p.skOn))return null;const k=p.skOn;p.skOn=null;p.skT=0;
   const S2=skOf(p);burst(p.x,1.6+p.y,p.z,S2?S2.col:'#fff',10,2.5);return k;}
 function skTick(dt){if(state!=='play')return;for(const p of players){if(p.skOn&&SK_DUR[p.skOn]>0){p.skT-=dt;if(p.skT<=0){p.skOn=null;p.skT=0;}}}}
-// AI 的發動時機：攻手在對方送球給他時、中間手在對方要進攻時、舉球手在要舉球時
-function skAI(){if(state!=='play'||!ball)return;for(const p of players){if(p.human||(p.sk||0)<100||p.skOn)continue;
-  const si=ball.setInfo,mine=ball.lastTeam===p.team;
-  if((p.role==='oh'||p.role==='op')&&mine&&si&&si.hitter===p&&ball.touches===2)skActivate(p);
-  else if(p.role==='mb'&&!mine&&ball.lastTeam!==null&&ball.touches===2&&si)skActivate(p);
-  else if(p.role==='set'&&mine&&ball.touches===1&&ball.setter===p)skActivate(p);}}
+// AI 的發動時機（看帶的是哪種技能，不看位置）：扣球技能在球托給他時、攔網技能在對方要進攻時、防守技能在對方發球或要進攻時、舉球技能在要舉球時、發球技能在輪到他發球時
+function skAI(){if(!ball||(state!=='play'&&state!=='serve'))return;for(const p of players){if(p.human||(p.sk||0)<100||p.skOn)continue;
+  const k=p.eq,si=ball.setInfo,mine=ball.lastTeam===p.team,oppAtk=!mine&&ball.lastTeam!==null&&ball.touches===2&&si;
+  if(state==='serve'){if(k==='ace'&&server===p)skActivate(p);else if((k==='eye'||k==='guard')&&server&&server.team!==p.team&&rnd()<.01)skActivate(p);continue;}
+  if((k==='power'||k==='precise')&&mine&&si&&si.hitter===p&&ball.touches===2)skActivate(p);
+  else if((k==='wall'||k==='kill')&&oppAtk)skActivate(p);
+  else if((k==='eye'||k==='guard')&&oppAtk)skActivate(p);
+  else if(k==='toss'&&mine&&ball.touches===1&&ball.setter===p)skActivate(p);}}
 // 集氣：一回合結束大家 +2；得分那隊再 +3；最後一擊（扣球得分、攔網得分）的人再 +5
 function skPoint(w){for(const p of players){skGain(p,2+(p.team===w?3:0));}
   const lp=ball&&ball.lastP;if(lp&&lp.team===w&&(ball.atk||ball.blockTouch||ball.tip))skGain(lp,5);}
@@ -2463,12 +2627,12 @@ function skTouch(p,act,q){skGain(p,(q>.82?6:q>.5?4:1.5)+(act==='spike'?2:0));}
 // ---------------- 對手強度與關卡 ----------------
 const DIFF_N={easy:'簡單',normal:'普通',hard:'困難',hell:'地獄'};
 const STAGES=[
-  {name:'社團練習賽',opp:'校內社團',diff:'easy',bonus:0,win:15,note:'暖身。對手常失誤，熟悉操作和技能。'},
-  {name:'地區預賽',opp:'鄰校聯隊',diff:'normal',bonus:0,win:15,note:'一般強度，攔網和防守開始會到位。'},
-  {name:'縣市賽',opp:'市立強校',diff:'normal',bonus:1,win:21,note:'對手能力全部 +1，扣球更重。'},
-  {name:'全國八強',opp:'傳統名校',diff:'hard',bonus:0,win:21,note:'困難 AI：判斷快、失誤少。'},
-  {name:'全國四強',opp:'體育班',diff:'hard',bonus:1,win:25,note:'困難 AI＋能力 +1。'},
-  {name:'全國決賽',opp:'衛冕冠軍',diff:'hell',bonus:2,win:25,note:'地獄 AI＋能力 +2。打贏就破關！'}];
+  {name:'社團練習賽',opp:'校內社團',diff:'easy',bonus:0,win:15,aces:1,note:'暖身。對手常失誤，熟悉操作和技能。'},
+  {name:'地區預賽',opp:'鄰校聯隊',diff:'normal',bonus:0,win:15,aces:1,note:'一般強度，攔網和防守開始會到位。'},
+  {name:'縣市賽',opp:'市立強校',diff:'normal',bonus:1,win:21,aces:2,note:'對手能力全部 +1，扣球更重。'},
+  {name:'全國八強',opp:'傳統名校',diff:'hard',bonus:0,win:21,aces:2,note:'困難 AI：判斷快、失誤少。'},
+  {name:'全國四強',opp:'體育班',diff:'hard',bonus:1,win:25,aces:3,note:'困難 AI＋能力 +1。'},
+  {name:'全國決賽',opp:'衛冕冠軍',diff:'hell',bonus:2,win:25,aces:4,note:'地獄 AI＋能力 +2。打贏就破關！'}];
 let stageProg=+(load('vb-stage',0))||0;
 const winPts=()=>MATCH.mode==='stage'?STAGES[MATCH.stage].win:MATCH.mode==='net'?MATCH.win:MATCH.mode==='train'?999:+S.win;
 function matchSetup(){const opp=1-prep.side;MATCH.diff=['normal','normal'];
@@ -2476,8 +2640,11 @@ function matchSetup(){const opp=1-prep.side;MATCH.diff=['normal','normal'];
   if(MATCH.mode==='stage'){const st=STAGES[MATCH.stage];MATCH.diff[opp]=st.diff;MATCH.bonus[opp]=DB[st.diff]+st.bonus;}
   else{MATCH.diff[opp]=S.diff in DIFF?S.diff:'normal';MATCH.bonus[opp]=DB[MATCH.diff[opp]];}}
 // 每場每隊隨機一位王牌：屬性 +2（可以超過 10，最多 12）
-function pickAces(){for(const t of [0,1]){const c=team(t).filter(p=>p.role!=='set'||rnd()<.25),a=c[Math.floor(rnd()*c.length)];if(!a)continue;a.ace=true;
-  const st={};for(const k in a.st)st[k]=Math.min(12,a.st[k]+2);a.st=st;a.jumpH=.62+Math.min(10,st.jmp)*.045+Math.max(0,st.jmp-10)*.03;}
+// 王牌人數：我方 1 人；對手照關卡（後面的關卡 2～4 人），自由比賽照對手強度（困難 2、地獄 3）
+function aceCount(t){if(t===ME&&MATCH.mode!=='net')return 1;if(MATCH.mode==='stage')return STAGES[MATCH.stage].aces||1;if(MATCH.mode==='free'){const d=MATCH.diff[t];return d==='hell'?3:d==='hard'?2:1;}return 1;}
+function pickAces(){for(const t of [0,1]){const n=aceCount(t);let pool=team(t).slice();
+  for(let i=0;i<n&&pool.length;i++){const c=pool.filter(p=>p.role!=='set'||rnd()<.25||pool.every(q=>q.role==='set')),a=(c.length?c:pool)[Math.floor(rnd()*(c.length||pool.length))];pool=pool.filter(p=>p!==a);a.ace=true;
+    const st={};for(const k in a.st)st[k]=Math.min(12,a.st[k]+2);a.st=st;a.jumpH=.62+Math.min(10,st.jmp)*.045+Math.max(0,st.jmp-10)*.03;}}
 }
 function aceSay(){const A2=players.filter(p=>p.ace);if(A2.length)say('本場王牌：'+A2.map(p=>`${COL[p.team].name} ${p.ch.name}`).join('、'),'#ffd23f');}
 // 對手能力加成（關卡）：每項 +n，最多 10
@@ -2490,7 +2657,7 @@ function renderMode(){const box=$('pMode');if(!box)return;if(MATCH.mode!=='stage
   $('pDiff').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===S.diff));
   const L=$('pStages');L.innerHTML='';
   STAGES.forEach((st,i)=>{const lock=i>stageProg,b=document.createElement('button');b.className='stg'+(i===MATCH.stage?' on':'')+(lock?' lock':'')+(i<stageProg?' done':'');b.disabled=lock;
-    b.innerHTML=`<b>第 ${i+1} 關</b><span class="sn">${st.name}</span><span class="so">${st.opp}・${DIFF_N[st.diff]}${st.bonus?'・能力 +'+st.bonus:''}・${st.win} 分</span><span class="sd">${lock?'🔒 先打贏上一關':i<stageProg?'✓ 已過關・':''}${lock?'':st.note}</span>`;
+    b.innerHTML=`<b>第 ${i+1} 關</b><span class="sn">${st.name}</span><span class="so">${st.opp}・${DIFF_N[st.diff]}${st.bonus?'・能力 +'+st.bonus:''}・王牌 ${'★'.repeat(st.aces||1)}・對手技能 Lv ${[1,3,6,9,12,15][i]}・${st.win} 分</span><span class="sd">${lock?'🔒 先打贏上一關':i<stageProg?'✓ 已過關・':''}${lock?'':st.note}</span>`;
     b.onclick=()=>{MATCH.stage=i;renderMode();};L.appendChild(b);});
   $('pGo').textContent=MATCH.mode==='stage'?`挑戰第 ${MATCH.stage+1} 關 ▶`:'開始比賽 ▶';}
 if($('pMode')){$('pMode').onclick=e=>{const b=e.target.closest('button');if(!b)return;MATCH.mode=b.dataset.v;if(MATCH.mode==='stage')MATCH.stage=Math.min(stageProg,STAGES.length-1);renderMode();};
@@ -2557,7 +2724,7 @@ function netStartLocal(serveT){
   MATCH.diff=[NET.diff,NET.diff];MATCH.bonus=[0,0];
   for(const t of [0,1])for(const r of ROLES){const s=NET.slots[slotIdx(t,r)],p=mkP(t,r,charOf(r,s.ch),!!s.owner);p.owner=s.owner;p.pname=s.owner?s.name:'';
     if(s.owner===NET.id)human=p;else if(NET.host&&s.owner)p.rc={held:new Set(),trig:new Set(),cy:t?-Math.PI/2:Math.PI/2,cp:.3,cf:[sd(1-t)*1,0],cg:[sd(1-t)*5,0,false]};players.push(p);}
-  players.forEach((p,i)=>p.num=[4,1,7,3][i%4]+(p.team?8:0));if(NET.host)pickAces();
+  players.forEach((p,i)=>p.num=[4,1,7,3][i%4]+(p.team?8:0));if(NET.host){pickAces();treeApply();}
   score=[0,0];served=[false,false];serverIdx=[0,0];msgs=[];parts=[];serveTeam=serveT;served[serveTeam]=true;rebuildRigs();
   camYaw=camYawT=ME?-Math.PI/2:Math.PI/2;camPitch=camPitchT=.3;setupServe(serveTeam);say(`${COL[serveTeam].name}先發球`,COL[serveTeam].ui,true);SFX.whistle();
   g3.focus();try{const r=g3.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
@@ -2822,7 +2989,7 @@ function drawHUD(){
     const gx=cw-20*sc,gy=ch*.69,gh=ch*.27,fh=(gh-6*sc)*sk/100;rr(g,gx,gy,14*sc,gh,2,'rgba(8,22,30,.55)');
     if(fh>1){g.globalAlpha=pul;rr(g,gx+3*sc,gy+gh-3*sc-fh,8*sc,fh,2,skc);g.globalAlpha=1;}
     T2(g,full?'MAX':String(Math.floor(sk)),gx+7*sc,gy-8*sc,11*sc,full?skc:'#eef6f7');
-    if(SKD){const tx=human.skOn?`技能中：${SKD.name}（${SK_DUR[human.skOn]>0?Math.ceil(human.skT)+' 秒':{power:'下一次扣球',precise:'下一次扣球',toss:'下一次舉球'}[human.skOn]}）`:full?`${k1('skill')} 發動：${SKD.name}`:`技能：${SKD.name}`;
+    if(SKD){const tx=human.skOn?`技能中：${SKD.name}（${SK_DUR[human.skOn]>0?Math.ceil(human.skT)+' 秒':(TS[human.skOn]&&TS[human.skOn].when||'')}）`:full?`${k1('skill')} 發動：${SKD.name}`:`技能：${SKD.name}`;
       g.font=`700 ${12*sc}px "Noto Sans TC",sans-serif`;const tw=g.measureText(tx).width+18*sc;rr(g,x1-tw+6*sc,y0-30*sc,tw,22*sc,11,human.skOn||full?'rgba(8,22,30,.78)':'rgba(8,22,30,.45)');
       T2(g,tx,x1-3*sc,y0-19*sc,12*sc,human.skOn||full?skc:'#cfe2ea','right');}drawReq(g,cw,ch,sc,x1,y0);}
   // 技能發動中的球員：腳下一圈淡淡的光環
@@ -2870,8 +3037,9 @@ function keyGlyph(g,k,x,y,sc,shift){const mL=/滑鼠左鍵|左鍵/.test(k),mR=/�
   g.restore();}
 
 // ---------------- 選單 ----------------
-const PAGES=['vMenu','vPrep','vHelp','vPause','vOver','vSet','vMocap','vSkin','vNet','vTrain'];
+const PAGES=['vMenu','vPrep','vHelp','vPause','vOver','vSet','vMocap','vSkin','vNet','vTrain','vTree'];
 $('mTrain').onclick=()=>{renderTrain();show('vTrain');};
+$('mTree').onclick=()=>openTree(prep.chars[prep.role]);
 function show(id){PAGES.filter(x=>x!=='vSet').forEach(x=>$(x).hidden=x!==id);if(id){const b=$(id).querySelector('button');if(b)b.focus();}else g3.focus();
   if(id==='vPrep')renderPrep();if(id==='vHelp')renderHelp();}
 document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{toMenu(b.dataset.go);});
@@ -2915,13 +3083,13 @@ function renderHelp(){
    {t:'進攻',sub:'球托給你時',rows:[[`${K('jump')} → ${air}${K('atk')}`,'扣球：按下去就一定打得到，在跳躍最高點出手最強'],['準星','畫面中央的準星指到哪裡，球就往哪裡打'],['攔網牆','起跳後網上會出現對方攔網手的紅色矩形：打縫隙或頭上＝乾淨過網；虛線外側＝可能打手出界；打正中間要看力量'],['力量','助跑越長、跳越高、在最高點出手，球越重越難攔'],['旋球','空中按滑鼠左鍵＝左旋扣球、右鍵＝右旋扣球（球會往那邊彎），鍵盤扣球鍵＝不旋；出手前滑鼠甩動會再加旋轉，往下甩＝上旋'],[`${K('call')}`,'要球：舉球員會把下一球舉給你'],[`${K('stype')}／滾輪`,'要哪種球：自動／高球／平快／快攻（快攻要先衝到網前、早一點起跳；一傳不好會降級）'],[`${air}${K('tip')}`,'輕打：把球輕輕推到準星位置'],[K('call'),'叫球：要舉球手托給你']]},
    {t:'舉球',sub:'你選舉球手時，隊友一傳後輪到你',rows:[['黃圈','地上的黃圈是球落到頭上的位置，跑過去（一傳會傳高一點，球飛過來時畫面變慢，慢的程度在設定「舉球思考時間」調整）'],['準星','對準要托給的攻手（頭上出現黃色標記）'],[K('atk'),'舉球（差一點會自動跨一步）'],[`${K('jump')} → ${air}${K('rcv')}`,'跳舉：一傳靠網又高時跳起來，在空中按右鍵托球，節奏更快'],[`${K('jump')} → ${air}${K('atk')}`,'二次攻擊：跳起來按左鍵直接扣過網'],[`${K('jump')} → ${air}${K('tip')}`,'二次球：舉球員直接吊過網'],[`${K('s1')}${K('s2')}${K('s3')}`,'直接指定托給左攻／中間／右攻（不按就看準星）；對方發球或進攻時就能先選好下一球'],[`${K('stype')}／滾輪`,'切換攻擊方式：自動、高球（最穩）、平快（低平快，攔網來不及）、快攻（只有中間手，托在身邊、第一時間打；選左右攻會改成平快）；一傳太差時會改托修正高球'],[K('tip'),'二次吊球：直接把球推過網'],[`${hold}${K('rcv')}`,'墊球舉：比較保險，但沒那麼準']]},
    {t:'接球・防守',rows:[[`${hold}${K('rcv')}`,'接球姿勢：球掉進手臂就自動墊給舉球手'],[`<i>跑動中</i>${K('rcv')}`,'球太遠時飛撲'],[`<i>網前</i>${K('block')}`,'攔網：對方攻手起跳時按，原地起跳、手自動舉高、會往球的位置橫移']]},
-   {t:'發球',sub:'輪到你發球時',rows:[[K('atk'),'拋球，球到手上方再按一次'],[`${hold}${K('mod')}＋${K('atk')}`,'跳發：快又重'],['準星','發球落點']]},
+   {t:'發球',sub:'輪到你發球時',rows:[[K('atk'),'拋球，球到手上方再按一次'],[`${hold}${K('mod')}＋${K('atk')}`,'跳發：快又重'],[K('rcv'),'跳飄球：右鍵拋球，自動助跑起跳，在空中再按一次（左右鍵都可以）。球不旋轉、弧線平、會飄，最難接'],['準星','發球落點']]},
    {t:'技能',sub:'右下角量表滿了才能用',rows:[[K('skill'),'發動技能（左攻：強力扣球／右攻：精準扣球／中間：鐵壁攔網／舉球：神準舉球）'],['集氣','碰到球、得分、每打完一球都會集氣；一場至少能放一兩次']]},
    {t:'其他',rows:[[K('pause'),'暫停（Esc 也會放開滑鼠；多人連線時不會暫停）']]}];
   const notes=[['畫面提示',['球後面的白線是飛行軌跡，前面的點是接下來會飛的路線：黃色會落在我方，藍色落在對方','球跑出畫面時，畫面邊緣會有黃色箭頭指向球','地上的光圈是落點；黃色起跳圈出現時，跑過去在「跳！」時起跳']],
     ['成長',['每個角色有自己的等級，比賽依表現拿經驗值，升級得能力點，在賽前準備頁的角色預覽裡加點','主選單「訓練」：扣球／接發／攔網練習，加該能力的經驗值（滿 100 加 1 點），成長最多到 12','每場兩隊各有一位隨機「王牌」（頭上有 ★），屬性 +2']],
     ['多人連線',['主選單「多人連線」：房主建立房間，朋友輸入代碼加入，各自選位置，沒人坐的位置由 AI 打','需要先執行 server.js（離線包裡有「多人連線伺服器.bat」），再用 cloudflared 分享網址']],
-    ['規則',['4 對 4，先取設定分數且領先 2 分獲勝','得分的一方發球；換發時換下一位發球（舉球手不發球）','每隊最多碰三次，同一人不能連碰，攔網不算次數']]];
+    ['規則',['4 對 4，先取設定分數且領先 2 分獲勝','得分的一方發球；換發時換下一位發球（四個人輪流，舉球員也要發）','每隊最多碰三次，同一人不能連碰，攔網不算次數']]];
   $('helpList').innerHTML=G.map(g=>`<div class="cg"><h4>${g.t}${g.sub?`<small>${g.sub}</small>`:''}</h4>${g.rows.map(([k,t])=>`<div class="cr"><span class="ck">${k}</span><span>${t}</span></div>`).join('')}</div>`).join('')
     +notes.map(([t,l])=>`<div class="cg"><h4>${t}</h4><ul>${l.map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join('');}
 function demo(){players=[];PID=0;

@@ -7,12 +7,12 @@
 const BLK={handH:.42,tipH:.08,armK:.55,edge:.7};
 function attackPower(p,q,SK){
   const jf=clamp(p.y/Math.max(.3,p.jumpH||.9),0,1);           // 起跳高度比：越接近最高點越大
-  return p.st.pow*.5+(p.app||0)*2.5+jf*2+q*3+(SK==='power'?3:SK==='precise'?1:0);}
+  return p.st.pow*.5+(p.app||0)*2.5+jf*2+q*3+(SK==='power'?2+skRk(p,'power')*.6*skM(p,'power'):SK==='precise'?1+skM(p,'precise'):0)+pr(p,'a_pow')*.3;}
 // 攔網牆：回傳每位攔網手的矩形（網面座標：z 橫向、y 高度）
 function blockRects(defT){const R=[];
   for(const b of team(defT)){if(b.y<.12||Math.abs(b.x)>1.15||b.stun>0)continue;
     const wall=b.skOn==='wall',apex=1-Math.min(1,Math.abs(b.vy)/3);
-    const hw=.3+b.st.blk*.022+(wall?.14:0),top=b.y+HANDUP+.3+apex*.06+(wall?.05:0);
+    const hw=(.3+b.st.blk*.022)*(1+.04*pr(b,'b_reach'))+(wall?(.08+.03*skRk(b,'wall'))*skM(b,'wall'):0),top=b.y+HANDUP+.3+apex*.06+(wall?.05:0);
     R.push({b,cz:b.z,hw,top,hb:top-BLK.handH,aw:hw*BLK.armK,apex,wall,pen:clamp(1-Math.abs(b.x)/1.15,0,1)});}
   return R;}
 // 判定球穿過網面的點落在哪一區
@@ -23,14 +23,15 @@ function blockZone(R,zc,yc){let best=null;
     else if(yc<r.hb&&yc>NETH-.12&&Math.abs(zc-cz)<=r.aw)k='arm';
     if(k&&(!best||au<best.au))best={r,k,u,au};}
   return best;}
-function blockStrength(r,R,zc){let B=r.b.st.blk*.8+r.apex*3+r.pen*1.2+(r.wall?3:0)+rnd()*2.5;
+function blockStrength(r,R,zc){let B=r.b.st.blk*.8+r.apex*3+r.pen*1.2+(r.wall?(2+skRk(r.b,'wall'))*skM(r.b,'wall'):0)+pr(r.b,'b_str')*.5+rnd()*2.5;
   for(const o of R)if(o!==r&&Math.abs(zc-o.cz)<o.hw+.25)B+=1.2;    // 雙人攔網：隔壁那位的手也在附近
   return B;}
 // 回傳 true＝攔網有碰到球（已處理），false＝沒碰到，照常過網
 function blockResolve(zc,yc,atkT,defT){
   const R=blockRects(defT);if(!R.length)return false;const Z=blockZone(R,zc,yc);if(!Z)return false;
-  const {r,k,u}=Z,b=r.b,P=ball.tip?2:(ball.power||6),B=blockStrength(r,R,zc);
+  const {r,k,u}=Z,b=r.b,P=ball.tip?2:(ball.power||6);let B=blockStrength(r,R,zc);
   if(r.wall)skTake(b,['wall']);
+  if(skTake(b,['kill'])){B+=3*skM(b,'kill');pop(b,'攔死！',TS.kill.col);}
   b.swing=.4;b.pose='block';b.touchFx=.8;b.touchN='攔';ball.cool=.12;ball.serial=++SERIAL;ball.letGo=null;ball.spS=0;ball.spT=0;ball.trail=[];PC={};
   const fxAt=(c,n)=>{burst(0,yc,zc,c,n,3);};
   const own=(vx,vy)=>{ball.drive=false;ball.vx=vx;ball.vy=vy;ball.lastTeam=defT;ball.lastP=b;ball.touches=0;ball.blockTouch=true;ball.atk=false;ball.heavy=false;};
@@ -39,7 +40,7 @@ function blockResolve(zc,yc,atkT,defT){
   if(k==='tip'){ball.x=sd(defT)*.15;own(sd(defT)*Math.max(3,Math.abs(ball.vx)*.45),Math.max(2.5,ball.vy+3));ball.vz*=.6;
     say('擦到手！','#c9f0ff');fxAt('#c9f0ff',8);SFX.block();res('tip');return true;}
   // 手掌外緣：打手出界或亂彈
-  if(k==='edge'){const pt=clamp(.22+(P-B)*.06+(ball.toolAim?.22:0)+(Math.abs(u)-BLK.edge)*1.1+(ball.skPower?.15:0),.05,.85);
+  if(k==='edge'){const pt=clamp(.22+(P-B)*.06+(ball.toolAim?.22:0)+(Math.abs(u)-BLK.edge)*1.1+(ball.skPower?.15:0)+.06*pr(ball.attacker,'a_tool')-.06*pr(b,'b_soft'),.05,.85);
     if(rnd()<pt){const outward=Math.sign(u)===Math.sign(r.cz||u)||Math.abs(r.cz)>M.wid-1.6;
       ball.x=sd(defT)*.15;
       if(outward){lobTo(sd(defT)*(M.half*.5+rnd()*M.half),0,Math.sign(u)*(M.wid+.8+rnd()*1.6),yc+.6+rnd()*.8);

@@ -97,7 +97,7 @@ function cheer(){if(!S.sound||!AC||!NOISE)return;const t=AC.currentTime,d=out(1,
   const g=AC.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.16,t+.25);g.gain.exponentialRampToValueAtTime(.001,t+1.8);s.connect(f);f.connect(g);g.connect(d);s.start(t);s.stop(t+1.9);}
 
 const ACTS=['fwd','back','left','right','jump','atk','rcv','tip','block','mod','call','cam','pause','stype','s1','s2','s3','skill'];
-const ACT_LABEL={skill:'技能（量表滿了可以用）',fwd:'往前（鏡頭方向）',back:'往後',left:'往左',right:'往右',jump:'跳躍',atk:'扣球・發球（空中＝左旋扣球；舉球員跳起來托第二球時＝直接扣過去）',rcv:'接球（按住＝接球姿勢；空中＝右旋扣球；舉球員跳起來托第二球時＝跳舉）',tip:'輕打・吊球',block:'攔網',mod:'技巧鍵（跳發）',call:'叫球（要舉球手托給你）',cam:'切換鏡頭',pause:'暫停',stype:'切換球種：舉球員＝攻擊方式、攻擊手＝要哪種球（滾輪也可以）',s1:'舉球：托給左攻',s2:'舉球：托給中間',s3:'舉球：托給右攻'};
+const ACT_LABEL={skill:'技能（量表滿了可以用）',fwd:'往前（鏡頭方向）',back:'往後',left:'往左',right:'往右',jump:'跳躍',atk:'扣球・發球（空中＝左旋扣球；舉球員跳起來托第二球時＝直接扣過去）',rcv:'接球（按住＝接球姿勢；空中＝右旋扣球；舉球員跳起來托第二球時＝跳舉）',tip:'輕打・吊球',block:'攔網',mod:'技巧鍵（按住＋發球鍵＝跳發）',call:'叫球（要舉球手托給你）',cam:'切換鏡頭',pause:'暫停',stype:'切換球種：舉球員＝攻擊方式、攻擊手＝要哪種球（滾輪也可以）',s1:'舉球：托給左攻',s2:'舉球：托給中間',s3:'舉球：托給右攻'};
 const DEFAULT_KEYS={fwd:['k:KeyW','k:ArrowUp'],back:['k:KeyS','k:ArrowDown'],left:['k:KeyA','k:ArrowLeft'],right:['k:KeyD','k:ArrowRight'],jump:['k:Space',''],
   atk:['m:0','k:KeyJ'],rcv:['m:2','k:KeyK'],tip:['k:KeyF',''],block:['k:KeyE',''],mod:['k:ShiftLeft',''],call:['k:KeyV',''],cam:['k:KeyC',''],pause:['k:Escape','k:KeyP'],stype:['k:KeyR',''],s1:['k:Digit1',''],s2:['k:Digit2',''],s3:['k:Digit3',''],skill:['k:KeyQ','']};
 let KB=JSON.parse(JSON.stringify(DEFAULT_KEYS));

@@ -60,7 +60,7 @@ function netStartLocal(serveT){
   MATCH.diff=[NET.diff,NET.diff];MATCH.bonus=[0,0];
   for(const t of [0,1])for(const r of ROLES){const s=NET.slots[slotIdx(t,r)],p=mkP(t,r,charOf(r,s.ch),!!s.owner);p.owner=s.owner;p.pname=s.owner?s.name:'';
     if(s.owner===NET.id)human=p;else if(NET.host&&s.owner)p.rc={held:new Set(),trig:new Set(),cy:t?-Math.PI/2:Math.PI/2,cp:.3,cf:[sd(1-t)*1,0],cg:[sd(1-t)*5,0,false]};players.push(p);}
-  players.forEach((p,i)=>p.num=[4,1,7,3][i%4]+(p.team?8:0));if(NET.host)pickAces();
+  players.forEach((p,i)=>p.num=[4,1,7,3][i%4]+(p.team?8:0));if(NET.host){pickAces();treeApply();}
   score=[0,0];served=[false,false];serverIdx=[0,0];msgs=[];parts=[];serveTeam=serveT;served[serveTeam]=true;rebuildRigs();
   camYaw=camYawT=ME?-Math.PI/2:Math.PI/2;camPitch=camPitchT=.3;setupServe(serveTeam);say(`${COL[serveTeam].name}先發球`,COL[serveTeam].ui,true);SFX.whistle();
   g3.focus();try{const r=g3.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
