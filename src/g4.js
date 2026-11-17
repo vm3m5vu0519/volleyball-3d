@@ -21,10 +21,10 @@ sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-15,righ
     for(let i=0;i<9000;i++){const v=R();c.fillStyle=v<.5?`rgba(0,0,0,${grain*R()})`:`rgba(255,255,255,${grain*.7*R()})`;c.fillRect(R()*w,R()*h,1.4,1.4);}});};
   const tOut=sport([34,40,47],5,.06),tFree=sport([30,86,132],7,.07),tCourt=sport([214,112,58],11,.07);
   [tOut,tFree,tCourt].forEach(t=>{t.wrapS=t.wrapT=TH.RepeatWrapping;t.anisotropy=16;});tOut.repeat.set(GL/2,GW/2);tFree.repeat.set((HF+3.5)/2,(W+3)/2);tCourt.repeat.set(HF/2,W/2);
-  const fm=(t,sh)=>new TH.MeshPhongMaterial({color:'#ffffff',map:t,shininess:sh,specular:new TH.Color('#3a3a3a')});
-  const floor=new TH.Mesh(new TH.PlaneGeometry(GL*2,GW*2),fm(tOut,30));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
-  const free=new TH.Mesh(new TH.PlaneGeometry((HF+3.5)*2,(W+3)*2),fm(tFree,55));free.rotation.x=-Math.PI/2;free.position.y=.002;free.receiveShadow=true;scene.add(free);
-  const court=new TH.Mesh(new TH.PlaneGeometry(HF*2,W*2),fm(tCourt,55));court.rotation.x=-Math.PI/2;court.position.y=.004;court.receiveShadow=true;scene.add(court);
+  const fm=(t,sh)=>new TH.MeshPhongMaterial({color:'#ffffff',map:t,shininess:sh,specular:new TH.Color('#0e0e0e')}); /* 反光要很淡很散：從上往下看時，太亮的高光點會被光暈特效放大成一大團白光 */
+  const floor=new TH.Mesh(new TH.PlaneGeometry(GL*2,GW*2),fm(tOut,8));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
+  const free=new TH.Mesh(new TH.PlaneGeometry((HF+3.5)*2,(W+3)*2),fm(tFree,14));free.rotation.x=-Math.PI/2;free.position.y=.002;free.receiveShadow=true;scene.add(free);
+  const court=new TH.Mesh(new TH.PlaneGeometry(HF*2,W*2),fm(tCourt,14));court.rotation.x=-Math.PI/2;court.position.y=.004;court.receiveShadow=true;scene.add(court);
   const groups={};const box=(col,x,y,z,sx,sy,sz,ry=0)=>{const g=new TH.BoxGeometry(sx,sy,sz);g.rotateY(ry);g.translate(x,y,z);(groups[col]=groups[col]||[]).push(g);};
   [[0,W,HF*2+.05,.05],[0,-W,HF*2+.05,.05],[HF,0,.05,W*2],[-HF,0,.05,W*2],[0,0,.05,W*2],[3,0,.05,W*2],[-3,0,.05,W*2]].forEach(([x,z,a,b])=>box('#ffffff',x,.012,z,a,.01,b));
   [-3,3].forEach(x=>[-1,1].forEach(s=>{for(let k=0;k<4;k++)box('#ffffff',x,.012,s*(W+.5+k*.7),.05,.01,.35);}));

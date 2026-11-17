@@ -135,7 +135,7 @@ function touch(p,z,intent){
     pop(p,'被打飛！','#ff8a2a');burst(ball.x,ball.y,ball.z,'#ff8a2a',16,4);doShake(.3);SFX.block();return;}
   let act;
   // 跳舉：舉球手在空中碰第二球＝舉球（按輕打鍵＝吊二次球）
-  if(z.k==='air'&&!fresh&&ball.touches===2&&p===ball.setter&&intent!=='tip'&&(intent==='jset'||p.human&&p.role==='set'))act='set';
+  if(z.k==='air'&&!fresh&&ball.touches===2&&p===ball.setter&&intent!=='tip'&&(intent==='jset'||p.human&&p.role==='set'&&intent!=='atk'))act='set';
   else if(intent==='tip'&&(z.k==='air'||ball.touches===3||fresh===false&&ball.touches>=2))act='tip';
   else if(z.k==='air'&&(intent==='atk'||intent==='tip'||(!p.human&&ball.touches>=2&&p!==ball.setter)))act=intent==='tip'?'tip':'spike';
   else act=ball.touches===1?'pass':ball.touches===2?'set':'over';

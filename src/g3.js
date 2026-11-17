@@ -99,6 +99,7 @@ const MAGNET=2.4;
 function humanAir(p){
   if(p.y<=.15||p.hitDone||!p.swingReq||state!=='play')return;
   if(ball.lastTeam===p.team&&ball.lastP===p)return;
+  if(ball.serve&&ball.lastTeam===p.team)return; /* 自己隊發的球還沒過網：隊友不能碰 */
   if(Math.sign(ball.x)!==sd(p.team)&&Math.abs(ball.x)>.3)return;
   if(ball.lastTeam===p.team&&ball.touches>=3)return;
   const fx=Math.sin(p.yaw),fz=Math.cos(p.yaw),hx=p.x+fx*.3,hy=p.y+HANDUP+.05,hz=p.z+fz*.3,d=Math.hypot(ball.x-hx,ball.y-hy,ball.z-hz);
@@ -173,7 +174,9 @@ function humanInput(dt){
     if(Lb&&Math.sign(Lb.x)===sd(p.team)&&Lb.t<.42&&Lb.t>.06){const ax=Lb.x-Math.sin(p.yaw)*.3,az=Lb.z-Math.cos(p.yaw)*.3,dd=Math.hypot(ax-p.x,az-p.z);
       if(dd>.45&&dd<2.6){const tt=Math.max(.1,Lb.t-.05);p.vx=(ax-p.x)/tt;p.vz=(az-p.z)/tt;const v=Math.hypot(p.vx,p.vz);if(v>9){p.vx*=9/v;p.vz*=9/v;}p.lungeT=tt;p.lunged=ball.serial;}}}
   // 空中：左鍵＝左旋扣球、右鍵＝右旋扣球、鍵盤扣球鍵＝不旋（滑鼠甩動另外加旋轉）
-  if(p.y>0&&!p.hitDone&&(T('atk')||T('tip')||T('rcv')&&!setPhase(p))&&!p.swingReq){p.swingReq=T('tip')?'tip':'atk';p.spinReq=T('tip')?0:spinBtn();p.pressLate=ball.vy<0&&ball.y<p.y+HANDUP-.1;p.charging=true;p.chargeT=0;p.prevD=9;
+  // 舉球員跳起來、輪到他托第二球：右鍵＝跳舉（托球）、左鍵＝直接扣過去（不旋）、輕打鍵＝吊二次球
+  const _jsP=setPhase(p);
+  if(p.y>0&&!p.hitDone&&(T('atk')||T('tip')||T('rcv'))&&!p.swingReq){p.swingReq=T('tip')?'tip':_jsP?(T('rcv')&&!T('atk')?'jset':'atk'):'atk';p.spinReq=T('tip')||_jsP?0:spinBtn();p.pressLate=ball.vy<0&&ball.y<p.y+HANDUP-.1;p.charging=true;p.chargeT=0;p.prevD=9;
     const c=MOCAP.spike;if(c)playAct(p,'spike',Math.max(0,clipKey(c)-.4),{hold:clipKey(c)-.12});}
   if(p.charging){p.chargeT+=dt;p.power=Math.min(1,p.chargeT/.3);}
   // 舉球：1／2／3 直接指定托給誰（不按就看準星），R 或滾輪切換攻擊方式
@@ -224,6 +227,7 @@ function update0(dt){
   for(const p of order){
     if(Math.sign(ball.x)!==sd(p.team)&&Math.abs(ball.x)>.25)continue;
     if(ball.cool>0&&p.team===ball.lastTeam)continue;
+    if(ball.serve&&p.team===ball.lastTeam)continue; /* 同隊發球不能碰（現實也是犯規） */
     if(ball.lastTeam===p.team&&ball.lastP===p&&!ball.blockTouch)continue;
     if(p.human&&p.y>.15)continue;
     const z=zoneOf(p);if(!z)continue;

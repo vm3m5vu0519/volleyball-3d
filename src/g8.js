@@ -51,7 +51,7 @@ async function loadBuiltins(){const use=new Set([...Object.values(prep.skins||{}
     if(use.has(b.id)&&[...use].every(id=>SKINS[id])&&GLBSRC)rebuildRigs();}
   if(GLBSRC)rebuildRigs();if(!$('vSkin').hidden){skRender();skRig();}}
 async function loadSkins(){loadBuiltins();try{const all=await idbAll();for(const r of all){try{SKINS[r.id]=await parseSkin(r);}catch(e){SKINS[r.id]={id:r.id,name:r.name,gltf:null,miss:['讀不到檔案'],size:r.data.byteLength};}}}catch(e){}
-  let ch=false;for(const r of SK_ROLES)if(prep.skins[r]&&!/^b-/.test(prep.skins[r])&&!SKINS[prep.skins[r]]){delete prep.skins[r];ch=true;}if(ch)savePrep();
+  let ch=false;for(const r of SK_ROLES)if(prep.skins[r]&&!/^b-/.test(prep.skins[r])&&!SKINS[prep.skins[r]]){delete prep.skins[r];if(prep.skinPin)delete prep.skinPin[r];ch=true;}if(ch)savePrep();
   if(Object.keys(SKINS).length&&GLBSRC)rebuildRigs();}
 // ---------- 頁面 ----------
 const SKX={rend:null,sc:null,cam:null,rig:null,p:null,sel:null,mode:'auto',t:0,orbit:0,drag:null};
@@ -66,14 +66,16 @@ function skRender(){
     row.querySelector('b').textContent=s.name;row.querySelector('small').textContent=info;if(!ok)row.querySelector('small').style.color='#ff8a7a';
     row.querySelector('.skName').onclick=()=>{SKX.sel=id;skRender();skRig();accPanel();};
     const del=row.querySelector('.skDel');if(del)del.onclick=async()=>{if(del.dataset.arm!=='1'){del.dataset.arm='1';del.textContent='再按一次確認';setTimeout(()=>{del.dataset.arm='';del.textContent='刪除';},3000);return;}await idbDel(id).catch(()=>{});delete SKINS[id];
-      for(const r of SK_ROLES)if(prep.skins[r]===id)delete prep.skins[r];savePrep();if(SKX.sel===id)SKX.sel=null;skRender();skRig();rebuildRigs();};
+      for(const r of SK_ROLES)if(prep.skins[r]===id){delete prep.skins[r];if(prep.skinPin)delete prep.skinPin[r];}savePrep();if(SKX.sel===id)SKX.sel=null;skRender();skRig();rebuildRigs();};
     L.appendChild(row);});
   const A=$('skAssign');A.innerHTML='';
   SK_ROLES.forEach(r=>{const row=document.createElement('label');row.className='skAs';const nm=charOf(r,prep.chars[r]).name;
     row.innerHTML=`<span>${ROLE[r].name}<small>${nm}${r===prep.role?'・你':''}</small></span><select></select>`;const sel=row.querySelector('select');
-    sel.innerHTML='<option value="">預設人偶</option>'+ids.filter(id=>SKINS[id].gltf).map(id=>`<option value="${id}"></option>`).join('');
+    sel.innerHTML='<option value="__char">跟著球員（原本樣貌）</option><option value="">預設人偶</option>'+ids.filter(id=>SKINS[id].gltf).map(id=>`<option value="${id}"></option>`).join('');
     ids.filter(id=>SKINS[id].gltf).forEach((id,i)=>{sel.options[i+1].textContent=SKINS[id].name;});
-    sel.value=prep.skins[r]||'';sel.onchange=()=>{if(sel.value)prep.skins[r]=sel.value;else delete prep.skins[r];savePrep();rebuildRigs();skMsg(`${ROLE[r].name}換成「${sel.value?SKINS[sel.value].name:'預設人偶'}」`);};
+    prep.skinPin=prep.skinPin||{};sel.value=!prep.skinPin[r]&&prep.skins[r]===CHAR_SKIN[prep.chars[r]]?'__char':(prep.skins[r]&&SKINS[prep.skins[r]]&&SKINS[prep.skins[r]].gltf?prep.skins[r]:'');
+    sel.onchange=()=>{const v=sel.value;if(v==='__char'){delete prep.skinPin[r];const c=CHAR_SKIN[prep.chars[r]];if(c)prep.skins[r]=c;else delete prep.skins[r];}else{prep.skinPin[r]=1;if(v)prep.skins[r]=v;else delete prep.skins[r];}
+      savePrep();rebuildRigs();skMsg(v==='__char'?`${ROLE[r].name}恢復成球員原本的樣貌`:`${ROLE[r].name}換成「${v?SKINS[v].name:'預設人偶'}」（換球員也會保留，選「跟著球員」才會解除）`);};
     A.appendChild(row);});
   document.querySelectorAll('#skPose [data-m]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.m===SKX.mode)));}
 $('skFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
@@ -269,7 +271,8 @@ accLoadGlbs();
 const CHAR_SKIN={go:'b-shino',ryu:'b-dshibu',kenta:'b-shibu',taiki:'b-girl',sho:'b-vita',ren:'b-twist',misaki:'b-hair',shan:'b-seed',fu:'b-fumi',momo:'b-vivi',yukina:'b-vic',ming:'b-girl'};
 if((prep.skinInit|0)<4){ROLES.forEach(r=>{const s=CHAR_SKIN[prep.chars[r]];if(s)prep.skins[r]=s;});prep.skinInit=4;savePrep();}
 // 選了某個球員：場上的外觀換成他的樣貌
-function pickChar(r,cid){prep.chars[r]=cid;if(CHAR_SKIN[cid])prep.skins[r]=CHAR_SKIN[cid];savePrep();}
+// 在「角色外觀」頁自己指定過外觀（例如上傳的 VRM）就鎖住，換球員不會蓋掉；選「跟著球員」才解除
+function pickChar(r,cid){prep.chars[r]=cid;if(!(prep.skinPin&&prep.skinPin[r])&&CHAR_SKIN[cid])prep.skins[r]=CHAR_SKIN[cid];savePrep();}
 const PV={rend:null,sc:null,cam:null,rig:null,p:null,role:null,cid:null,orbit:0,drag:null,thumbs:{},tq:[],tT:0,rt:null};
 function pvInit(){if(PV.rend||!renderer)return;const c=$('pView');try{PV.rend=new TH.WebGLRenderer({canvas:c,antialias:true});}catch(e){return;}
   PV.rend.setPixelRatio(Math.min(devicePixelRatio||1,1.5));PV.sc=new TH.Scene();PV.sc.background=new TH.Color('#12303a');
